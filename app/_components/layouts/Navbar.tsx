@@ -61,7 +61,7 @@ export default function Navbar() {
             Contact
           </Link>
 
-          <Button />
+          <Button>Get Started</Button>
         </div>
       </div>
 
@@ -112,7 +112,9 @@ export default function Navbar() {
               →
             </span>
           </Link>
-          <Button />
+          <Button >
+            Get Started
+          </Button>
         </div>
       </div>
 

@@ -69,7 +69,10 @@ export default function Clients(): JSX.Element {
             </p>
           </div>
 
-          <Button width="w-92" />
+          
+          <Button className="w-92">
+            Get Started
+          </Button>
         </div>
         <div>
           <motion.div
