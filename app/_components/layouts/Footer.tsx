@@ -10,7 +10,7 @@ import Logo from "../ui/Logo";
 
 export default function Footer() {
   return (
-    <footer className="mt-20 text-white bg-secondary">
+    <footer className="mt-20 text-white bg-primary-700">
       <div className="container px-5 mx-auto py-14">
         <div className="text-center md:text-left">
           <h1 className="text-2xl font-semibold md:text-3xl">
@@ -55,7 +55,7 @@ export default function Footer() {
             <div className="flex gap-4 mb-6">
               <a
                 href="#"
-                className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-accent bg-secondary group"
+                className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-primary-300 bg-primary-700 group"
               >
                 <span className="absolute inset-0 w-0 h-full transition-all duration-300 bg-white/20 group-hover:w-full"></span>
 
@@ -70,7 +70,7 @@ export default function Footer() {
 
               <a
                 href="#"
-                className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-accent bg-secondary group"
+                className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-primary-300 bg-primary-700 group"
               >
                 <span className="absolute inset-0 w-0 h-full transition-all duration-300 bg-white/20 group-hover:w-full"></span>
 
@@ -89,7 +89,7 @@ export default function Footer() {
                 (icon, i) => (
                   <li
                     key={i}
-                    className="p-2 transition-all duration-300 rounded-full cursor-pointer hover:scale-110 hover:bg-accent/10 hover:border hover:border-accent"
+                    className="p-2 transition-all duration-300 rounded-full cursor-pointer hover:scale-110 hover:bg-accent/10 hover:border hover:border-primary-300"
                   >
                     <Image src={icon} width={20} height={20} alt="icon" />
                   </li>

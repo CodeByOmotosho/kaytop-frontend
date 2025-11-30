@@ -50,7 +50,7 @@ const data: CoreValue[] = [
 export default function CoreValues(): JSX.Element {
   return (
     <div>
-      <h1 className="px-5 text-lg font-medium text-center md:text-left text-primary">
+      <h1 className="px-5 text-lg font-medium text-center md:text-left text-primary-500">
         Core Values
       </h1>
       <div className="flex flex-col justify-between gap-10 p-5 md:items-start md:flex-row">
@@ -59,11 +59,11 @@ export default function CoreValues(): JSX.Element {
             {data.map((item, i) => (
               <div
                 key={i}
-                className="cursor-pointer p-5 rounded-xl transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:bg-white border border-transparent hover:border-accent"
+                className="cursor-pointer p-5 rounded-xl transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:bg-white border border-transparent hover:border-primary-300"
               >
                 <Image src={item.icon} quality={75} alt="chat icon" />
-                <h1 className="mt-5 font-medium text-primary">{item.title}</h1>
-                <p className="text-text">{item.content}</p>
+                <h1 className="mt-5 font-medium text-primary-500">{item.title}</h1>
+                <p className="text-neutral-500">{item.content}</p>
               </div>
             ))}
           </div>

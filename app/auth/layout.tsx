@@ -12,7 +12,7 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body
         style={{ backgroundImage: `url(${patterns.src})` }}
-        className="flex items-center justify-center min-h-screen bg-no-repeat bg-bottom-right bg-bg"
+        className="flex items-center justify-center min-h-screen bg-no-repeat bg-bottom-right bg-neutral-100"
       >
         {children}
       </body>

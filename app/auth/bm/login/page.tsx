@@ -6,8 +6,8 @@ import React from "react";
 
 export default function page() {
   return (
-    <div className="max-w-lg  w-full bg-white p-10 rounded-lg mx-5">
-      <h1 className="text-2xl font-medium">Hello,</h1>
+    <div className="w-full max-w-lg p-10 mx-5 bg-white rounded-lg">
+      <h1 className="text-3xl font-medium">Hello,</h1>
       <p className="text-md">Sign in to your account</p>
 
       <form className="my-2" action="">

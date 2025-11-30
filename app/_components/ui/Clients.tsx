@@ -11,10 +11,10 @@ export default function Clients(): JSX.Element {
     <>
       <div className="grid grid-cols-1 p-5 md:grid-cols-2 md:my-15">
         <div className="self-center">
-          <h1 className="py-4 text-lg font-medium text-center md:text-left text-accent">
+          <h1 className="py-4 text-lg font-medium text-center md:text-left text-primary-300">
             Target clients
           </h1>
-          <p className="tracking-wide text-text text-md">
+          <p className="tracking-wide text-neutral-500 text-md">
             Kay Top serves a wide range of clients including individuals, market
             traders, small and medium enterprises, farmers, and community
             groups. We aim to empower those with limited access to traditional
@@ -56,23 +56,20 @@ export default function Clients(): JSX.Element {
               speed={60}
               repeat={Infinity}
               wrapper="h1"
-              className="text-2xl font-medium md:text-5xl text-secondary"
+              className="text-2xl font-medium md:text-5xl text-primary-700"
             />
           </div>
 
           <div className="py-4">
-            <p className="tracking-wide text-text">
+            <p className="tracking-wide text-neutral-500">
               Contact Kay Top Multipurpose Investment Limited{" "}
             </p>
-            <p className="tracking-wide text-text">
+            <p className="tracking-wide text-neutral-500">
               to start your financial journey!
             </p>
           </div>
 
-          
-          <Button className="w-92">
-            Get Started
-          </Button>
+          <Button className="w-92">Get Started</Button>
         </div>
         <div>
           <motion.div

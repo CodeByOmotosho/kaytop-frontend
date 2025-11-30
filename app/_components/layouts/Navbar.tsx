@@ -8,7 +8,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className=" relative p-3 text-[#101828] bg-white md:flex md:justify-between md:items-center border-b border-b-[#F2F4F7]">
+    <nav className=" relative p-3 text-primary-500 bg-white md:flex md:justify-between md:items-center border-b border-b-[#F2F4F7]">
       <div className="container flex items-center justify-between mx-auto">
         <Logo />
 
@@ -45,7 +45,7 @@ export default function Navbar() {
             href="/"
             className="relative hover:text-accent transition-colors duration-300
                        after:content-[''] after:absolute after:left-0 after:bottom-0
-                       after:w-0 after:h-[2px] after:bg-accent
+                       after:w-0 after:h-[2px] after:bg-primary-300
                        after:transition-all after:duration-300 hover:after:w-full"
           >
             About
@@ -53,9 +53,9 @@ export default function Navbar() {
 
           <Link
             href="/contact"
-            className="relative hover:text-accent transition-colors duration-300
+            className="relative hover:text-primary-300 transition-colors duration-300
                        after:content-[''] after:absolute after:left-0 after:bottom-0
-                       after:w-0 after:h-[2px] after:bg-accent
+                       after:w-0 after:h-[2px] after:bg-primary-300
                        after:transition-all after:duration-300 hover:after:w-full"
           >
             Contact
