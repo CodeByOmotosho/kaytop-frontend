@@ -1,6 +1,21 @@
 import React from "react";
 import "../styles/globals.css";
 import patterns from "@/public/patterns.png";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | Kaytop App",
+    default: "Welcome / The Kaytop App",
+  },
+  description:
+    "Kaytop is a modern multipurpose investment platform that enables users to invest confidently, access financing, and grow wealth with ease.",
+  // metadataBase: new URL('https://next-learn-dashboard.vercel.sh'),
+  icons: {
+    icon: "/logo.png",
+  },
+};
+
 
 
 export default function RootLayout({
