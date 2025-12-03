@@ -1,4 +1,6 @@
+import Chart from "@/app/_components/ui/Chart";
 import FilterButton from "@/app/_components/ui/FilterButton";
+import Table from "@/app/_components/ui/Table";
 import { JSX } from "react";
 
 export default function page(): JSX.Element {
@@ -9,7 +11,7 @@ export default function page(): JSX.Element {
           <h1 className="text-2xl font-medium">Overview</h1>
           <p className="text-md">Igando Branch</p>
         </div>
-        <div className="flex items-center justify-between mt-10">
+        <div className="flex flex-wrap items-center justify-between mt-10 gap-y-2">
           <div className="flex flex-wrap items-center gap-1 px-1 py-1 bg-white rounded-sm w-fit">
             <FilterButton active={true}>12 months</FilterButton>
             <FilterButton>30 days</FilterButton>
@@ -25,6 +27,84 @@ export default function page(): JSX.Element {
               <img src="/filter.svg" alt="calendar" />
               <span>Filter</span>
             </FilterButton>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 px-4 py-5 my-5 bg-white rounded-md md:grid-cols-4 gap-y-4">
+          <div className="flex flex-col items-start px-4">
+            <p className="text-sm text-gray-500">All Customers</p>
+            <h1 className="text-xl font-semibold">42,094</h1>
+            <p className="text-sm text-green-500">+6% this month</p>
+          </div>
+
+          <div className="flex flex-col items-start px-4 border-l border-gray-300">
+            <p className="text-sm text-gray-500">All CO&apos;s</p>
+            <h1 className="text-xl font-semibold">15,350</h1>
+            <p className="text-sm text-green-500">+6% this month</p>
+          </div>
+
+          <div className="flex flex-col items-start px-4 border-gray-300 border-none md:border-l">
+            <p className="text-sm text-gray-500">Loans Processed</p>
+            <h1 className="text-xl font-semibold">28,350</h1>
+            <p className="text-sm text-red-500">-26% this month</p>
+          </div>
+
+          <div className="flex flex-col items-start px-4 border-l border-gray-300">
+            <p className="text-sm text-gray-500">Loan Amount</p>
+            <h1 className="text-xl font-semibold">₦50,350.00</h1>
+            <p className="text-sm text-green-500">+40% this month</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 px-4 py-5 bg-white rounded-md">
+          <div className="flex flex-col items-start px-4">
+            <p className="text-sm text-gray-500">Active Loan</p>
+            <h1 className="text-xl font-semibold">₦50,350.00</h1>
+            <p className="text-sm text-green-500">+40% this month</p>
+          </div>
+          <div className="flex flex-col items-start px-4 border-l">
+            <p className="text-sm text-gray-500">Missed Payment</p>
+            <h1 className="text-xl font-semibold">₦50,350.00</h1>
+            <p className="text-sm text-green-500">+40% this month</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col p-5 my-5 bg-white h-[40vh]">
+          <Chart />
+        </div>
+        <div>
+          <div className="my-5 text-gray-500 tabs tabs-border custom-tabs">
+            <input
+              type="radio"
+              name="my_tabs_2"
+              className="tab"
+              aria-label="Disbursements"
+              defaultChecked
+            />
+            <div className="p-10 bg-white tab-content">
+              <Table/>
+            </div>
+
+            <input
+              type="radio"
+              name="my_tabs_2"
+              className="tab"
+              aria-label="Re-collections"
+            />
+            <div className="p-10 bg-white tab-content">Tab content 2</div>
+
+            <input
+              type="radio"
+              name="my_tabs_2"
+              className="tab"
+              aria-label="Savings"
+            />
+            <div className="p-10 bg-white tab-content">Tab content 3</div>
+            <input
+              type="radio"
+              name="my_tabs_2"
+              className="tab"
+              aria-label="Missed payments"
+            />
+            <div className="p-10 bg-white tab-content">Tab content 4</div>
           </div>
         </div>
       </div>
