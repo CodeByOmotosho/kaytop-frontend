@@ -1,5 +1,5 @@
 import Button from "@/app/_components/ui/Button";
-import { Input } from "@/app/_components/ui/InputTemp";
+import Input  from "@/app/_components/ui/Input";
 import Link from "next/link";
 import { JSX } from "react";
 
