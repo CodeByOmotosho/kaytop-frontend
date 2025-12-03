@@ -1,5 +1,6 @@
 import Chart from "@/app/_components/ui/Chart";
 import FilterButton from "@/app/_components/ui/FilterButton";
+import Metric from "@/app/_components/ui/Metric";
 import Table from "@/app/_components/ui/Table";
 import { JSX } from "react";
 
@@ -30,29 +31,7 @@ export default function page(): JSX.Element {
           </div>
         </div>
         <div className="grid grid-cols-2 px-4 py-5 my-5 bg-white rounded-md md:grid-cols-4 gap-y-4">
-          <div className="flex flex-col items-start px-4">
-            <p className="text-sm text-gray-500">All Customers</p>
-            <h1 className="text-xl font-semibold">42,094</h1>
-            <p className="text-sm text-green-500">+6% this month</p>
-          </div>
-
-          <div className="flex flex-col items-start px-4 border-l border-gray-300">
-            <p className="text-sm text-gray-500">All CO&apos;s</p>
-            <h1 className="text-xl font-semibold">15,350</h1>
-            <p className="text-sm text-green-500">+6% this month</p>
-          </div>
-
-          <div className="flex flex-col items-start px-4 border-gray-300 border-none md:border-l">
-            <p className="text-sm text-gray-500">Loans Processed</p>
-            <h1 className="text-xl font-semibold">28,350</h1>
-            <p className="text-sm text-red-500">-26% this month</p>
-          </div>
-
-          <div className="flex flex-col items-start px-4 border-l border-gray-300">
-            <p className="text-sm text-gray-500">Loan Amount</p>
-            <h1 className="text-xl font-semibold">₦50,350.00</h1>
-            <p className="text-sm text-green-500">+40% this month</p>
-          </div>
+          <Metric />
         </div>
         <div className="grid grid-cols-2 px-4 py-5 bg-white rounded-md">
           <div className="flex flex-col items-start px-4">
@@ -80,7 +59,7 @@ export default function page(): JSX.Element {
               defaultChecked
             />
             <div className="p-10 bg-white tab-content">
-              <Table/>
+              <Table />
             </div>
 
             <input
