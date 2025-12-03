@@ -1,6 +1,6 @@
 "use client";
 import Button from "@/app/_components/ui/Button";
-import { Input } from "@/app/_components/ui/Input";
+import { Input } from "@/app/_components/ui/InputTemp";
 import OtpInput from "@/app/_components/ui/OtpInput";
 import React from "react";
 
