@@ -1,5 +1,6 @@
 import Button from "@/app/_components/ui/Button";
 import { Checkbox } from "@/app/_components/ui/Checkbox";
+<<<<<<< HEAD
 import { Input } from "@/app/_components/ui/input";
 import Link from "next/link";
 import React from "react";
@@ -9,6 +10,17 @@ export default function page() {
     <div className="max-w-lg  w-full bg-white p-10 rounded-lg mx-5">
       <h1 className="text-2xl font-medium">Hello,</h1>
       <p className="text-md">Sign in to your account</p>
+=======
+import Input from "@/app/_components/ui/Input"
+import Link from "next/link";
+import React, { JSX } from "react";
+
+export default function page(): JSX.Element {
+  return (
+    <div className="w-full max-w-lg p-10 mx-5 bg-white rounded-lg">
+      <h1 className="text-3xl font-medium text-neutral-700">Hello,</h1>
+      <p className="text-md text-neutral-700">Sign in to your account</p>
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
 
       <form className="my-2" action="">
         <label htmlFor="email">Email</label>

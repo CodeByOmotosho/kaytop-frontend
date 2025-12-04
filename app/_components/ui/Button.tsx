@@ -1,5 +1,6 @@
 import React from "react";
 
+<<<<<<< HEAD
 // import React from "react";
 
 // type AppProps = {
@@ -21,6 +22,8 @@ import React from "react";
 //   );
 // }
 
+=======
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
 type ButtonProps = {
   children: React.ReactNode;
   variant?: "primary" | "tertiary" | "danger";
@@ -30,8 +33,13 @@ type ButtonProps = {
 };
 
 const variants = {
+<<<<<<< HEAD
   primary: "bg-accent text-primary hover:text-white font-medium",
   tertiary: "bg-tertiary text-white hover:text-white font-medium",
+=======
+  primary: "bg-primary-300 text-primary hover:text-white font-medium",
+  tertiary: "bg-brand-purple text-white hover:text-white font-medium",
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
   danger: "bg-red-500 text-white hover:bg-red-600",
 };
 

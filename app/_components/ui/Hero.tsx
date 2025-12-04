@@ -15,15 +15,25 @@ export default function Hero(): JSX.Element {
       <div className="text-center md:text-left">
         <a
           href=""
+<<<<<<< HEAD
           className="inline-block my-2 relative px-2 py-2 border rounded-full border-secondary text-secondary
+=======
+          className="inline-block my-2 relative px-2 py-2 border rounded-full border-primary-700 text-primary-700
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
              overflow-hidden transition-all duration-300
              before:content-[''] before:absolute before:top-0 before:left-0
              before:w-0 before:h-full before:bg-white/30
              before:transition-all before:duration-300
              hover:before:w-full
+<<<<<<< HEAD
              hover:bg-accent hover:text-secondary cursor-pointer group"
         >
           <span className="px-2 mr-2 border rounded-full border-secondary">
+=======
+             hover:bg-primary-300 hover:text-primary-700 cursor-pointer group"
+        >
+          <span className="px-2 mr-2 border rounded-full border-primary-700">
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
             Trusted!
           </span>
           Empowering Every Dream
@@ -45,6 +55,7 @@ export default function Hero(): JSX.Element {
           speed={60}
           repeat={Infinity}
           wrapper="h1"
+<<<<<<< HEAD
           className="text-2xl font-semibold md:text-5xl text-secondary"
         />
         <div className="my-3">
@@ -52,6 +63,15 @@ export default function Hero(): JSX.Element {
             Designed for everyday people. Quick loans with fair rates and
           </p>
           <p className="text-lg tracking-wide text-text">
+=======
+          className="text-2xl font-semibold md:text-5xl text-primary-700"
+        />
+        <div className="my-3">
+          <p className="text-lg tracking-wide text-neutral-500">
+            Designed for everyday people. Quick loans with fair rates and
+          </p>
+          <p className="text-lg tracking-wide text-neutral-500">
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
             flexible terms to help you grow your business or handle life&apos;
             needs.
           </p>
@@ -65,7 +85,11 @@ export default function Hero(): JSX.Element {
                before:content-[''] before:absolute before:top-0 before:left-0
                before:w-0 before:h-full before:bg-white/20
                before:transition-all before:duration-300
+<<<<<<< HEAD
                hover:before:w-full hover:bg-accent hover:text-secondary"
+=======
+               hover:before:w-full hover:bg-primary-300 hover:text-primary-700"
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
           >
             <div className="relative z-10 flex items-center">
               <img src="appleLogo.svg" alt="apple logo" />
@@ -83,7 +107,11 @@ export default function Hero(): JSX.Element {
                before:content-[''] before:absolute before:top-0 before:left-0
                before:w-0 before:h-full before:bg-white/20
                before:transition-all before:duration-300
+<<<<<<< HEAD
                hover:before:w-full hover:bg-accent hover:text-secondary"
+=======
+               hover:before:w-full hover:bg-primary-300 hover:text-primary-700"
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
           >
             <div className="relative z-10 flex items-center">
               <img src="googleplaylogo.svg" alt="google play logo" />

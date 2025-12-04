@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React from "react";
+=======
+import React, { JSX } from "react";
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
 import hand from "@/public/hand.svg";
 import facebook from "@/public/facebook.svg";
 import github from "@/public/github.svg";
@@ -8,9 +12,15 @@ import web from "@/public/web.svg";
 import Image from "next/image";
 import Logo from "../ui/Logo";
 
+<<<<<<< HEAD
 export default function Footer() {
   return (
     <footer className="mt-20 text-white bg-secondary">
+=======
+export default function Footer(): JSX.Element {
+  return (
+    <footer className="mt-20 text-white bg-primary-700">
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
       <div className="container px-5 mx-auto py-14">
         <div className="text-center md:text-left">
           <h1 className="text-2xl font-semibold md:text-3xl">
@@ -55,7 +65,11 @@ export default function Footer() {
             <div className="flex gap-4 mb-6">
               <a
                 href="#"
+<<<<<<< HEAD
                 className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-accent bg-secondary group"
+=======
+                className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-primary-300 bg-primary-700 group"
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
               >
                 <span className="absolute inset-0 w-0 h-full transition-all duration-300 bg-white/20 group-hover:w-full"></span>
 
@@ -70,7 +84,11 @@ export default function Footer() {
 
               <a
                 href="#"
+<<<<<<< HEAD
                 className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-accent bg-secondary group"
+=======
+                className="relative inline-block px-4 py-2 overflow-hidden transition border rounded-md border-primary-300 bg-primary-700 group"
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
               >
                 <span className="absolute inset-0 w-0 h-full transition-all duration-300 bg-white/20 group-hover:w-full"></span>
 
@@ -89,7 +107,11 @@ export default function Footer() {
                 (icon, i) => (
                   <li
                     key={i}
+<<<<<<< HEAD
                     className="p-2 transition-all duration-300 rounded-full cursor-pointer hover:scale-110 hover:bg-accent/10 hover:border hover:border-accent"
+=======
+                    className="p-2 transition-all duration-300 rounded-full cursor-pointer hover:scale-110 hover:bg-accent/10 hover:border hover:border-primary-300"
+>>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
                   >
                     <Image src={icon} width={20} height={20} alt="icon" />
                   </li>
