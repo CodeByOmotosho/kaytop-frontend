@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { Input } from "../_components/ui/input";
 import Button from "../_components/ui/Button";
 import { Label } from "../_components/ui/label";
 

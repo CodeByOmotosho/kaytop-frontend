@@ -6,11 +6,7 @@ import React, { JSX } from "react";
 
 export default function Investment(): JSX.Element {
   return (
-<<<<<<< HEAD
-    <div className="md:p-15 text-white rounded-[25px] bg-secondary mt-15">
-=======
     <div className="md:p-15 text-white rounded-[25px] bg-primary-700 mt-15">
->>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
       <div className="flex flex-col items-center md:flex-row">
         <div className="order-2 md:order-1">
           <motion.div
@@ -62,15 +58,9 @@ export default function Investment(): JSX.Element {
                 key={i}
                 className="
               relative cursor-pointer 
-<<<<<<< HEAD
-              hover:text-accent transition-colors duration-300
-              after:content-[''] after:absolute after:left-0 after:-bottom-1
-              after:w-0 after:h-[2px] after:bg-accent
-=======
               hover:text-primary-300 transition-colors duration-300
               after:content-[''] after:absolute after:left-0 after:-bottom-1
               after:w-0 after:h-[2px] after:bg-primary-300
->>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
               after:transition-all after:duration-300 hover:after:w-full
             "
               >

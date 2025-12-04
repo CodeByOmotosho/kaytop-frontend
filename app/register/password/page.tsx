@@ -3,8 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
-import  Input  from "@/app/_components/ui/input"
 import Button from "@/app/_components/ui/Button"
+import { Input } from "@/components/ui/input"
 
 export default function CreatePasswordPage() {
   const [show1, setShow1] = useState(false)

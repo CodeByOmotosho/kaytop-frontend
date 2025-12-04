@@ -1,16 +1,5 @@
 "use client";
 import Link from "next/link";
-<<<<<<< HEAD
-import { useState } from "react";
-import Logo from "../ui/Logo";
-import Button from "../ui/Button";
-
-export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <nav className=" relative p-3 text-[#101828] bg-white md:flex md:justify-between md:items-center border-b border-b-[#F2F4F7]">
-=======
 import { JSX, useState } from "react";
 import Logo from "../ui/Logo";
 import Button from "../ui/Button";
@@ -20,7 +9,6 @@ export default function Navbar(): JSX.Element {
 
   return (
     <nav className=" relative p-3 text-primary-500 bg-white md:flex md:justify-between md:items-center border-b border-b-[#F2F4F7]">
->>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
       <div className="container flex items-center justify-between mx-auto">
         <Logo />
 
@@ -57,11 +45,7 @@ export default function Navbar(): JSX.Element {
             href="/"
             className="relative hover:text-accent transition-colors duration-300
                        after:content-[''] after:absolute after:left-0 after:bottom-0
-<<<<<<< HEAD
-                       after:w-0 after:h-[2px] after:bg-accent
-=======
                        after:w-0 after:h-[2px] after:bg-primary-300
->>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
                        after:transition-all after:duration-300 hover:after:w-full"
           >
             About
@@ -69,15 +53,9 @@ export default function Navbar(): JSX.Element {
 
           <Link
             href="/contact"
-<<<<<<< HEAD
-            className="relative hover:text-accent transition-colors duration-300
-                       after:content-[''] after:absolute after:left-0 after:bottom-0
-                       after:w-0 after:h-[2px] after:bg-accent
-=======
             className="relative hover:text-primary-300 transition-colors duration-300
                        after:content-[''] after:absolute after:left-0 after:bottom-0
                        after:w-0 after:h-[2px] after:bg-primary-300
->>>>>>> 35af71aa7f763dc0adb3b3153c877668ec307350
                        after:transition-all after:duration-300 hover:after:w-full"
           >
             Contact
