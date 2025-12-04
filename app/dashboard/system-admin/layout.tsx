@@ -24,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <body className=" bg-neutral-100">
+      <body className="bg-[#F4F6FA]">
         <Navbar />
         <div className="pt-16 drawer lg:drawer-open">
           <input

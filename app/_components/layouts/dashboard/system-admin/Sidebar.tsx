@@ -42,14 +42,14 @@ export default function Sidebar(): JSX.Element {
                   <li key={i}>
                     <Link
                       href={item.link}
-                      className={`flex items-center gap-[23px] text-base font-medium leading-[1.24] ${
+                      className={`flex items-center gap-[23px] text-base font-medium leading-[1.24] transition-all duration-200 hover:text-[#7F56D9] ${
                         isActive ? "text-[#7F56D9]" : "text-[#888F9B]"
                       }`}
                     >
                       <img
                         src={item.icon}
                         alt={item.label}
-                        className="w-[18px] h-[18px]"
+                        className="w-[18px] h-[18px] transition-all duration-200"
                         style={{ filter: isActive ? "none" : "grayscale(1) opacity(0.6)" }}
                       />
                       <span>{item.label}</span>

@@ -11,12 +11,12 @@ export default function page(): JSX.Element {
           <p className="text-base font-medium leading-4 opacity-50">Osun state</p>
         </div>
 
-        {/* Stats Cards Row 1 - Exact Figma spacing */}
+        {/* Stats Cards Row 1 - Exact Figma spacing with interactivity */}
         <div className="relative mt-[60px]">
           <div className="absolute inset-0 bg-black/[0.04] blur-[60px] rounded-lg" style={{ top: "73px", height: "46px", width: "666px", left: "70px" }} />
-          <div className="relative bg-white border border-[rgba(2,28,62,0.2)] rounded-[4px] p-3">
+          <div className="relative bg-white border border-[rgba(2,28,62,0.2)] rounded-[4px] p-3 hover:shadow-lg transition-shadow duration-300">
             <div className="grid grid-cols-4 gap-0">
-              <div className="px-[63px] py-3 border-r border-black/20">
+              <div className="px-[63px] py-3 border-r border-black/20 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="All Branches"
                   value="45"
@@ -24,7 +24,7 @@ export default function page(): JSX.Element {
                   isPositive={true}
                 />
               </div>
-              <div className="px-[63px] py-3 border-r border-black/20">
+              <div className="px-[63px] py-3 border-r border-black/20 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="All CO's"
                   value="128"
@@ -32,7 +32,7 @@ export default function page(): JSX.Element {
                   isPositive={true}
                 />
               </div>
-              <div className="px-[63px] py-3 border-r border-black/20">
+              <div className="px-[63px] py-3 border-r border-black/20 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="All Customers"
                   value="2,847"
@@ -40,7 +40,7 @@ export default function page(): JSX.Element {
                   isPositive={false}
                 />
               </div>
-              <div className="px-[63px] py-3">
+              <div className="px-[63px] py-3 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="Loans Processed"
                   value="1,234"
@@ -52,12 +52,12 @@ export default function page(): JSX.Element {
           </div>
         </div>
 
-        {/* Stats Cards Row 2 - Exact Figma spacing */}
+        {/* Stats Cards Row 2 - Exact Figma spacing with interactivity */}
         <div className="relative mt-[16px]">
           <div className="absolute inset-0 bg-black/[0.04] blur-[60px] rounded-lg" style={{ top: "73px", height: "46px", width: "494px", left: "70px" }} />
-          <div className="relative bg-white border border-[rgba(2,28,62,0.2)] rounded-[4px] p-3">
+          <div className="relative bg-white border border-[rgba(2,28,62,0.2)] rounded-[4px] p-3 hover:shadow-lg transition-shadow duration-300">
             <div className="grid grid-cols-3 gap-0">
-              <div className="px-[63px] py-3 border-r border-black/20">
+              <div className="px-[63px] py-3 border-r border-black/20 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="Loan Amounts"
                   value="₦45.2M"
@@ -65,7 +65,7 @@ export default function page(): JSX.Element {
                   isPositive={true}
                 />
               </div>
-              <div className="px-[63px] py-3 border-r border-black/20">
+              <div className="px-[63px] py-3 border-r border-black/20 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="Active Loans"
                   value="892"
@@ -73,7 +73,7 @@ export default function page(): JSX.Element {
                   isPositive={true}
                 />
               </div>
-              <div className="px-[63px] py-3">
+              <div className="px-[63px] py-3 hover:bg-[#F9FAFB] transition-colors duration-200 cursor-pointer">
                 <StatsCard
                   title="Missed Payments"
                   value="34"
@@ -85,47 +85,47 @@ export default function page(): JSX.Element {
           </div>
         </div>
 
-        {/* Tabs - Exact Figma styling */}
+        {/* Tabs - Exact Figma styling with interactivity */}
         <div className="flex items-center gap-6 mt-[182px]">
           <div className="relative">
-            <button className="text-base font-medium leading-4 text-[#7F56D9]">
+            <button className="text-base font-medium leading-4 text-[#7F56D9] transition-colors duration-200">
               Disbursements
             </button>
             <div className="absolute bottom-0 left-0 w-[99px] h-[2px] bg-[#7F56D9] rounded-[20px]" style={{ transform: "translateY(8px)" }} />
           </div>
-          <button className="text-base font-medium leading-4 text-[#ABAFB3]">
+          <button className="text-base font-medium leading-4 text-[#ABAFB3] hover:text-[#7F56D9] transition-colors duration-200">
             Re-collections
           </button>
-          <button className="text-base font-medium leading-4 text-[#ABAFB3]">
+          <button className="text-base font-medium leading-4 text-[#ABAFB3] hover:text-[#7F56D9] transition-colors duration-200">
             Savings
           </button>
-          <button className="text-base font-medium leading-4 text-[#ABAFB3]">
+          <button className="text-base font-medium leading-4 text-[#ABAFB3] hover:text-[#7F56D9] transition-colors duration-200">
             Missed payments
           </button>
         </div>
 
-        {/* Filters - Exact Figma styling */}
+        {/* Filters - Exact Figma styling with interactivity */}
         <div className="flex items-center justify-between mt-[28px]">
           <div className="flex items-center border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
-            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#1D2939] bg-[#F9FAFB] border-r border-[#D0D5DD] rounded-l-lg">
+            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#1D2939] bg-[#F9FAFB] border-r border-[#D0D5DD] rounded-l-lg transition-all duration-200">
               12 months
             </button>
-            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white border-r border-[#D0D5DD]">
+            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white hover:bg-[#F9FAFB] border-r border-[#D0D5DD] transition-all duration-200">
               30 days
             </button>
-            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white border-r border-[#D0D5DD]">
+            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white hover:bg-[#F9FAFB] border-r border-[#D0D5DD] transition-all duration-200">
               7 days
             </button>
-            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white rounded-r-lg">
+            <button className="px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white hover:bg-[#F9FAFB] rounded-r-lg transition-all duration-200">
               24 hours
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
+            <button className="flex items-center gap-2 px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] hover:bg-[#F9FAFB] hover:border-[#7F56D9] transition-all duration-200">
               <img src="/calendar.svg" alt="calendar" className="w-5 h-5" />
               <span>Select dates</span>
             </button>
-            <button className="flex items-center gap-2 px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
+            <button className="flex items-center gap-2 px-4 py-[10px] text-sm font-semibold leading-[1.43] text-[#344054] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] hover:bg-[#F9FAFB] hover:border-[#7F56D9] transition-all duration-200">
               <img src="/filter.svg" alt="filter" className="w-5 h-5" />
               <span>Filters</span>
             </button>
@@ -232,9 +232,9 @@ export default function page(): JSX.Element {
                       date: "March 22, 2024",
                     },
                   ].map((row, idx) => (
-                    <tr key={idx} className="border-b border-[#EAECF0] last:border-b-0">
+                    <tr key={idx} className="border-b border-[#EAECF0] last:border-b-0 hover:bg-[#F9FAFB] transition-colors duration-150 cursor-pointer">
                       <td className="px-6 py-4">
-                        <input type="checkbox" className="w-4 h-4 rounded border-[#D0D5DD]" />
+                        <input type="checkbox" className="w-4 h-4 rounded border-[#D0D5DD] cursor-pointer hover:border-[#7F56D9] transition-colors duration-200" />
                       </td>
                       <td className="px-6 py-4 text-sm font-normal leading-[1.43] text-[#475467]">
                         {row.branch}
