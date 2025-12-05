@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import Button from "../_components/ui/Button";
-import { Label } from "../_components/ui/label";
+import Button from "../../_components/ui/Button";
+import { Label } from "../../_components/ui/label";
 
 // Sample small Badge component
 function StatusBadge({ status }: { status: string }) {
