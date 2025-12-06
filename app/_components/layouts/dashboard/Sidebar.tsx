@@ -9,7 +9,7 @@ interface MenuItem {
 
 const data: MenuItem[] = [
   { icon: "/dashboard.svg", label: "Dashboard", link: "/dashboard/bm" },
-  { icon: "/credit.svg", label: "Credit Officers", link: "/dashboard/bm/credit-officers" },
+  { icon: "/credit.svg", label: "Credit Officers", link: "/dashboard/bm/credit" },
   { icon: "/credit.svg", label: "Customers", link: "/customers" },
   { icon: "/loans.svg", label: "Loans", link: "/loans" },
   { icon: "/report.svg", label: "Reports", link: "/reports" },
