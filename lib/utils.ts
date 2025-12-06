@@ -12,14 +12,41 @@ export const ROUTES: Routes = {
   Bm :{
     DASHBOARD: "/dashboard/bm",
     CREDIT: "/dashboard/bm/credit",
-    CUSTOMERS: "/dashboard/bm/customers",
-    LOAN: "/dashboard/bm/loans",
-    REPORT: "/dashboard/bm/reports",
+    CUSTOMERS: "/dashboard/bm/customer",
+    LOAN: "/dashboard/bm/loan",
+    REPORT: "/dashboard/bm/report",
     SETTING: "/dashboard/bm/settings"
 
   }
   
 }
+
+export const loans: MetricProps[] = [
+  {
+    title: "Total Loans",
+    value: "42,094",
+    change: "+6% this month",
+    changeColor: "green",
+    border: false,
+  },
+  {
+    title: "Active Loans",
+    value: "15,350",
+    change: "+6% this month",
+    changeColor: "green",
+    border: true,
+  },
+
+  {
+    title: "Completed  Loans",
+    value: "15,350",
+    change: "+6% this month",
+    changeColor: "green",
+    border: true,
+  },
+]
+
+
 
 export const customer: MetricProps[] = [
   {
