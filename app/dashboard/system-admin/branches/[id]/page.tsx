@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import BranchDetailsStatistics from '@/app/_components/ui/BranchDetailsStatistics';
+import BranchInfoCard from '@/app/_components/ui/BranchInfoCard';
 
 // TypeScript Interfaces
 interface BranchDetails {
