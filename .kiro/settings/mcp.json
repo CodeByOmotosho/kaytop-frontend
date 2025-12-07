@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "Figma": {
+      "url": "https://mcp.figma.com/mcp",
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
