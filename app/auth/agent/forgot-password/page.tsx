@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Label } from "../_components/ui/label";
-import Button from "../_components/ui/Button";
+import { Label } from "../../../_components/ui/label";
+import Button from "../../../_components/ui/Button";
 import { Input } from "@/components/ui/input";
 
 export default function ForgotPasswordPage() {
@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* CTAs */}
-        <Link href="/forgot-password/enter-otp" className="block">
+        <Link href="/auth/agent/forgot-password/enter-otp" className="block">
         <Button className="w-full py-3 mb-4" variant="tertiary">
           Continue
         </Button>
@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
 
         <div className="text-center">
           <Link
-            href="/login"
+            href="/auth/agent/login"
             className="text-sm font-medium text-primary hover:underline"
           >
             Cancel
