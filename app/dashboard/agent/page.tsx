@@ -12,6 +12,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useCustomerFlow } from "./AddCustomerFlow/AddCustomerFlowProvider";
 
 type Payment = {
   name: string;
@@ -65,6 +66,8 @@ const payments: Payment[] = [
 ];
 
 export default function AgentDashboardPage() {
+   const { start } = useCustomerFlow();
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header row: Title + controls */}
@@ -211,7 +214,7 @@ export default function AgentDashboardPage() {
 
           {/* Quick actions row under cards (full width of the 3 cards when on small) */}
           <div className="sm:col-span-3 flex flex-col sm:flex-row gap-4 mt-2">
-            <button className="flex-1 bg-white p-4 rounded-xl shadow border text-left">
+            <button onClick={start} className="flex-1 bg-white p-4 rounded-xl shadow border text-left">
               <p className="font-semibold">Add new customer</p>
               <p className="text-sm text-slate-500">Add yourself or import from CSV</p>
             </button>

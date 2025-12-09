@@ -20,7 +20,7 @@ export default function CreatePasswordPage() {
           <span className="font-semibold text-primary">Kaytop MI</span>
         </div>
 
-        <Link href="/login" className="text-sm text-secondary hover:underline">
+        <Link href="/ath/login" className="text-sm text-secondary hover:underline">
           Already have an account? <span className="font-semibold">Sign in</span>
         </Link>
       </div>

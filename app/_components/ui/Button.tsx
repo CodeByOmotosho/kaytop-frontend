@@ -2,14 +2,16 @@ import React from "react";
 
 type ButtonProps = {
   children: React.ReactNode;
-  variant?: "primary" | "tertiary" | "danger";
+  variant?: "primary" | "secondary" | "tertiary" | "danger";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   className?: string;
+  onClick?: () => void;
 };
 
 const variants = {
   primary: "bg-primary-300 text-primary hover:text-white font-medium",
+  secondary: "bg-brand-secondary text-brand-purple hover:text-white font-medium",
   tertiary: "bg-brand-purple text-white hover:text-white font-medium",
   danger: "bg-red-500 text-white hover:bg-red-600",
 };
@@ -26,11 +28,13 @@ export default function Button({
   size = "md",
   fullWidth = false,
   className = "",
+  onClick,
   ...props
 }: ButtonProps) {
   return (
     <button
       {...props}
+      onClick={onClick}
       className={`relative  rounded-md 
                        overflow-hidden transition-all duration-300
                        before:content-[''] before:absolute before:top-0 before:left-0

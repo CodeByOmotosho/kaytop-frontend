@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import Button from "../_components/ui/Button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../_components/ui/Select";
-import { Label } from "../_components/ui/label";
+import Button from "../../_components/ui/Button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../_components/ui/Select";
+import { Label } from "../../_components/ui/label";
 import { Input } from "@/components/ui/input";
 
 
@@ -23,7 +23,7 @@ export default function RegisterPage() {
           <span className="font-semibold text-primary">Kaytop MI</span>
         </div>
 
-        <Link href="/login" className="text-sm text-secondary hover:underline">
+        <Link href="/auth/login" className="text-sm text-secondary hover:underline">
           Already have an account? <span className="font-semibold">Sign in</span>
         </Link>
       </div>
@@ -95,7 +95,7 @@ export default function RegisterPage() {
 
 
       {/* SUBMIT */}
-      <Link href="/register/password" className="block">
+      <Link href="/auth/register/password" className="block">
             <Button variant="tertiary" fullWidth size="lg">
                 Continue
             </Button>

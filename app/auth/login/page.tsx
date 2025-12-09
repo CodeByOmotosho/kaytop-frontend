@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Label } from "../_components/ui/label";
-import Button from "../_components/ui/Button";
+import { Label } from "../../_components/ui/label";
+import Button from "../../_components/ui/Button";
 import { Input } from "@/components/ui/input";
 // import Input from "../_components/ui/input";
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
           <span className="font-semibold text-primary">Kaytop MI</span>
         </div>
 
-        <Link href="/register" className="text-sm text-secondary hover:underline">
+        <Link href="/auth/register" className="text-sm text-secondary hover:underline">
           Don’t have an account? <span className="font-semibold">Sign Up</span>
         </Link>
       </div>
