@@ -94,7 +94,7 @@ export default function Step3UploadID({
           </div>
 
           {/* Upload area */}
-          <label className="flex-1 cursor-pointer border border-dashed rounded-md p-4 bg-[#F9FAFB] hover:bg-slate-50 transition">
+          <label className="flex-1 cursor-pointer border border-dashed rounded-md p-4 bg-bg-gray-50 hover:bg-slate-50 transition">
             <p className="text-[13px] font-medium text-slate-700">
               Click to Capture
               <span className="text-slate-500"> or drag and drop</span>
