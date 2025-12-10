@@ -370,7 +370,7 @@ export default function SystemAdminDashboard() {
 
   return (
     <div className="drawer-content flex flex-col min-h-screen">
-      <main className="flex-1 pl-[58px] pr-6" style={{ paddingTop: '40px' }}>
+      <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
         <div className="max-w-[1150px]">
           {/* Page Header - Position: y:110px (Overview), y:150px (Osun State) */}
           <header>
@@ -411,7 +411,7 @@ export default function SystemAdminDashboard() {
             </div>
 
             {/* Performance Cards */}
-            <div className="flex flex-col md:flex-row gap-6 md:gap-8 mt-6 sm:mt-8">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mt-6 sm:mt-8">
               {/* Card 3 - Top 3 Best performing branch */}
               {isLoading ? (
                 <div className="w-full md:w-[400px] h-[312px] bg-white rounded-lg border border-[#EAECF0] p-6 animate-pulse">

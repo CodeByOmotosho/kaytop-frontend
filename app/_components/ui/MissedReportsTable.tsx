@@ -86,22 +86,9 @@ export default function MissedReportsTable({ data, onEdit, onDelete, onViewDetai
                 Branch Name
               </th>
 
-              {/* Status Column with Sort Arrow */}
-              <th className="px-6 py-3 text-left">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-medium text-gray-700">
-                    Status
-                  </span>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M8 3.33334V12.6667M8 12.6667L12.6667 8.00001M8 12.6667L3.33333 8.00001"
-                      stroke="#6B7280"
-                      strokeWidth="1.33333"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+              {/* Status Column */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700">
+                Status
               </th>
 
               {/* Date Due Column */}

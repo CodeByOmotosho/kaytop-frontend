@@ -57,7 +57,7 @@ const emailDomains = [
   'gmail.com', 'live.com', 'msn.com', 'me.com', 'outlook.com'
 ];
 
-const statuses = ['Active', 'In active'] as const;
+const statuses = ['Active', 'Inactive'] as const;
 
 /**
  * Generate unique branch data based on branch ID
@@ -130,7 +130,7 @@ export function generateBranchData(branchId: string) {
     usedNames.add(name);
 
     const idNumber = rng.nextInt(10000, 99999).toString();
-    const status = rng.next() > 0.2 ? 'Active' : 'In active'; // 80% active
+    const status = rng.next() > 0.2 ? 'Active' : 'Inactive'; // 80% active
     const phone = `+234${rng.nextInt(800, 909)}${rng.nextInt(1000000, 9999999)}`;
     const emailPrefix = name.toLowerCase().replace(' ', '');
     const email = `${emailPrefix}@${rng.choice(emailDomains)}`;
@@ -143,7 +143,7 @@ export function generateBranchData(branchId: string) {
       id: `co-${i + 1}`,
       name,
       idNumber,
-      status: status as 'Active' | 'In active',
+      status: status as 'Active' | 'Inactive',
       phone,
       email,
       dateJoined: dateJoined.toLocaleDateString('en-US', { 

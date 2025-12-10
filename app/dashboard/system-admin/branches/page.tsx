@@ -327,7 +327,7 @@ export default function BranchesPage() {
 
   return (
     <div className="drawer-content flex flex-col">
-      <main className="flex-1 pl-[58px] pr-6" style={{ paddingTop: '40px' }}>
+      <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
         <div className="max-w-[1150px]">
           <div>
             {/* Page Header with Create Button */}

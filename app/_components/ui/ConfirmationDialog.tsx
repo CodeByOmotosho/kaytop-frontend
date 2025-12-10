@@ -74,7 +74,7 @@ export function ConfirmationDialog({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+        className="absolute inset-0 bg-[rgba(52,64,84,0.7)] backdrop-blur-[8px]"
         aria-hidden="true"
       />
 

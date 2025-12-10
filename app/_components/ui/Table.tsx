@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Checkbox } from "./Checkbox";
-import { StatusBadge } from "./StatusBadge";
+import StatusBadge from "./StatusBadge";
 import { ArrowDownIcon } from "../icons/arrow-down-icon";
 import { formatDate } from "@/lib/formatDate";
 
@@ -638,7 +638,7 @@ export default function Table({
                     {columnConfig.showType ? (
                       <>
                         <td className="px-3">
-                          <StatusBadge status="Savings" type="savings" />
+                          <StatusBadge status="Active" />
                         </td>
                         <td className="px-3 text-sm font-medium text-[#101828]">
                           {loan.name}
@@ -704,7 +704,13 @@ export default function Table({
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && selectedLoan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/30">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(52, 64, 84, 0.7)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-semibold text-[#101828] mb-2">Delete Loan</h3>
             <p className="text-sm text-[#475467] mb-6">
@@ -733,7 +739,13 @@ export default function Table({
 
       {/* Edit Modal */}
       {editModalOpen && selectedLoan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/30">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(52, 64, 84, 0.7)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
             <h3 className="text-lg font-semibold text-[#101828] mb-4">Edit Loan</h3>
             <form onSubmit={handleEditSubmit}>

@@ -47,7 +47,11 @@ export default function EditReportModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/30"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        backgroundColor: 'rgba(52, 64, 84, 0.7)',
+        backdropFilter: 'blur(16px)',
+      }}
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">

@@ -7,7 +7,7 @@ interface CreditOfficer {
   id: string;
   name: string;
   idNumber: string;
-  status: 'Active' | 'In active';
+  status: 'Active' | 'Inactive';
   phone: string;
   email: string;
   dateJoined: string;
@@ -21,7 +21,8 @@ interface CreditOfficersTableProps {
 
 export default function CreditOfficersTable({ data, onEdit, onDelete }: CreditOfficersTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] = useState<string | null>('status');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const handleSelectAll = (checked: boolean | 'indeterminate') => {
     if (checked === true) {
@@ -48,6 +49,27 @@ export default function CreditOfficersTable({ data, onEdit, onDelete }: CreditOf
     console.log('Delete Credit Officer:', id);
     onDelete?.(id);
   };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort data
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortColumn) return 0;
+    
+    const aValue = a[sortColumn as keyof CreditOfficer];
+    const bValue = b[sortColumn as keyof CreditOfficer];
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   const allSelected = data.length > 0 && selectedIds.length === data.length;
 
@@ -80,20 +102,29 @@ export default function CreditOfficersTable({ data, onEdit, onDelete }: CreditOf
 
               {/* Status Column */}
               <th className="px-6 py-3 text-left">
-                <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleSort('status')}
+                  className="flex items-center gap-1 hover:text-[#7F56D9] transition-colors cursor-pointer"
+                >
                   <span className="text-xs font-medium text-gray-700">
                     Status
                   </span>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 16 16" 
+                    fill="none"
+                    className={`transition-transform ${sortColumn === 'status' && sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                  >
                     <path
                       d="M8 3.33334V12.6667M8 12.6667L12.6667 8.00001M8 12.6667L3.33333 8.00001"
-                      stroke="#6B7280"
+                      stroke={sortColumn === 'status' ? '#7F56D9' : '#6B7280'}
                       strokeWidth="1.33333"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
-                </div>
+                </button>
               </th>
 
               {/* Phone Number Column */}
@@ -118,7 +149,7 @@ export default function CreditOfficersTable({ data, onEdit, onDelete }: CreditOf
 
           {/* Table Body */}
           <tbody>
-            {data.map((officer) => (
+            {sortedData.map((officer) => (
               <tr
                 key={officer.id}
                 className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
@@ -147,14 +178,14 @@ export default function CreditOfficersTable({ data, onEdit, onDelete }: CreditOf
                   <span
                     className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{
-                      background: officer.status === 'Active' ? '#ECFDF3' : 'rgba(255, 147, 38, 0.1)',
-                      color: officer.status === 'Active' ? '#027A48' : '#CC7720'
+                      background: officer.status === 'Active' ? '#ECFDF3' : '#FEF3F2',
+                      color: officer.status === 'Active' ? '#027A48' : '#B42318'
                     }}
                   >
                     <span
                       className="w-1.5 h-1.5 rounded-full"
                       style={{
-                        background: officer.status === 'Active' ? '#12B76A' : '#FF9326'
+                        background: officer.status === 'Active' ? '#12B76A' : '#F04438'
                       }}
                     />
                     {officer.status}

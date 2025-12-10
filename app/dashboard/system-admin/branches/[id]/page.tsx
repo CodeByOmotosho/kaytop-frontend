@@ -57,7 +57,7 @@ interface CreditOfficer {
   id: string;
   name: string;
   idNumber: string;
-  status: 'Active' | 'In active';
+  status: 'Active' | 'Inactive';
   phone: string;
   email: string;
   dateJoined: string;
@@ -423,7 +423,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="drawer-content flex flex-col min-h-screen">
-      <main className="flex-1 pl-[58px] pr-6" style={{ paddingTop: '40px' }}>
+      <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
         {/* Container with proper max width */}
         <div className="w-full" style={{ maxWidth: '1200px' }}>
           {/* Header Section with Back and Title + Button */}
@@ -612,7 +612,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
         message={`Are you sure you want to approve loan report "${selectedLoanData?.reportId}"? This action cannot be undone.`}
         confirmText="Approve"
         cancelText="Cancel"
-        confirmButtonStyle="success"
+        confirmButtonStyle="primary"
         isLoading={isProcessing}
       />
 
