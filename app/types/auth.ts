@@ -32,6 +32,10 @@ export interface ResetPasswordData {
   otp: string | null;
 }
 
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export type ApiErrorMessage = string | string[];
 
 export interface ApiErrorResponse {
@@ -59,3 +63,4 @@ export interface ValidationErrorResponse {
   message?: string;
   errors?: BackendValidationErrors;
 }
+
