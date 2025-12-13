@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export default function Input({ className, type, disabled, ...props }: React.ComponentProps<"input">) {
-  const isDisabled = disabled ? "cursor-not-allowed bg-gray-100" : "cursor-pointer";
+  const isDisabled = disabled ? "cursor-not-allowed bg-gray-100" : "";
   return (
     <input
       type={type}
