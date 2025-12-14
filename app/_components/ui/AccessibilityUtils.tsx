@@ -128,7 +128,7 @@ export function useKeyboardNavigation(
 // Hook for screen reader announcements
 export function useScreenReader() {
   const [announcement, setAnnouncement] = useState('');
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
     // Clear previous timeout
@@ -143,7 +143,7 @@ export function useScreenReader() {
     timeoutRef.current = setTimeout(() => {
       setAnnouncement('');
     }, 1000);
-  }, [setAnnouncement]);
+  }, []);
 
   const LiveRegion = () => (
     <div
