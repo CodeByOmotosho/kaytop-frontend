@@ -1,6 +1,8 @@
 import React from "react";
 import patterns from "@/public/patterns.png";
 import { Metadata } from "next";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "../context/AuthContext";
 
 export const metadata: Metadata = {
   title: {
@@ -14,17 +16,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AuthLayout({
+
+
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div
-      style={{ backgroundImage: `url(${patterns.src})` }}
-      className="flex items-center justify-center min-h-screen bg-no-repeat bg-bottom-right bg-neutral-100"
-    >
-      {children}
-    </div>
+    <html lang="en" className="h-full">
+      <body
+        style={{ backgroundImage: `url(${patterns.src})` }}
+        className="flex items-center justify-center min-h-screen bg-no-repeat bg-bottom-right bg-neutral-100"
+      >
+        {children}
+      </body>
+    </html>
   );
 }
