@@ -53,6 +53,9 @@ export default function page(): JSX.Element {
           <Chart />
         </div>
         <div>
+
+
+          
           <div className="my-5 text-gray-500 tabs tabs-border custom-tabs">
             <input
               type="radio"
