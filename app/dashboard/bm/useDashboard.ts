@@ -1,3 +1,4 @@
+"use client"
 import { DashboardService } from "@/app/services/dashboardService";
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
@@ -9,7 +10,7 @@ interface DashboardKpiResponse {
 
 export function useDashboard() {
   const searchParams = useSearchParams();
-  const timeFilter = searchParams.get("last") ?? "";
+  const timeFilter = searchParams.get("last") ?? "custom";
 
   const { isLoading, error, data } = useQuery<
     unknown[],
