@@ -1,6 +1,7 @@
 "use client"
 import useRequireAuth from "@/app/hooks/useRequireAuth";
 import React from "react";
+import QueryProvider from "../QueryProvider";
 
 export default function DashboardWrapper({
   children,
@@ -8,5 +9,5 @@ export default function DashboardWrapper({
   children: React.ReactNode;
 }) {
   useRequireAuth();
-  return <>{children}</>;
+  return <QueryProvider>{children}</QueryProvider>;
 }
