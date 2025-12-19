@@ -51,8 +51,8 @@ class DashboardAPIService implements DashboardService {
           return this.transformDashboardData(response.data);
         }
         // Check if it's direct data format (has dashboard fields)
-        else if (response.totalLoans !== undefined || response.activeLoans !== undefined) {
-          return this.transformDashboardData(response);
+        else if ((response as any).totalLoans !== undefined || (response as any).activeLoans !== undefined) {
+          return this.transformDashboardData(response as any);
         }
       }
 
@@ -83,7 +83,7 @@ class DashboardAPIService implements DashboardService {
         queryParams.append('branch', params.branch);
       }
 
-      const url = `${API_ENDPOINTS.DASHBOARD.LOAN_STATISTICS}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${API_ENDPOINTS.DASHBOARD.KPI}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
       const response = await apiClient.get<LoanStatistics>(url);
 

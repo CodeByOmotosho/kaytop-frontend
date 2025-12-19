@@ -26,7 +26,7 @@ export function useSearch(config: SearchConfig = {}): UseSearchResult {
   const [query, setQueryState] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const setQuery = useCallback((newQuery: string) => {
     setQueryState(newQuery);

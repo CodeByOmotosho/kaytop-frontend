@@ -9,7 +9,8 @@ interface CollectionTransaction {
   amount: number;
   status: 'Completed' | 'Pending' | 'Failed';
   date: string;
-  creditOfficerId: string;
+  customerName?: string;
+  creditOfficerId?: string;
 }
 
 interface EditCollectionModalProps {

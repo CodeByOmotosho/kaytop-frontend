@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Types and Interfaces
@@ -27,7 +27,7 @@ interface PasswordResetResponse {
   error?: string;
 }
 
-export default function NewPasswordPage() {
+function NewPasswordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -498,5 +498,18 @@ export default function NewPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    }>
+      <NewPasswordPageContent />
+    </Suspense>
   );
 }

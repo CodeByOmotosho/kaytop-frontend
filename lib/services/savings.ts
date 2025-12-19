@@ -33,12 +33,12 @@ class SavingsAPIService implements SavingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has transaction fields)
-        else if (response.id || response.transactionId || response.amount) {
-          return response as Transaction;
+        else if ((response as any).id || (response as any).transactionId || (response as any).amount) {
+          return response as unknown as Transaction;
         }
       }
 
@@ -59,12 +59,12 @@ class SavingsAPIService implements SavingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has transaction fields)
-        else if (response.id || response.transactionId || response.amount) {
-          return response as Transaction;
+        else if ((response as any).id || (response as any).transactionId || (response as any).amount) {
+          return response as unknown as Transaction;
         }
       }
 
@@ -85,12 +85,12 @@ class SavingsAPIService implements SavingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has transaction fields)
-        else if (response.id || response.transactionId || response.amount) {
-          return response as Transaction;
+        else if ((response as any).id || (response as any).transactionId || (response as any).amount) {
+          return response as unknown as Transaction;
         }
       }
 
@@ -112,12 +112,12 @@ class SavingsAPIService implements SavingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has transaction fields)
-        else if (response.id || response.transactionId || response.amount) {
-          return response as Transaction;
+        else if ((response as any).id || (response as any).transactionId || (response as any).amount) {
+          return response as unknown as Transaction;
         }
       }
 
@@ -137,12 +137,12 @@ class SavingsAPIService implements SavingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has savings fields)
-        else if (response.id || response.customerId || response.balance !== undefined) {
-          return response as SavingsAccount;
+        else if ((response as any).id || (response as any).customerId || (response as any).balance !== undefined) {
+          return response as unknown as SavingsAccount;
         }
       }
 
@@ -166,12 +166,12 @@ class SavingsAPIService implements SavingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has transactions and pagination)
-        else if (response.transactions && Array.isArray(response.transactions)) {
-          return response;
+        else if ((response as any).transactions && Array.isArray((response as any).transactions)) {
+          return response as any;
         }
         // Check if it's just an array of transactions
         else if (Array.isArray(response)) {

@@ -7,9 +7,21 @@ interface Report {
   id: string;
   reportId: string;
   creditOfficer: string;
-  timeSent: string; // email address
-  date: string;
+  creditOfficerId: string;
+  branch: string;
+  branchId: string;
   email: string;
+  dateSent: string;
+  timeSent: string;
+  reportType: 'daily' | 'weekly' | 'monthly';
+  status: 'submitted' | 'pending' | 'approved' | 'declined';
+  isApproved?: boolean;
+  loansDispursed: number;
+  loansValueDispursed: string;
+  savingsCollected: string;
+  repaymentsCollected: number;
+  createdAt: string;
+  updatedAt: string;
   isMissed?: boolean;
 }
 
@@ -132,7 +144,7 @@ export default function ReportsTable({ reports, selectedReports, onSelectionChan
 
                 {/* Date Cell */}
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {report.date}
+                  {report.dateSent}
                 </td>
 
                 {/* Actions Cell */}

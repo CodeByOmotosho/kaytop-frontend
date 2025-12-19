@@ -6,9 +6,21 @@ interface Report {
   id: string;
   reportId: string;
   creditOfficer: string;
-  timeSent: string;
-  date: string;
+  creditOfficerId: string;
+  branch: string;
+  branchId: string;
   email: string;
+  dateSent: string;
+  timeSent: string;
+  reportType: 'daily' | 'weekly' | 'monthly';
+  status: 'submitted' | 'pending' | 'approved' | 'declined';
+  isApproved?: boolean;
+  loansDispursed: number;
+  loansValueDispursed: string;
+  savingsCollected: string;
+  repaymentsCollected: number;
+  createdAt: string;
+  updatedAt: string;
   isMissed?: boolean;
 }
 
@@ -115,8 +127,8 @@ export default function EditReportModal({
               </label>
               <input
                 type="text"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                value={formData.dateSent}
+                onChange={(e) => setFormData({ ...formData, dateSent: e.target.value })}
                 className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7F56D9]"
                 placeholder="e.g., June 03, 2024"
                 required

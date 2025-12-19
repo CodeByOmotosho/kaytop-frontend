@@ -22,7 +22,7 @@ export function useLoadingState(options: LoadingOptions = {}) {
     message: options.initialMessage
   });
 
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const startLoading = useCallback((message?: string) => {
     setState({

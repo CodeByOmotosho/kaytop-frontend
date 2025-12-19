@@ -85,7 +85,7 @@ class UserAPIService implements UserService {
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
-          return response;
+          return response as unknown as PaginatedResponse<User>;
         }
       }
 
@@ -103,12 +103,12 @@ class UserAPIService implements UserService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has user fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as User;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as User;
         }
       }
 
@@ -126,12 +126,12 @@ class UserAPIService implements UserService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has user fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as User;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as User;
         }
       }
 
@@ -149,12 +149,12 @@ class UserAPIService implements UserService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has user fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as User;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as User;
         }
       }
 
@@ -172,12 +172,12 @@ class UserAPIService implements UserService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has user fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as User;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as User;
         }
       }
 
@@ -221,12 +221,12 @@ class UserAPIService implements UserService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct data format (has user fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as User;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as User;
         }
       }
 
@@ -267,11 +267,11 @@ class UserAPIService implements UserService {
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
-          return response;
+          return response as unknown as PaginatedResponse<User>;
         }
         // Check if it has users array (branch-specific format)
-        else if (response.users && Array.isArray(response.users)) {
-          return this.createPaginatedResponse(response.users, response.total || response.users.length, params);
+        else if ((response as any).users && Array.isArray((response as any).users)) {
+          return this.createPaginatedResponse((response as any).users, (response as any).total || (response as any).users.length, params);
         }
       }
 
@@ -312,11 +312,11 @@ class UserAPIService implements UserService {
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
-          return response;
+          return response as unknown as PaginatedResponse<User>;
         }
         // Check if it has users array (state-specific format)
-        else if (response.users && Array.isArray(response.users)) {
-          return this.createPaginatedResponse(response.users, response.total || response.users.length, params);
+        else if ((response as any).users && Array.isArray((response as any).users)) {
+          return this.createPaginatedResponse((response as any).users, (response as any).total || (response as any).users.length, params);
         }
       }
 
@@ -339,7 +339,7 @@ class UserAPIService implements UserService {
         }
         // Check if it's direct array format (staff list)
         else if (Array.isArray(response)) {
-          return response;
+          return response as User[];
         }
       }
 

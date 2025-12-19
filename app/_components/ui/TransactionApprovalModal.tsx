@@ -28,7 +28,7 @@ export default function TransactionApprovalModal({
       setIsSubmitting(true);
       
       const approvalType = transaction.type === 'withdrawal' ? 'withdrawal' : 'loan-coverage';
-      await savingsService.approveTransaction(transaction.id, approvalType);
+      await savingsService.approveTransaction(String(transaction.id), approvalType);
       
       success(`${transaction.type === 'withdrawal' ? 'Withdrawal' : 'Loan coverage'} transaction approved successfully`);
       

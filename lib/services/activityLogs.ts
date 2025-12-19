@@ -46,15 +46,17 @@ class ActivityLogsAPIService implements ActivityLogsService {
           // Backend returns direct array, create paginated response structure
           return {
             data: response,
-            total: response.length,
-            page: parseInt(filters.page?.toString() || '1'),
-            limit: parseInt(filters.limit?.toString() || '50'),
-            totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+            pagination: {
+              total: response.length,
+              page: parseInt(filters.page?.toString() || '1'),
+              limit: parseInt(filters.limit?.toString() || '50'),
+              totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+            }
           };
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
-          return response;
+          return response as unknown as PaginatedResponse<ActivityLog>;
         }
       }
 
@@ -93,15 +95,17 @@ class ActivityLogsAPIService implements ActivityLogsService {
           // Backend returns direct array, create paginated response structure
           return {
             data: response,
-            total: response.length,
-            page: parseInt(filters.page?.toString() || '1'),
-            limit: parseInt(filters.limit?.toString() || '50'),
-            totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+            pagination: {
+              total: response.length,
+              page: parseInt(filters.page?.toString() || '1'),
+              limit: parseInt(filters.limit?.toString() || '50'),
+              totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+            }
           };
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
-          return response;
+          return response as unknown as PaginatedResponse<ActivityLog>;
         }
       }
 

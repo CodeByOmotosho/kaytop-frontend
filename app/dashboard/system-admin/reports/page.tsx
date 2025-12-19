@@ -516,7 +516,7 @@ export default function ReportsPage() {
             creditOfficer: selectedReportForDetails.creditOfficer,
             branch: 'Igando Branch',
             email: selectedReportForDetails.email,
-            dateSent: selectedReportForDetails.date,
+            dateSent: selectedReportForDetails.dateSent,
             timeSent: selectedReportForDetails.timeSent,
             reportType: selectedReportForDetails.reportType,
             status: selectedReportForDetails.status,

@@ -53,22 +53,21 @@ class DashboardTabsAPIService implements DashboardTabsService {
       const filters: BulkLoansFilters = {
         page: params.page || 1,
         limit: params.limit || 10,
-        status: 'active,disbursed', // Get active and disbursed loans
-        search: params.search,
+        status: ['active', 'disbursed'], // Get active and disbursed loans
       };
 
       const response = await bulkLoansService.getBulkLoans(filters);
       
       const transformedData: TabDataItem[] = response.loans.map(loan => ({
-        id: loan.id,
-        loanId: loan.id,
-        name: loan.customerName || loan.borrowerName || 'Unknown Customer',
+        id: String(loan.id),
+        loanId: String(loan.id),
+        name: 'Customer ' + String(loan.customerId), // TODO: Fetch customer name from customerId
         status: loan.status,
         interest: `${loan.interestRate?.toFixed(2) || '0.00'}%`,
         amount: `₦${loan.amount?.toLocaleString('en-NG') || '0'}`,
         dateDisbursed: loan.disbursementDate || loan.createdAt || new Date().toISOString().split('T')[0],
-        customerId: loan.customerId,
-        customerName: loan.customerName || loan.borrowerName,
+        customerId: String(loan.customerId),
+        customerName: 'Customer ' + String(loan.customerId),
       }));
 
       return {
@@ -93,21 +92,20 @@ class DashboardTabsAPIService implements DashboardTabsService {
       const filters: BulkLoansFilters = {
         page: params.page || 1,
         limit: params.limit || 10,
-        status: 'active', // Get active loans that need collections
-        search: params.search,
+        status: ['active'], // Get active loans that need collections
       };
 
       const response = await bulkLoansService.getBulkLoans(filters);
       
       const transformedData: TabDataItem[] = response.loans.map(loan => ({
-        id: loan.id,
-        loanId: loan.id,
-        name: loan.customerName || loan.borrowerName || 'Unknown Customer',
+        id: String(loan.id),
+        loanId: String(loan.id),
+        name: 'Customer ' + String(loan.customerId), // TODO: Fetch customer name from customerId
         status: loan.status,
         amount: `₦${loan.amount?.toLocaleString('en-NG') || '0'}`,
         dateDisbursed: loan.disbursementDate || loan.createdAt || new Date().toISOString().split('T')[0],
-        customerId: loan.customerId,
-        customerName: loan.customerName || loan.borrowerName,
+        customerId: String(loan.customerId),
+        customerName: 'Customer ' + String(loan.customerId),
       }));
 
       return {
@@ -132,20 +130,19 @@ class DashboardTabsAPIService implements DashboardTabsService {
         page: params.page || 1,
         limit: params.limit || 10,
         role: 'customer',
-        search: params.search,
       };
 
       const response = await userService.getAllUsers(userParams);
       
       // Transform user data to savings format
       const transformedData: TabDataItem[] = response.data.map(user => ({
-        id: user.id,
-        loanId: user.id, // Use user ID as identifier
+        id: String(user.id),
+        loanId: String(user.id), // Use user ID as identifier
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown Customer',
         type: 'Savings',
         amount: `₦${(Math.random() * 100000).toFixed(0)}`, // TODO: Replace with actual savings balance from API
         dateDisbursed: user.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
-        customerId: user.id,
+        customerId: String(user.id),
         customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
       }));
 
@@ -170,22 +167,21 @@ class DashboardTabsAPIService implements DashboardTabsService {
       const filters: BulkLoansFilters = {
         page: params.page || 1,
         limit: params.limit || 10,
-        status: 'overdue,defaulted', // Get overdue and defaulted loans
-        search: params.search,
+        status: ['overdue', 'defaulted'], // Get overdue and defaulted loans
       };
 
       const response = await bulkLoansService.getBulkLoans(filters);
       
       const transformedData: TabDataItem[] = response.loans.map(loan => ({
-        id: loan.id,
-        loanId: loan.id,
-        name: loan.customerName || loan.borrowerName || 'Unknown Customer',
+        id: String(loan.id),
+        loanId: String(loan.id),
+        name: 'Customer ' + String(loan.customerId), // TODO: Fetch customer name from customerId
         status: loan.status,
         interest: `${loan.interestRate?.toFixed(2) || '0.00'}%`,
         amount: `₦${loan.amount?.toLocaleString('en-NG') || '0'}`,
         dateDisbursed: loan.disbursementDate || loan.createdAt || new Date().toISOString().split('T')[0],
-        customerId: loan.customerId,
-        customerName: loan.customerName || loan.borrowerName,
+        customerId: String(loan.customerId),
+        customerName: 'Customer ' + String(loan.customerId),
       }));
 
       return {

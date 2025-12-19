@@ -21,7 +21,7 @@ export interface ReportDetailsData {
   /** Report type (e.g., "Daily Report", "Weekly Report") */
   reportType?: string;
   /** Report status */
-  status?: 'submitted' | 'missed' | 'pending';
+  status?: 'submitted' | 'pending' | 'approved' | 'declined';
   /** Whether the report has been approved and is locked */
   isApproved?: boolean;
   /** Number of loans disbursed in this report */

@@ -37,7 +37,7 @@ export function useBackgroundRefresh(
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [isEnabled, setIsEnabled] = useState(enabled);
   
-  const intervalRef = useRef<NodeJS.Timeout | undefined>();
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const refreshFunctionRef = useRef(refreshFunction);
   const isRefreshingRef = useRef(false);
 
@@ -188,7 +188,7 @@ export function useBackgroundRefreshWithBackoff(
   } = config;
 
   const [retryCount, setRetryCount] = useState(0);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const retryTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const refreshWithBackoff = useCallback(async () => {
     try {

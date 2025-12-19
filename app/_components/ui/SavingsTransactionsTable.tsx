@@ -138,7 +138,7 @@ export default function SavingsTransactionsTable({
     if (selectedTransactions.length === paginatedTransactions.length) {
       setSelectedTransactions([]);
     } else {
-      setSelectedTransactions(paginatedTransactions.map(t => t.id));
+      setSelectedTransactions(paginatedTransactions.map(t => String(t.id)));
     }
   };
 
@@ -310,8 +310,8 @@ export default function SavingsTransactionsTable({
               >
                 <td style={{ padding: '16px 24px' }}>
                   <Checkbox
-                    checked={selectedTransactions.includes(transaction.id)}
-                    onChange={() => handleSelectTransaction(transaction.id)}
+                    checked={selectedTransactions.includes(String(transaction.id))}
+                    onChange={() => handleSelectTransaction(String(transaction.id))}
                     aria-label={`Select transaction ${String(transaction.id).slice(-8).toUpperCase()}`}
                   />
                 </td>

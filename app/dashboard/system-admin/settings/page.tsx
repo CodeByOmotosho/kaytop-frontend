@@ -208,7 +208,7 @@ export default function SettingsPage() {
         
         // Transform API users to RoleUserData format
         const transformedUsers: RoleUserData[] = response.data.map(user => ({
-          id: user.id,
+          id: String(user.id),
           name: `${user.firstName} ${user.lastName}`,
           email: user.email,
           role: user.role === 'system_admin' ? 'HQ' : user.role === 'branch_manager' ? 'BM' : 'CO',

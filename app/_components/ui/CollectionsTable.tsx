@@ -10,6 +10,7 @@ interface CollectionTransaction {
   amount: number;
   status: 'Completed' | 'Pending' | 'Failed';
   date: string;
+  customerName?: string;
 }
 
 interface CollectionsTableProps {

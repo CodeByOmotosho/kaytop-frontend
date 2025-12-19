@@ -50,15 +50,17 @@ class ReportsAPIService implements ReportsService {
           // Backend returns direct array, create paginated response structure
           return {
             data: response,
-            total: response.length,
-            page: parseInt(filters.page?.toString() || '1'),
-            limit: parseInt(filters.limit?.toString() || '50'),
-            totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+            pagination: {
+              total: response.length,
+              page: parseInt(filters.page?.toString() || '1'),
+              limit: parseInt(filters.limit?.toString() || '50'),
+              totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+            }
           };
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
-          return response;
+          return response as unknown as PaginatedResponse<Report>;
         }
       }
 
@@ -82,8 +84,8 @@ class ReportsAPIService implements ReportsService {
           return response.data;
         }
         // Check if it's direct data format (has report fields)
-        else if (response.id || response.reportId || response.title) {
-          return response as Report;
+        else if ((response as any).id || (response as any).reportId || (response as any).title) {
+          return response as unknown as Report;
         }
       }
 
@@ -108,8 +110,8 @@ class ReportsAPIService implements ReportsService {
           return response.data;
         }
         // Check if it's direct data format (has report fields)
-        else if (response.id || response.reportId || response.title) {
-          return response as Report;
+        else if ((response as any).id || (response as any).reportId || (response as any).title) {
+          return response as unknown as Report;
         }
       }
 
@@ -134,8 +136,8 @@ class ReportsAPIService implements ReportsService {
           return response.data;
         }
         // Check if it's direct data format (has report fields)
-        else if (response.id || response.reportId || response.title) {
-          return response as Report;
+        else if ((response as any).id || (response as any).reportId || (response as any).title) {
+          return response as unknown as Report;
         }
       }
 
@@ -164,8 +166,8 @@ class ReportsAPIService implements ReportsService {
           return response.data;
         }
         // Check if it's direct data format (has statistics fields)
-        else if (response.totalReports !== undefined || response.pendingReports !== undefined) {
-          return response as ReportStatistics;
+        else if ((response as any).totalReports !== undefined || (response as any).pendingReports !== undefined) {
+          return response as unknown as ReportStatistics;
         }
       }
 

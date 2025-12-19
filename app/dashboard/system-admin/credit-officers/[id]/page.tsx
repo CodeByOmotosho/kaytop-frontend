@@ -32,21 +32,22 @@ interface CreditOfficerDetails {
 interface CollectionTransaction {
   id: string;
   transactionId: string;
-  customerName: string;
+  customerName?: string;
   amount: number;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: 'Completed' | 'Pending' | 'Failed';
   date: string;
-  type: string;
+  type: 'Deposit' | 'Withdrawal' | 'Transfer';
 }
 
 interface DisbursedLoan {
   id: string;
   loanId: string;
-  customerName: string;
+  name: string;
   amount: number;
   status: 'Active' | 'Completed' | 'Defaulted';
-  disbursementDate: string;
-  nextPaymentDate: string;
+  interest: number;
+  nextRepayment: string;
+  creditOfficerId: string;
 }
 
 export default function CreditOfficerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -100,35 +101,32 @@ export default function CreditOfficerDetailsPage({ params }: { params: Promise<{
     transactionId: String(transaction.id).slice(-8).toUpperCase(),
     customerName,
     amount: transaction.amount,
-    status: transaction.status === 'approved' ? 'Approved' : 
-            transaction.status === 'rejected' ? 'Rejected' : 'Pending',
+    status: transaction.status === 'approved' ? 'Completed' : 
+            transaction.status === 'rejected' ? 'Failed' : 'Pending',
     date: new Date(transaction.createdAt).toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'short', 
       day: '2-digit' 
     }),
     type: transaction.type === 'deposit' ? 'Deposit' : 
-          transaction.type === 'withdrawal' ? 'Withdrawal' : 'Loan Coverage'
+          transaction.type === 'withdrawal' ? 'Withdrawal' : 'Transfer'
   });
 
   // Transform Loan to DisbursedLoan
   const transformLoanToDisbursed = (loan: Loan, customerName: string): DisbursedLoan => ({
     id: String(loan.id), // Ensure ID is string
     loanId: String(loan.id).slice(-8).toUpperCase(),
-    customerName,
+    name: customerName,
     amount: loan.amount,
     status: loan.status === 'active' ? 'Active' : 
             loan.status === 'completed' ? 'Completed' : 'Defaulted',
-    disbursementDate: loan.disbursementDate ? new Date(loan.disbursementDate).toLocaleDateString('en-US', { 
+    interest: loan.interestRate || 0,
+    nextRepayment: loan.nextRepaymentDate ? new Date(loan.nextRepaymentDate).toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'short', 
       day: '2-digit' 
     }) : 'N/A',
-    nextPaymentDate: loan.nextRepaymentDate ? new Date(loan.nextRepaymentDate).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: '2-digit' 
-    }) : 'N/A'
+    creditOfficerId: id
   });
 
   // Fetch credit officer data

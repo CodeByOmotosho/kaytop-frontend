@@ -40,7 +40,7 @@ interface LoanData {
   customerName: string; // Customer name (renamed from borrowerName)
   amount: number; // In Naira
   interestRate: number; // Percentage (e.g., 7.25)
-  status: 'Active' | 'Completed' | 'Overdue' | 'Defaulted'; // Updated status options
+  status: 'pending' | 'approved' | 'disbursed' | 'active' | 'completed' | 'defaulted' | 'overdue'; // Updated status options
   nextRepaymentDate: string; // Changed to string for consistency
   disbursementDate: Date;
   term: number; // Loan term in days/months
@@ -57,17 +57,23 @@ interface LocalLoanStatistics {
 // Transform API Loan to LoanData format (now handled by bulk API)
 const transformBulkLoanToLoanData = (loan: any): LoanData => {
   // Map status to expected values
-  let status: 'Active' | 'Completed' | 'Overdue' | 'Defaulted' = 'Active';
+  let status: 'pending' | 'approved' | 'disbursed' | 'active' | 'completed' | 'defaulted' | 'overdue' = 'active';
   if (loan.status) {
     const lowerStatus = loan.status.toLowerCase();
     if (lowerStatus.includes('completed') || lowerStatus.includes('paid')) {
-      status = 'Completed';
+      status = 'completed';
     } else if (lowerStatus.includes('overdue') || lowerStatus.includes('missed')) {
-      status = 'Overdue';
+      status = 'overdue';
     } else if (lowerStatus.includes('defaulted') || lowerStatus.includes('default')) {
-      status = 'Defaulted';
+      status = 'defaulted';
+    } else if (lowerStatus.includes('pending')) {
+      status = 'pending';
+    } else if (lowerStatus.includes('approved')) {
+      status = 'approved';
+    } else if (lowerStatus.includes('disbursed')) {
+      status = 'disbursed';
     } else {
-      status = 'Active';
+      status = 'active';
     }
   }
 

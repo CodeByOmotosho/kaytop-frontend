@@ -181,7 +181,7 @@ export function useUrlSync<T, F extends Record<string, any>>(
       const filters: Partial<F> = {};
       
       Object.entries(filterParams).forEach(([filterKey, paramName]) => {
-        const value = searchParams.get(paramName);
+        const value = searchParams.get(paramName as string);
         if (value) {
           // Try to parse as array first
           if (value.includes(',')) {
@@ -293,7 +293,7 @@ export function useInitialStateFromUrl<T, F extends Record<string, any>>(
       const filters: Partial<F> = {};
       
       Object.entries(filterParams).forEach(([filterKey, paramName]) => {
-        const value = searchParams.get(paramName);
+        const value = searchParams.get(paramName as string);
         if (value) {
           // Try to parse as array first
           if (value.includes(',')) {

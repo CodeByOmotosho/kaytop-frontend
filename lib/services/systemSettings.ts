@@ -26,8 +26,8 @@ class SystemSettingsAPIService implements SystemSettingsService {
           return response.data;
         }
         // Check if it's direct data format (has settings fields)
-        else if (response.id || response.appName || response.version) {
-          return response as SystemSettings;
+        else if ((response as any).id || (response as any).appName || (response as any).version) {
+          return response as unknown as SystemSettings;
         }
       }
 
@@ -52,8 +52,8 @@ class SystemSettingsAPIService implements SystemSettingsService {
           return response.data;
         }
         // Check if it's direct data format (has settings fields)
-        else if (response.id || response.appName || response.version) {
-          return response as SystemSettings;
+        else if ((response as any).id || (response as any).appName || (response as any).version) {
+          return response as unknown as SystemSettings;
         }
       }
 

@@ -33,8 +33,8 @@ class ProfileManagementService implements ProfileService {
           return response.data;
         }
         // Check if it's direct data format (has profile fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as AdminProfile;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as AdminProfile;
         }
       }
 
@@ -59,8 +59,8 @@ class ProfileManagementService implements ProfileService {
           return response.data;
         }
         // Check if it's direct data format (has profile fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as AdminProfile;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as AdminProfile;
         }
       }
 
@@ -94,8 +94,8 @@ class ProfileManagementService implements ProfileService {
           return response.data;
         }
         // Check if it's direct data format (has profile fields)
-        else if (response.id || response.email || response.firstName) {
-          return response as AdminProfile;
+        else if ((response as any).id || (response as any).email || (response as any).firstName) {
+          return response as unknown as AdminProfile;
         }
       }
 

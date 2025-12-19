@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Types and Interfaces
@@ -26,7 +26,7 @@ interface OtpVerificationResponse {
   token?: string;
 }
 
-export default function VerifyOtpPage() {
+function VerifyOtpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -570,5 +570,18 @@ export default function VerifyOtpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    }>
+      <VerifyOtpPageContent />
+    </Suspense>
   );
 }

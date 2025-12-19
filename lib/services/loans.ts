@@ -37,8 +37,8 @@ class LoanAPIService implements LoanService {
           return response.data;
         }
         // Check if it's direct data format (has loan fields)
-        else if (response.id || response.loanId || response.customerId) {
-          return response as Loan;
+        else if ((response as any).id || (response as any).loanId || (response as any).customerId) {
+          return response as unknown as Loan;
         }
       }
 
@@ -71,8 +71,8 @@ class LoanAPIService implements LoanService {
           return response.data;
         }
         // Check if it's direct data format (has loan fields)
-        else if (response.id || response.loanId || response.customerId) {
-          return response as Loan;
+        else if ((response as any).id || (response as any).loanId || (response as any).customerId) {
+          return response as unknown as Loan;
         }
       }
 
@@ -107,8 +107,8 @@ class LoanAPIService implements LoanService {
           return response.data;
         }
         // Check if it's direct data format (has repayment fields)
-        else if (response.id || response.amount || response.loanId) {
-          return response;
+        else if ((response as any).id || (response as any).amount || (response as any).loanId) {
+          return response as any;
         }
       }
 
@@ -132,8 +132,8 @@ class LoanAPIService implements LoanService {
           return response.data;
         }
         // Check if it's direct data format (has summary fields)
-        else if (response.totalLoans !== undefined || response.activeLoans !== undefined) {
-          return response as LoanSummary;
+        else if ((response as any).totalLoans !== undefined || (response as any).activeLoans !== undefined) {
+          return response as unknown as LoanSummary;
         }
       }
 
@@ -157,8 +157,8 @@ class LoanAPIService implements LoanService {
           return response.data;
         }
         // Check if it's direct data format (has disbursement fields)
-        else if (response.totalDisbursed !== undefined || response.pendingDisbursements !== undefined) {
-          return response as DisbursementSummary;
+        else if ((response as any).totalDisbursed !== undefined || (response as any).pendingDisbursements !== undefined) {
+          return response as unknown as DisbursementSummary;
         }
       }
 

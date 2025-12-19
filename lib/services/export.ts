@@ -48,12 +48,12 @@ class ExportAPIService implements ExportService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return new Blob([response.data], { type: this.getMimeType(format) });
+        if ((response as any).success && (response as any).data) {
+          return new Blob([JSON.stringify((response as any).data)], { type: this.getMimeType(format) });
         }
         // Check if it's direct data format (export data)
         else if (response) {
-          return new Blob([response], { type: this.getMimeType(format) });
+          return new Blob([JSON.stringify(response)], { type: this.getMimeType(format) });
         }
       }
 
@@ -76,7 +76,7 @@ class ExportAPIService implements ExportService {
         }
       });
 
-      const url = `${API_ENDPOINTS.BULK.LOANS}/export?${params.toString()}`;
+      const url = `${API_ENDPOINTS.BULK.USERS}/export?${params.toString()}`;
       const response = await apiClient.get(url, {
         headers: {
           'Accept': this.getAcceptHeader(format),
@@ -86,12 +86,12 @@ class ExportAPIService implements ExportService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return new Blob([response.data], { type: this.getMimeType(format) });
+        if ((response as any).success && (response as any).data) {
+          return new Blob([JSON.stringify((response as any).data)], { type: this.getMimeType(format) });
         }
         // Check if it's direct data format (export data)
         else if (response) {
-          return new Blob([response], { type: this.getMimeType(format) });
+          return new Blob([JSON.stringify(response)], { type: this.getMimeType(format) });
         }
       }
 
@@ -124,12 +124,12 @@ class ExportAPIService implements ExportService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return new Blob([response.data], { type: this.getMimeType(format) });
+        if ((response as any).success && (response as any).data) {
+          return new Blob([JSON.stringify((response as any).data)], { type: this.getMimeType(format) });
         }
         // Check if it's direct data format (export data)
         else if (response) {
-          return new Blob([response], { type: this.getMimeType(format) });
+          return new Blob([JSON.stringify(response)], { type: this.getMimeType(format) });
         }
       }
 
@@ -162,12 +162,12 @@ class ExportAPIService implements ExportService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return new Blob([response.data], { type: this.getMimeType(format) });
+        if ((response as any).success && (response as any).data) {
+          return new Blob([JSON.stringify((response as any).data)], { type: this.getMimeType(format) });
         }
         // Check if it's direct data format (export data)
         else if (response) {
-          return new Blob([response], { type: this.getMimeType(format) });
+          return new Blob([JSON.stringify(response)], { type: this.getMimeType(format) });
         }
       }
 
@@ -185,8 +185,8 @@ class ExportAPIService implements ExportService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        if ((response as any).success && (response as any).data) {
+          return (response as any).data;
         }
         // Check if it's direct array format (export history list)
         else if (Array.isArray(response)) {
