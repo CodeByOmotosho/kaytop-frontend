@@ -1,5 +1,5 @@
 import { MetricProps } from "@/app/types/dashboard";
-import { Routes } from "@/app/types/routes";
+import { MenuItem, Routes } from "@/app/types/routes";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
@@ -35,6 +35,18 @@ export const formatCurrency = (value: number) => {
     currency: "NGN",
   }).format(value ?? 0);
 };
+
+export function isActiveRoute(pathname: string, item: MenuItem) {
+  return item.exact
+    ? pathname === item.link
+    : pathname.startsWith(`${item.link}`);
+}
+
+export function getLinkClass(isActive: boolean) {
+  return isActive
+    ? "text-white before:w-full"
+    : "text-neutral-700 hover:text-white hover:before:w-full";
+}
 
 interface DashboardMetricsInput {
   data: {
