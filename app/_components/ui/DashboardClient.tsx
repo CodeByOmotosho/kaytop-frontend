@@ -1,142 +1,162 @@
 "use client";
-import { useDashboard } from "@/app/dashboard/bm/useDashboard";
+import { useDashboardQuery } from "@/app/dashboard/bm/queries/kpi/useDashboardQuery";
+import { useLoanDisbursedQuery } from "@/app/dashboard/bm/queries/loan/useLoanDisbursedQuery";
+import { useDashboardDateFilter } from "@/app/hooks/useDashboardDateFilter";
 import { MetricProps } from "@/app/types/dashboard";
-import { data as dashboardData } from "@/lib/utils";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React from "react";
-import { DateRange } from "react-day-picker";
-import Chart from "./Chart";
+import { formatCurrency, getDashboardMetrics } from "@/lib/utils";
 import DashboardFilter from "./DashboardFilter";
 import Date from "./Date";
 import FilterButton from "./FilterButton";
 import Metric from "./Metric";
 import SpinnerLg from "./SpinnerLg";
-import Table from "./Table";
 
-const metricData: MetricProps[] = dashboardData;
+import { useDisburseVolume } from "@/app/dashboard/bm/queries/loan/useDisburseVolume";
+import { useLoanRecollection } from "@/app/dashboard/bm/queries/loan/useLoanRecollection";
+import { useMissedPayment } from "@/app/dashboard/bm/queries/loan/useMissedPayment";
+import { useSavings } from "@/app/dashboard/bm/queries/savings/useSavings";
+import { usePageChange } from "@/app/hooks/usePageChange";
+import DisbursementLineChart from "./DisbursementLineChart";
+import DisbursementTable from "./table/DisbursementTable";
+import MissedPaymentTable from "./table/MissedPaymentTable";
+import RecollectionTable from "./table/RecollectionTable";
+import SavingsTable from "./table/SavingsTable";
 
 export default function DashboardClient() {
-  const { isLoading, error, data } = useDashboard();
-  console.log(data);
+  const { isLoading, error, data } = useDashboardQuery();
 
-  const [open, setOpen] = React.useState(false);
-  const [range, setRange] = React.useState<DateRange | undefined>();
+  const { open, setOpen, range, setRange, applyDateFilter, resetDateFilter } =
+    useDashboardDateFilter();
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { data: loan } = useLoanDisbursedQuery();
+  const { data: disburseVolume } = useDisburseVolume();
+  const { data: loanRecollection } = useLoanRecollection();
+  const { data: savings } = useSavings();
+  const { data: missedPayment } = useMissedPayment();
+  const { handlePageChange } = usePageChange();
 
-  function handleClick() {
-    if (!range?.from || !range?.to) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("startDate", range.from.toISOString().split("T")[0]);
-    params.set("endDate", range.to.toISOString().split("T")[0]);
-
-    router.push(`${pathname}?${params.toString()}`);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <SpinnerLg />
+      </div>
+    );
   }
+
+  if (error) {
+    return (
+      <div className="text-2xl text-center text-neutral-700">
+        {error.response?.data?.message || "Failed to load KPI"}
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const {primary, secondary} = getDashboardMetrics({ data });
+
 
   return (
     <>
-      {isLoading ? (
-        <div className="flex items-center justify-center h-[70vh]">
-          <SpinnerLg />
+      <div className="leading-4 text-neutral-700">
+        <h1 className="text-2xl font-medium">Overview</h1>
+        <p className="text-md">{data.branch} Branch</p>
+      </div>
+      <div className="flex flex-wrap items-center justify-between mt-10 gap-y-2">
+        <div className="flex flex-wrap items-center gap-1 px-1 py-1 bg-white rounded-sm w-fit">
+          <DashboardFilter />
         </div>
-      ) : error ? (
-        <div className="text-2xl text-center text-neutral-700">
-          {error.response?.data?.message || "Failed to load KPI"}
+        <div className="flex flex-wrap items-center gap-3">
+          <Date
+            open={open}
+            setOpen={setOpen}
+            range={range}
+            setRange={setRange}
+          />
+          <FilterButton
+            onClick={applyDateFilter}
+            className="flex gap-1 px-1 py-1 bg-white rounded-sm"
+          >
+            <img src="/filter.svg" alt="calendar" />
+            <span>Filter</span>
+          </FilterButton>
+          <FilterButton
+            onClick={resetDateFilter}
+            className="flex gap-1 px-1 py-1 bg-white rounded-sm"
+          >
+            <span>Reset</span>
+          </FilterButton>
         </div>
-      ) : (
-        <>
-          <div className="leading-4 text-neutral-700">
-            <h1 className="text-2xl font-medium">Overview</h1>
-            <p className="text-md">Igando Branch</p>
-          </div>
-          <div className="flex flex-wrap items-center justify-between mt-10 gap-y-2">
-            <div className="flex flex-wrap items-center gap-1 px-1 py-1 bg-white rounded-sm w-fit">
-              <DashboardFilter />
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Date
-                open={open}
-                setOpen={setOpen}
-                range={range}
-                setRange={setRange}
-              />
-              <FilterButton
-                onClick={handleClick}
-                className="flex gap-1 px-1 py-1 bg-white rounded-sm"
-              >
-                <img src="/filter.svg" alt="calendar" />
-                <span>Filter</span>
-              </FilterButton>
-              <FilterButton
-                onClick={() => {
-                  setRange(undefined);
-                  router.push(`${pathname}`);
-                }}
-                className="flex gap-1 px-1 py-1 bg-white rounded-sm"
-              >
-                <span>Reset</span>
-              </FilterButton>
-            </div>
-          </div>
-          <Metric item={metricData} />
+      </div>
+      <Metric item={primary} />
 
-          <div className="grid grid-cols-2 px-4 py-5 bg-white rounded-md">
-            <div className="flex flex-col items-start px-4">
-              <p className="text-sm text-gray-500">Active Loan</p>
-              <h1 className="text-xl font-semibold">₦50,350.00</h1>
-              <p className="text-sm text-green-500">+40% this month</p>
-            </div>
-            <div className="flex flex-col items-start px-4 border-l">
-              <p className="text-sm text-gray-500">Missed Payment</p>
-              <h1 className="text-xl font-semibold">₦50,350.00</h1>
-              <p className="text-sm text-green-500">+40% this month</p>
-            </div>
+      <Metric item={secondary} cols={2} />
+
+      <div className="flex flex-col p-5 my-5 bg-white h-[40vh]">
+        <DisbursementLineChart data={disburseVolume ?? []} />
+      </div>
+      <div>
+        <div className="my-5 text-gray-500 tabs tabs-border custom-tabs">
+          <input
+            type="radio"
+            name="my_tabs_2"
+            className="tab"
+            aria-label="Disbursements"
+            defaultChecked
+          />
+          <div className="p-10 bg-white tab-content">
+            <DisbursementTable
+              item={loan?.data}
+              meta={loan?.meta}
+              onPageChange={(page) => handlePageChange(page, "loanPage")}
+            />
           </div>
 
-          <div className="flex flex-col p-5 my-5 bg-white h-[40vh]">
-            <Chart />
+          <input
+            type="radio"
+            name="my_tabs_2"
+            className="tab"
+            aria-label="Re-collections"
+          />
+          <div className="p-10 bg-white tab-content">
+            <RecollectionTable
+              item={loanRecollection?.data}
+              meta={loanRecollection?.meta}
+              onPageChange={(page) =>
+                handlePageChange(page, "recollectionPage")
+              }
+            />
           </div>
-          <div>
-            <div className="my-5 text-gray-500 tabs tabs-border custom-tabs">
-              <input
-                type="radio"
-                name="my_tabs_2"
-                className="tab"
-                aria-label="Disbursements"
-                defaultChecked
-              />
-              <div className="p-10 bg-white tab-content">
-                <Table />
-              </div>
 
-              <input
-                type="radio"
-                name="my_tabs_2"
-                className="tab"
-                aria-label="Re-collections"
-              />
-              <div className="p-10 bg-white tab-content">Tab content 2</div>
-
-              <input
-                type="radio"
-                name="my_tabs_2"
-                className="tab"
-                aria-label="Savings"
-              />
-              <div className="p-10 bg-white tab-content">Tab content 3</div>
-              <input
-                type="radio"
-                name="my_tabs_2"
-                className="tab"
-                aria-label="Missed payments"
-              />
-              <div className="p-10 bg-white tab-content">Tab content 4</div>
-            </div>
+          <input
+            type="radio"
+            name="my_tabs_2"
+            className="tab"
+            aria-label="Savings"
+          />
+          <div className="p-10 bg-white tab-content">
+            <SavingsTable
+              item={savings?.data}
+              meta={savings?.meta}
+              onPageChange={(page) => handlePageChange(page, "savingsPage")}
+            />
           </div>
-        </>
-      )}
+          <input
+            type="radio"
+            name="my_tabs_2"
+            className="tab"
+            aria-label="Missed payments"
+          />
+          <div className="p-10 bg-white tab-content">
+            <MissedPaymentTable
+              item={missedPayment?.data}
+              meta={missedPayment?.meta}
+              onPageChange={(page) =>
+                handlePageChange(page, "missedPaymentPage")
+              }
+            />
+          </div>
+        </div>
+      </div>
     </>
   );
 }
