@@ -2,8 +2,7 @@
 import { useDashboardQuery } from "@/app/dashboard/bm/queries/kpi/useDashboardQuery";
 import { useLoanDisbursedQuery } from "@/app/dashboard/bm/queries/loan/useLoanDisbursedQuery";
 import { useDashboardDateFilter } from "@/app/hooks/useDashboardDateFilter";
-import { MetricProps } from "@/app/types/dashboard";
-import { formatCurrency, getDashboardMetrics } from "@/lib/utils";
+import { getDashboardMetrics } from "@/lib/utils";
 import DashboardFilter from "./DashboardFilter";
 import Date from "./Date";
 import FilterButton from "./FilterButton";
