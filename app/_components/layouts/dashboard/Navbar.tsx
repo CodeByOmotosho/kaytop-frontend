@@ -2,6 +2,7 @@ import Image from "next/image";
 import React, { JSX } from "react";
 import ProfileDropdown from "../../ui/ProfileDropdown";
 import logo from "@/public/logo.png";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function Navbar(): JSX.Element {
   return (

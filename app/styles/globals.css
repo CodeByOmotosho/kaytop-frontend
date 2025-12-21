@@ -467,3 +467,94 @@
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
 }
+
+
+/* Date Range Picker Custom Styling - Override react-day-picker blue with purple */
+.date-range-picker .rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: #7F56D9;
+  --rdp-background-color: #F9F5FF;
+  --rdp-accent-color-dark: #6941C6;
+  --rdp-background-color-dark: #F9F5FF;
+  --rdp-outline: 2px solid #7F56D9;
+  --rdp-outline-selected: 2px solid #7F56D9;
+  margin: 0;
+}
+
+.date-range-picker .rdp-months {
+  justify-content: center;
+}
+
+.date-range-picker .rdp-month {
+  width: 100%;
+}
+
+.date-range-picker .rdp-caption {
+  display: none; /* Hide default caption since we have custom one */
+}
+
+.date-range-picker .rdp-table {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.date-range-picker .rdp-head_cell {
+  color: #475467;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: uppercase;
+  padding: 8px 0;
+}
+
+.date-range-picker .rdp-cell {
+  padding: 2px;
+}
+
+.date-range-picker .rdp-day {
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #101828;
+  transition: all 0.2s;
+}
+
+.date-range-picker .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: #F9FAFB;
+  color: #7F56D9;
+}
+
+.date-range-picker .rdp-day_selected {
+  background-color: #7F56D9 !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.date-range-picker .rdp-day_selected:hover {
+  background-color: #6941C6 !important;
+}
+
+.date-range-picker .rdp-day_range_middle {
+  background-color: #F9F5FF !important;
+  color: #7F56D9 !important;
+  border-radius: 0;
+}
+
+.date-range-picker .rdp-day_range_start,
+.date-range-picker .rdp-day_range_end {
+  background-color: #7F56D9 !important;
+  color: white !important;
+}
+
+.date-range-picker .rdp-day_outside {
+  color: #D0D5DD;
+}
+
+.date-range-picker .rdp-day_disabled {
+  color: #D0D5DD;
+  cursor: not-allowed;
+}
+
+.date-range-picker .rdp-day_today:not(.rdp-day_selected) {
+  font-weight: 600;
+  color: #7F56D9;
+}

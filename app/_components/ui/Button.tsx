@@ -8,6 +8,7 @@ type ButtonProps = {
   className?: string;
   onClick?: () => void;
   loading?: boolean;
+  disabled?: boolean;
 };
 
 const variants = {
@@ -31,9 +32,10 @@ export default function Button({
   className = "",
   onClick,
   loading = false,
+  disabled = false,
   ...props
 }: ButtonProps) {
-  const disabled = loading ? "cursor-not-allowed opacity-60" : "cursor-pointer";
+  const isDisabled = disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer";
   return (
     <button
       {...props}
@@ -48,10 +50,10 @@ export default function Button({
                        ${sizes[size]}
                        ${fullWidth ? "w-full" : ""}
                        ${className}
-                       ${disabled}
+                       ${isDisabled}
                        
                        `}
-      disabled={loading}
+      disabled={disabled}
     >
       {children}
     </button>

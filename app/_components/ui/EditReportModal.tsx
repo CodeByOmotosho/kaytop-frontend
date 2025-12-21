@@ -5,9 +5,23 @@ import { useState, useEffect } from 'react';
 interface Report {
   id: string;
   reportId: string;
-  branchName: string;
+  creditOfficer: string;
+  creditOfficerId: string;
+  branch: string;
+  branchId: string;
+  email: string;
+  dateSent: string;
   timeSent: string;
-  date: string;
+  reportType: 'daily' | 'weekly' | 'monthly';
+  status: 'submitted' | 'pending' | 'approved' | 'declined';
+  isApproved?: boolean;
+  loansDispursed: number;
+  loansValueDispursed: string;
+  savingsCollected: string;
+  repaymentsCollected: number;
+  createdAt: string;
+  updatedAt: string;
+  isMissed?: boolean;
 }
 
 interface EditReportModalProps {
@@ -47,7 +61,11 @@ export default function EditReportModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/30"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        backgroundColor: 'rgba(52, 64, 84, 0.7)',
+        backdropFilter: 'blur(16px)',
+      }}
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
@@ -68,24 +86,37 @@ export default function EditReportModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-[#344054] mb-1">
-                Branch Name
+                Credit Officer
               </label>
               <input
                 type="text"
-                value={formData.branchName}
-                onChange={(e) => setFormData({ ...formData, branchName: e.target.value })}
+                value={formData.creditOfficer}
+                onChange={(e) => setFormData({ ...formData, creditOfficer: e.target.value })}
                 className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7F56D9]"
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#344054] mb-1">
-                Time Sent (Email)
+                Time Sent
+              </label>
+              <input
+                type="text"
+                value={formData.timeSent}
+                onChange={(e) => setFormData({ ...formData, timeSent: e.target.value })}
+                className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7F56D9]"
+                placeholder="e.g., 14:30"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#344054] mb-1">
+                Email
               </label>
               <input
                 type="email"
-                value={formData.timeSent}
-                onChange={(e) => setFormData({ ...formData, timeSent: e.target.value })}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7F56D9]"
                 required
               />
@@ -96,8 +127,8 @@ export default function EditReportModal({
               </label>
               <input
                 type="text"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                value={formData.dateSent}
+                onChange={(e) => setFormData({ ...formData, dateSent: e.target.value })}
                 className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7F56D9]"
                 placeholder="e.g., June 03, 2024"
                 required

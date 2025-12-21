@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import BranchDetailsStatistics from '@/app/_components/ui/BranchDetailsStatistics';
 import BranchInfoCard from '@/app/_components/ui/BranchInfoCard';
@@ -19,7 +19,10 @@ import { ToastContainer } from '@/app/_components/ui/ToastContainer';
 import { useToast } from '@/app/hooks/useToast';
 import { PageSkeleton } from '@/app/_components/ui/Skeleton';
 import AssignUsersModal from '@/app/_components/ui/AssignUsersModal';
-import { generateBranchData } from '@/lib/branchDataGenerator';
+import { userService } from '@/lib/services/users';
+import { dashboardService } from '@/lib/services/dashboard';
+import { branchService } from '@/lib/services/branches';
+import { reportsService } from '@/lib/services/reports';
 
 // TypeScript Interfaces
 interface BranchDetails {
@@ -57,7 +60,7 @@ interface CreditOfficer {
   id: string;
   name: string;
   idNumber: string;
-  status: 'Active' | 'In active';
+  status: 'Active' | 'Inactive';
   phone: string;
   email: string;
   dateJoined: string;
@@ -74,8 +77,12 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Generate unique data for this branch based on ID
-  const branchData = generateBranchData(id);
+  // API data state
+  const [branchData, setBranchData] = useState<any>(null);
+  const [creditOfficers, setCreditOfficers] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [missedReports, setMissedReports] = useState<any[]>([]);
+  const [statistics, setStatistics] = useState<any>(null);
   
   // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -85,9 +92,174 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
   const [editCOModalOpen, setEditCOModalOpen] = useState(false);
   const [editReportModalOpen, setEditReportModalOpen] = useState(false);
   const [editMissedReportModalOpen, setEditMissedReportModalOpen] = useState(false);
-  const [selectedCO, setSelectedCO] = useState<typeof branchData.creditOfficers[0] | null>(null);
-  const [selectedReport, setSelectedReport] = useState<typeof branchData.reports[0] | null>(null);
-  const [selectedMissedReport, setSelectedMissedReport] = useState<typeof branchData.missedReports[0] | null>(null);
+  const [selectedCO, setSelectedCO] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedMissedReport, setSelectedMissedReport] = useState<any>(null);
+
+  // Fetch branch data on component mount
+  useEffect(() => {
+    const fetchBranchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch branch details from API
+        const branchDetails = await branchService.getBranchById(id);
+        
+        // Fetch users by branch (credit officers and customers)
+        const branchUsers = await userService.getUsersByBranch(id, { page: 1, limit: 100 });
+        
+        // Filter credit officers and customers
+        const officers = branchUsers.data.filter(user => user.role === 'credit_officer');
+        const customers = branchUsers.data.filter(user => user.role === 'customer');
+        
+        setCreditOfficers(officers);
+        
+        // Fetch real reports data from API
+        try {
+          const reportsResponse = await reportsService.getAllReports({
+            branchId: id,
+            page: 1,
+            limit: 100
+          });
+          
+          // Transform API reports to component format
+          const apiReports = reportsResponse.data.map(report => ({
+            id: report.id,
+            reportId: report.reportId,
+            creditOfficer: report.creditOfficer,
+            creditOfficerId: report.creditOfficerId,
+            branch: report.branch,
+            branchId: report.branchId,
+            email: report.email,
+            reportType: report.reportType,
+            status: report.status,
+            dateSubmitted: report.createdAt,
+            dateSent: report.dateSent,
+            timeSent: report.timeSent,
+            loansDispursed: report.loansDispursed,
+            loansValueDispursed: report.loansValueDispursed,
+            savingsCollected: report.savingsCollected,
+            repaymentsCollected: report.repaymentsCollected,
+            createdAt: report.createdAt,
+            updatedAt: report.updatedAt
+          }));
+          
+          // Filter submitted reports and missed reports
+          const submittedReports = apiReports.filter(report => 
+            report.status === 'submitted' || report.status === 'approved' || report.status === 'declined'
+          );
+          
+          const missedReports = apiReports.filter(report => 
+            report.status === 'pending'
+          ).map(report => ({
+            ...report,
+            dueDate: report.createdAt,
+            dateDue: new Date(report.createdAt).toLocaleDateString(),
+            daysMissed: Math.max(1, Math.floor((Date.now() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))),
+            status: 'Overdue'
+          }));
+          
+          setReports(submittedReports);
+          setMissedReports(missedReports);
+          
+        } catch (reportsError) {
+          console.warn('Reports API not available, using fallback data:', reportsError);
+          
+          // Fallback: Create minimal reports based on credit officers if API fails
+          const fallbackReports = officers.slice(0, Math.min(5, officers.length)).map((officer, index) => ({
+            id: `report-${officer.id}-${index}`,
+            reportId: `RPT-${Date.now()}-${index}`,
+            creditOfficer: `${officer.firstName} ${officer.lastName}`,
+            creditOfficerId: officer.id.toString(),
+            branch: branchDetails.name,
+            branchId: id,
+            email: officer.email,
+            reportType: 'monthly' as const,
+            status: 'submitted' as const,
+            dateSubmitted: new Date().toISOString(),
+            dateSent: new Date().toLocaleDateString(),
+            timeSent: new Date().toLocaleTimeString(),
+            loansDispursed: 0,
+            loansValueDispursed: '₦0',
+            savingsCollected: '₦0',
+            repaymentsCollected: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }));
+          
+          const fallbackMissedReports = officers.slice(0, Math.min(2, officers.length)).map((officer, index) => ({
+            id: `missed-${officer.id}-${index}`,
+            reportId: `MRP-${Date.now()}-${index}`,
+            creditOfficer: `${officer.firstName} ${officer.lastName}`,
+            creditOfficerId: officer.id.toString(),
+            branch: branchDetails.name,
+            branchId: id,
+            email: officer.email,
+            reportType: 'weekly' as const,
+            dueDate: new Date().toISOString(),
+            dateDue: new Date().toLocaleDateString(),
+            daysMissed: 1,
+            status: 'Overdue'
+          }));
+          
+          setReports(fallbackReports);
+          setMissedReports(fallbackMissedReports);
+        }
+        
+        // Transform branch statistics to component format
+        const branchStats = {
+          allCOs: {
+            value: branchDetails.statistics.totalCreditOfficers,
+            change: branchDetails.statistics.creditOfficersGrowth,
+            changeLabel: `${branchDetails.statistics.creditOfficersGrowth >= 0 ? '+' : ''}${branchDetails.statistics.creditOfficersGrowth}% this month`
+          },
+          allCustomers: {
+            value: branchDetails.statistics.totalCustomers,
+            change: branchDetails.statistics.customersGrowth,
+            changeLabel: `${branchDetails.statistics.customersGrowth >= 0 ? '+' : ''}${branchDetails.statistics.customersGrowth}% this month`
+          },
+          activeLoans: {
+            value: branchDetails.statistics.activeLoans,
+            change: branchDetails.statistics.activeLoansGrowth,
+            changeLabel: `${branchDetails.statistics.activeLoansGrowth >= 0 ? '+' : ''}${branchDetails.statistics.activeLoansGrowth}% this month`
+          },
+          totalDisbursed: {
+            value: branchDetails.statistics.totalDisbursed,
+            change: branchDetails.statistics.totalDisbursedGrowth,
+            changeLabel: `${branchDetails.statistics.totalDisbursedGrowth >= 0 ? '+' : ''}${branchDetails.statistics.totalDisbursedGrowth}% this month`
+          }
+        };
+        
+        setStatistics(branchStats);
+        
+        // Set branch data (reports and missedReports are set separately above)
+        setBranchData({
+          id: branchDetails.id,
+          name: branchDetails.name,
+          code: branchDetails.code,
+          address: branchDetails.address,
+          region: branchDetails.region,
+          state: branchDetails.state,
+          status: branchDetails.status,
+          dateCreated: new Date(branchDetails.dateCreated),
+          statistics: branchStats,
+          creditOfficers: officers
+        });
+        
+      } catch (err) {
+        console.error('Error fetching branch data:', err);
+        setError('Failed to load branch data');
+        showError('Failed to load branch data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchBranchData();
+    }
+  }, [id, showError]);
   
   // Loan Details Modal state
   const [loanDetailsModalOpen, setLoanDetailsModalOpen] = useState(false);
@@ -109,26 +281,26 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
   };
 
   // Delete handlers
-  const handleDeleteCO = (id: string) => {
-    const officer = branchData.creditOfficers.find(co => co.id === id);
+  const handleDeleteCO = (coId: string) => {
+    const officer = creditOfficers.find(co => co.id === coId);
     if (officer) {
-      setItemToDelete({ id, name: officer.name, type: 'Credit Officer' });
+      setItemToDelete({ id: coId, name: `${officer.firstName} ${officer.lastName}`, type: 'Credit Officer' });
       setDeleteModalOpen(true);
     }
   };
 
-  const handleDeleteReport = (id: string) => {
-    const report = branchData.reports.find(r => r.id === id);
+  const handleDeleteReport = (reportId: string) => {
+    const report = reports.find(r => r.id === reportId);
     if (report) {
-      setItemToDelete({ id, name: report.branchName, type: 'Report' });
+      setItemToDelete({ id: reportId, name: report.creditOfficer, type: 'Report' });
       setDeleteModalOpen(true);
     }
   };
 
-  const handleDeleteMissedReport = (id: string) => {
-    const report = branchData.missedReports.find(r => r.id === id);
+  const handleDeleteMissedReport = (reportId: string) => {
+    const report = missedReports.find(r => r.id === reportId);
     if (report) {
-      setItemToDelete({ id, name: report.branchName, type: 'Missed Report' });
+      setItemToDelete({ id: reportId, name: report.creditOfficer, type: 'Missed Report' });
       setDeleteModalOpen(true);
     }
   };
@@ -146,24 +318,24 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
   };
 
   // Edit handlers
-  const handleEditCO = (id: string) => {
-    const officer = branchData.creditOfficers.find(co => co.id === id);
+  const handleEditCO = (coId: string) => {
+    const officer = creditOfficers.find(co => co.id === coId);
     if (officer) {
       setSelectedCO(officer);
       setEditCOModalOpen(true);
     }
   };
 
-  const handleEditReport = (id: string) => {
-    const report = branchData.reports.find(r => r.id === id);
+  const handleEditReport = (reportId: string) => {
+    const report = reports.find(r => r.id === reportId);
     if (report) {
       setSelectedReport(report);
       setEditReportModalOpen(true);
     }
   };
 
-  const handleEditMissedReport = (id: string) => {
-    const report = branchData.missedReports.find(r => r.id === id);
+  const handleEditMissedReport = (reportId: string) => {
+    const report = missedReports.find(r => r.id === reportId);
     if (report) {
       setSelectedMissedReport(report);
       setEditMissedReportModalOpen(true);
@@ -171,31 +343,31 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
   };
 
   // Save handlers
-  const handleSaveCO = (officer: typeof branchData.creditOfficers[0]) => {
+  const handleSaveCO = (officer: any) => {
     console.log('Saving Credit Officer:', officer);
     // TODO: Implement actual update API call
     // Example: await updateCreditOfficer(officer.id, officer);
     
     // Show success notification
-    success(`Credit Officer "${officer.name}" updated successfully!`);
+    success(`Credit Officer "${officer.firstName} ${officer.lastName}" updated successfully!`);
   };
 
-  const handleSaveReport = (report: typeof branchData.reports[0]) => {
+  const handleSaveReport = (report: any) => {
     console.log('Saving Report:', report);
     // TODO: Implement actual update API call
     // Example: await updateReport(report.id, report);
     
     // Show success notification
-    success(`Report "${report.reportId}" updated successfully!`);
+    success(`Report "${report.id}" updated successfully!`);
   };
 
-  const handleSaveMissedReport = (report: typeof branchData.missedReports[0]) => {
+  const handleSaveMissedReport = (report: any) => {
     console.log('Saving Missed Report:', report);
     // TODO: Implement actual update API call
     // Example: await updateMissedReport(report.id, report);
     
     // Show success notification
-    success(`Missed Report "${report.reportId}" updated successfully!`);
+    success(`Missed Report "${report.id}" updated successfully!`);
   };
 
   // Confirmation dialog state
@@ -209,19 +381,19 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
 
   // Loan Details Modal handlers
   const handleViewLoanDetails = (id: string) => {
-    const report = branchData.reports.find(r => r.id === id);
+    const report = reports.find((r: any) => r.id === id);
     if (report) {
-      // Transform report data to LoanDetailsData format
+      // Transform report data to LoanDetailsData format using real report data
       const loanData: LoanDetailsData = {
         reportId: report.reportId,
-        creditOfficer: report.branchName, // Using branchName as credit officer for demo
-        branch: branchData.branchInfo.name, // Using actual branch name
-        loansDispursed: Math.floor(Math.random() * 50) + 10, // Sample data
-        loansValueDispursed: `₦${(Math.random() * 5000000 + 1000000).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`,
-        savingsCollected: `₦${(Math.random() * 1000000 + 100000).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`,
-        repaymentsCollected: Math.floor(Math.random() * 30) + 5,
-        dateSent: report.date,
-        timeSent: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        creditOfficer: report.creditOfficer || 'Unknown Officer',
+        branch: branchData?.name || 'Unknown Branch',
+        loansDispursed: report.loansDispursed || 0, // Use real report data
+        loansValueDispursed: report.loansValueDispursed || '₦0',
+        savingsCollected: report.savingsCollected || '₦0',
+        repaymentsCollected: report.repaymentsCollected || 0,
+        dateSent: report.dateSent || new Date().toLocaleDateString(),
+        timeSent: report.timeSent || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
       };
       
       setSelectedLoanData(loanData);
@@ -301,19 +473,19 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
 
   // Missed Reports - View Details Handler
   const handleViewMissedLoanDetails = (id: string) => {
-    const report = branchData.missedReports.find(r => r.id === id);
+    const report = missedReports.find((r: any) => r.id === id);
     if (report) {
-      // Transform missed report data to LoanDetailsData format
+      // Transform missed report data to LoanDetailsData format using real data
       const loanData: LoanDetailsData = {
         reportId: report.reportId,
-        creditOfficer: report.branchName,
-        branch: branchData.branchInfo.name,
-        loansDispursed: Math.floor(Math.random() * 50) + 10,
-        loansValueDispursed: `₦${(Math.random() * 5000000 + 1000000).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`,
-        savingsCollected: `₦${(Math.random() * 1000000 + 100000).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`,
-        repaymentsCollected: Math.floor(Math.random() * 30) + 5,
-        dateSent: report.dateDue,
-        timeSent: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        creditOfficer: report.creditOfficer || 'Unknown Officer',
+        branch: branchData?.name || `Branch ${id}`,
+        loansDispursed: report.loansDispursed || 0, // Use real report data or default to 0
+        loansValueDispursed: report.loansValueDispursed || '₦0',
+        savingsCollected: report.savingsCollected || '₦0',
+        repaymentsCollected: report.repaymentsCollected || 0,
+        dateSent: report.dateDue || new Date().toLocaleDateString(),
+        timeSent: report.timeSent || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
       };
       
       setSelectedLoanData(loanData);
@@ -330,41 +502,44 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
     }, 1000);
   };
 
-  // Transform generated data to component format
-  const statisticsData = [
+  // Transform API data to component format
+  const statisticsData = statistics ? [
     {
       label: "All CO's",
-      value: branchData.statistics.allCOs.value,
-      change: branchData.statistics.allCOs.change,
-      changeLabel: branchData.statistics.allCOs.changeLabel
+      value: statistics.allCOs.value,
+      change: statistics.allCOs.change,
+      changeLabel: statistics.allCOs.changeLabel
     },
     {
       label: 'All Customers',
-      value: branchData.statistics.allCustomers.value,
-      change: branchData.statistics.allCustomers.change,
-      changeLabel: branchData.statistics.allCustomers.changeLabel
+      value: statistics.allCustomers.value,
+      change: statistics.allCustomers.change,
+      changeLabel: statistics.allCustomers.changeLabel
     },
     {
       label: 'Active Loans',
-      value: branchData.statistics.activeLoans.value,
-      change: branchData.statistics.activeLoans.change,
-      changeLabel: branchData.statistics.activeLoans.changeLabel
+      value: statistics.activeLoans.value,
+      change: statistics.activeLoans.change,
+      changeLabel: statistics.activeLoans.changeLabel
     },
     {
-      label: 'Loans Processed',
-      value: branchData.statistics.loansProcessed.amount,
-      change: branchData.statistics.loansProcessed.change,
-      changeLabel: branchData.statistics.loansProcessed.changeLabel,
+      label: 'Total Disbursed',
+      value: statistics.totalDisbursed.value,
+      change: statistics.totalDisbursed.change,
+      changeLabel: statistics.totalDisbursed.changeLabel,
       isCurrency: true
     }
-  ];
+  ] : [];
 
-  const branchInfoFields = [
-    { label: 'Branch Name', value: branchData.branchInfo.name },
-    { label: 'Branch ID', value: branchData.branchInfo.branchId },
-    { label: 'Date Created', value: branchData.branchInfo.dateCreated },
-    { label: 'Region', value: branchData.branchInfo.region }
-  ];
+  const branchInfoFields = branchData ? [
+    { label: 'Branch Name', value: branchData.name },
+    { label: 'Branch Code', value: branchData.code || branchData.id },
+    { label: 'Date Created', value: branchData.dateCreated.toLocaleDateString() },
+    { label: 'Region', value: branchData.region },
+    { label: 'State', value: branchData.state || 'N/A' },
+    { label: 'Status', value: branchData.status || 'Active' },
+    { label: 'Address', value: branchData.address || 'Address not available' }
+  ] : [];
 
   // Loading skeleton
   if (isLoading) {
@@ -423,7 +598,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="drawer-content flex flex-col min-h-screen">
-      <main className="flex-1 pl-[58px] pr-6" style={{ paddingTop: '40px' }}>
+      <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
         {/* Container with proper max width */}
         <div className="w-full" style={{ maxWidth: '1200px' }}>
           {/* Header Section with Back and Title + Button */}
@@ -487,7 +662,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
                 aria-labelledby="credit-officers-tab"
               >
                 <CreditOfficersTable 
-                  data={branchData.creditOfficers}
+                  data={creditOfficers}
                   onEdit={handleEditCO}
                   onDelete={handleDeleteCO}
                 />
@@ -506,10 +681,12 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
                 aria-labelledby="reports-tab"
               >
                 <ReportsTable 
-                  data={branchData.reports}
+                  reports={reports}
+                  selectedReports={[]}
+                  onSelectionChange={() => {}}
                   onEdit={handleEditReport}
                   onDelete={handleDeleteReport}
-                  onViewDetails={handleViewLoanDetails}
+                  onReportClick={(report) => handleViewLoanDetails(report.id)}
                 />
                 
                 <Pagination 
@@ -526,7 +703,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
                 aria-labelledby="missed-reports-tab"
               >
                 <MissedReportsTable 
-                  data={branchData.missedReports}
+                  data={missedReports}
                   onEdit={handleEditMissedReport}
                   onDelete={handleDeleteMissedReport}
                   onViewDetails={handleViewMissedLoanDetails}
@@ -612,7 +789,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
         message={`Are you sure you want to approve loan report "${selectedLoanData?.reportId}"? This action cannot be undone.`}
         confirmText="Approve"
         cancelText="Cancel"
-        confirmButtonStyle="success"
+        confirmButtonStyle="primary"
         isLoading={isProcessing}
       />
 
@@ -637,7 +814,7 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
         isOpen={showAssignUsersModal}
         onClose={() => setShowAssignUsersModal(false)}
         onSubmit={handleAssignUsers}
-        branchName={branchData.branchInfo.name}
+        branchName={branchData?.name || 'this branch'}
         currentlyAssignedUsers={currentlyAssignedUsers}
       />
     </div>

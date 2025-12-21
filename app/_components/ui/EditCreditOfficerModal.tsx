@@ -6,7 +6,7 @@ interface CreditOfficer {
   id: string;
   name: string;
   idNumber: string;
-  status: 'Active' | 'In active';
+  status: 'Active' | 'Inactive';
   phone: string;
   email: string;
   dateJoined: string;
@@ -49,7 +49,11 @@ export default function EditCreditOfficerModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/30"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        backgroundColor: 'rgba(52, 64, 84, 0.7)',
+        backdropFilter: 'blur(16px)',
+      }}
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
@@ -86,11 +90,11 @@ export default function EditCreditOfficerModal({
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'In active' })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
                 className="w-full px-3 py-2 border border-[#D0D5DD] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#7F56D9]"
               >
                 <option value="Active">Active</option>
-                <option value="In active">In active</option>
+                <option value="Inactive">Inactive</option>
               </select>
             </div>
             <div>

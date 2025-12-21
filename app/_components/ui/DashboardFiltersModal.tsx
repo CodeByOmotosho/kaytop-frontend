@@ -62,7 +62,13 @@ export function DashboardFiltersModal({ isOpen, onClose, onApply }: DashboardFil
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        backgroundColor: 'rgba(52, 64, 84, 0.7)',
+        backdropFilter: 'blur(16px)',
+      }}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#EAECF0]">

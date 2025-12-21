@@ -1,59 +1,72 @@
-import React from 'react';
+/**
+ * StatusBadge Component
+ * Displays loan status with colored indicator dot and text
+ */
 
 interface StatusBadgeProps {
-  status: 'Active' | 'Scheduled' | 'Savings';
-  type?: 'savings';
+  status: string; // More flexible to handle various status formats
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, type }) => {
-  const isActive = status === 'Active';
-  const isSavings = status === 'Savings' || type === 'savings';
-  
-  // Determine colors based on status/type
-  const getColors = () => {
-    if (isSavings) {
-      return {
-        bg: 'bg-[#ECFDF3]',
-        text: 'text-[#027A48]',
-        dot: 'bg-[#12B76A]'
-      };
-    }
-    if (isActive) {
-      return {
-        bg: 'bg-[#ECFDF3]',
-        text: 'text-[#027A48]',
-        dot: 'bg-[#12B76A]'
-      };
-    }
-    return {
-      bg: 'bg-[rgba(255,147,38,0.1)]',
-      text: 'text-[rgba(204,119,32,0.99)]',
+export default function StatusBadge({ status }: StatusBadgeProps) {
+  const styles = {
+    pending: {
+      container: 'bg-[#FEF3F2] text-[#B42318]',
+      dot: 'bg-[#B42318]'
+    },
+    approved: {
+      container: 'bg-[#EFF8FF] text-[#175CD3]',
+      dot: 'bg-[#175CD3]'
+    },
+    disbursed: {
+      container: 'bg-[#F0F9FF] text-[#0369A1]',
+      dot: 'bg-[#0369A1]'
+    },
+    active: {
+      container: 'bg-[#ECFDF3] text-[#027A48]',
+      dot: 'bg-[#027A48]'
+    },
+    scheduled: {
+      container: 'bg-[rgba(255,147,38,0.1)] text-[#FF9326]',
       dot: 'bg-[#FF9326]'
-    };
+    },
+    completed: {
+      container: 'bg-[#F3F4F6] text-[#374151]',
+      dot: 'bg-[#374151]'
+    },
+    defaulted: {
+      container: 'bg-[#FEF3F2] text-[#E91F11]',
+      dot: 'bg-[#E91F11]'
+    },
+    overdue: {
+      container: 'bg-[#FEF3F2] text-[#E91F11]',
+      dot: 'bg-[#E91F11]'
+    }
   };
+
+  // Normalize status to lowercase to handle case variations
+  const normalizedStatus = status?.toLowerCase() as keyof typeof styles;
+  const style = styles[normalizedStatus] || styles.active; // Default to active if status not found
   
-  const colors = getColors();
-  
+  // Format status text for display
+  const formatStatusText = (status: string) => {
+    const normalized = status?.toLowerCase();
+    switch (normalized) {
+      case 'pending': return 'Pending';
+      case 'approved': return 'Approved';
+      case 'disbursed': return 'Disbursed';
+      case 'active': return 'Active';
+      case 'scheduled': return 'Scheduled';
+      case 'completed': return 'Completed';
+      case 'defaulted': return 'Defaulted';
+      case 'overdue': return 'Overdue';
+      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown';
+    }
+  };
+
   return (
-    <div
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-2xl ${colors.bg} ${colors.text}`}
-      style={{
-        paddingLeft: '6px',
-        paddingRight: '8px',
-        paddingTop: '2px',
-        paddingBottom: '2px',
-      }}
-      role="status"
-      aria-label={`Loan status: ${status}`}
-    >
-      {/* Dot container */}
-      <div className="w-2 h-2 flex items-center justify-center" aria-hidden="true">
-        <div className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-      </div>
-      {/* Text */}
-      <span className="text-xs font-medium leading-none">
-        {status}
-      </span>
+    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[16px] ${style.container}`}>
+      <div className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+      <span className="text-xs font-medium">{formatStatusText(status)}</span>
     </div>
   );
-};
+}

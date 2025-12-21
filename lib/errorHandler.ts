@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import toast from "react-hot-toast";
+import  toast from "react-hot-toast";
 import validationError from "./validationError";
 import { ValidationErrorResponse } from "@/app/types/auth";
 import { FieldError } from "react-hook-form";
@@ -39,6 +39,8 @@ export function handleAxiosError<TField extends string>(
     //400-499 client errors
     if (status >= 400 && status < 500) {
       const data = error.response.data as ValidationErrorResponse;
+
+      console.log(data);
 
       const message = data.message || "Request failed";
       return toast.error(message);

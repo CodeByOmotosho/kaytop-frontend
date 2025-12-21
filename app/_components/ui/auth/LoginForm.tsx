@@ -11,13 +11,14 @@ import { useState } from "react";
 import { AuthService } from "@/app/services/authService";
 import { handleAxiosError } from "@/lib/errorHandler";
 import { AxiosError } from "axios";
-import { useAuth } from "@/app/context/AuthContext";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { ROUTES } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import Spinner from "../Spinner";
+import toast from "react-hot-toast";
 
 const schema = z.object({
-  email: z.string().email("Invalid email format"),
+  email: z.email("Invalid email format"),
   password: z.string().min(8).max(32),
   // .refine((val) => /[A-Z]/.test(val), {
   //   message: "Password must contain at least one uppercase letter",
@@ -29,8 +30,8 @@ const schema = z.object({
 type LoginData = z.infer<typeof schema>;
 
 export default function LoginForm() {
-  const [loading, setLoading] = useState(false);
-  const { login: auth } = useAuth();
+  const [isSubmitting, setisSubmitting] = useState(false);
+  const { login } = useAuth();
   const router = useRouter();
   const {
     register,
@@ -42,21 +43,20 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (data: LoginData) => {
-    setLoading(true);
+    setisSubmitting(true);
 
     try {
-      const response = await AuthService.login(data);
-      //console.log(response);
-      const accessToken = response.access_token;
-      const role = response.role;
-      auth(accessToken, role);
-      router.push(ROUTES.Bm.DASHBOARD);
+      await login({
+        email: data.email,
+        password: data.password,
+        userType: 'branch-manager'
+      });
+      toast.success("You have logged in successfully");
     } catch (error: AxiosError | unknown) {
       const err = error as AxiosError;
-      //  console.log(err);
       handleAxiosError(err, setError);
     } finally {
-      setLoading(false);
+      setisSubmitting(false);
     }
   };
   return (
@@ -67,6 +67,7 @@ export default function LoginForm() {
           type="email"
           placeholder="Enter your email"
           id="email"
+          disabled={isSubmitting}
           {...register("email")}
         />
         {errors.email && <Error error={errors.email.message} />}
@@ -78,6 +79,7 @@ export default function LoginForm() {
           type="password"
           placeholder="Enter your password"
           id="password"
+          disabled={isSubmitting}
           {...register("password")}
         />
         {errors.password && <Error error={errors.password.message} />}
@@ -96,8 +98,8 @@ export default function LoginForm() {
         </Link>
       </div>
 
-      <Button fullWidth={true} variant="tertiary" loading={loading}>
-        {loading ? <Spinner /> : "Sign in"}
+      <Button fullWidth={true} variant="tertiary" disabled={isSubmitting}>
+        {isSubmitting ? <Spinner /> : "Sign in"}
       </Button>
     </form>
   );
