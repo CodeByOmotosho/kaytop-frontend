@@ -175,31 +175,34 @@ export default function SystemAdminDashboard() {
   const getTopCardSections = () => {
     if (!dashboardData) return [];
     
+    // Debug: Log the dashboard data structure
+    console.log('🔍 Dashboard data structure:', JSON.stringify(dashboardData, null, 2));
+    
     return [
       {
         label: "All Branches",
-        value: dashboardData.branches.value,
-        change: dashboardData.branches.change,
-        changeLabel: dashboardData.branches.changeLabel,
+        value: dashboardData.branches?.value || 0,
+        change: dashboardData.branches?.change || 0,
+        changeLabel: dashboardData.branches?.changeLabel || '',
       },
       {
         label: "All CO's",
-        value: dashboardData.creditOfficers.value,
-        change: dashboardData.creditOfficers.change,
-        changeLabel: dashboardData.creditOfficers.changeLabel,
+        value: dashboardData.creditOfficers?.value || 0,
+        change: dashboardData.creditOfficers?.change || 0,
+        changeLabel: dashboardData.creditOfficers?.changeLabel || '',
       },
       {
         label: "All Customers",
-        value: dashboardData.customers.value,
-        change: dashboardData.customers.change,
-        changeLabel: dashboardData.customers.changeLabel,
+        value: dashboardData.customers?.value || 0,
+        change: dashboardData.customers?.change || 0,
+        changeLabel: dashboardData.customers?.changeLabel || '',
       },
       {
         label: "Loans Processed",
-        value: dashboardData.loansProcessed.value,
-        change: dashboardData.loansProcessed.change,
-        changeLabel: dashboardData.loansProcessed.changeLabel,
-        isCurrency: dashboardData.loansProcessed.isCurrency,
+        value: dashboardData.loansProcessed?.value || 0,
+        change: dashboardData.loansProcessed?.change || 0,
+        changeLabel: dashboardData.loansProcessed?.changeLabel || '',
+        isCurrency: dashboardData.loansProcessed?.isCurrency || false,
       },
     ];
   };
@@ -210,22 +213,22 @@ export default function SystemAdminDashboard() {
     return [
       {
         label: "Loan Amounts",
-        value: dashboardData.loanAmounts.value,
-        change: dashboardData.loanAmounts.change,
-        changeLabel: dashboardData.loanAmounts.changeLabel,
-        isCurrency: dashboardData.loanAmounts.isCurrency,
+        value: dashboardData.loanAmounts?.value || 0,
+        change: dashboardData.loanAmounts?.change || 0,
+        changeLabel: dashboardData.loanAmounts?.changeLabel || '',
+        isCurrency: dashboardData.loanAmounts?.isCurrency || false,
       },
       {
         label: "Active Loans",
-        value: dashboardData.activeLoans.value,
-        change: dashboardData.activeLoans.change,
-        changeLabel: dashboardData.activeLoans.changeLabel,
+        value: dashboardData.activeLoans?.value || 0,
+        change: dashboardData.activeLoans?.change || 0,
+        changeLabel: dashboardData.activeLoans?.changeLabel || '',
       },
       {
         label: "Missed Payments",
-        value: dashboardData.missedPayments.value,
-        change: dashboardData.missedPayments.change,
-        changeLabel: dashboardData.missedPayments.changeLabel,
+        value: dashboardData.missedPayments?.value || 0,
+        change: dashboardData.missedPayments?.change || 0,
+        changeLabel: dashboardData.missedPayments?.changeLabel || '',
       },
     ];
   };
