@@ -95,32 +95,62 @@ export const ROUTE_CONFIGURATIONS: RouteConfig[] = [
  * Detect user role from authentication response
  */
 export function detectUserRole(authResponse: any): UserRole {
+  console.log('🔍 Detecting user role from auth response:', JSON.stringify(authResponse, null, 2));
+  
   // Check if role is directly provided in response
   if (authResponse.role && Object.values(UserRole).includes(authResponse.role)) {
+    console.log('✅ Role found directly in response:', authResponse.role);
     return authResponse.role as UserRole;
   }
   
   // Check if user object has role
   if (authResponse.user?.role && Object.values(UserRole).includes(authResponse.user.role)) {
+    console.log('✅ Role found in user object:', authResponse.user.role);
     return authResponse.user.role as UserRole;
   }
   
   // Handle backend role mapping - treat branch_manager as HQ_MANAGER for AM dashboard access
   if (authResponse.user?.role === 'branch_manager' || authResponse.role === 'branch_manager') {
+    console.log('✅ Converting branch_manager to hq_manager');
     return UserRole.HQ_MANAGER;
   }
   
   // Check for role in token payload (if available)
-  if (authResponse.token) {
-    const role = extractRoleFromToken(authResponse.token);
+  if (authResponse.token || authResponse.access_token) {
+    const token = authResponse.token || authResponse.access_token;
+    const role = extractRoleFromToken(token);
     if (role) {
+      console.log('✅ Role found in token:', role);
       return role;
     }
   }
   
-  // Default fallback - this should not happen in normal operation
-  console.warn('Unable to detect user role from auth response, defaulting to system_admin');
-  return UserRole.SYSTEM_ADMIN;
+  // Additional checks for different response formats
+  if (authResponse.data?.role && Object.values(UserRole).includes(authResponse.data.role)) {
+    console.log('✅ Role found in data object:', authResponse.data.role);
+    return authResponse.data.role as UserRole;
+  }
+  
+  // Check if the response itself contains user data at root level
+  if (authResponse.firstName || authResponse.lastName || authResponse.email) {
+    // This might be a user object at root level, check for role
+    const roleFromRoot = authResponse.role;
+    if (roleFromRoot && Object.values(UserRole).includes(roleFromRoot)) {
+      console.log('✅ Role found at root level:', roleFromRoot);
+      return roleFromRoot as UserRole;
+    }
+  }
+  
+  // Log warning but don't default to system_admin - this is causing the issue!
+  console.warn('⚠️ Unable to detect user role from auth response. Response structure:', {
+    hasRole: !!authResponse.role,
+    hasUserRole: !!authResponse.user?.role,
+    hasToken: !!(authResponse.token || authResponse.access_token),
+    responseKeys: Object.keys(authResponse)
+  });
+  
+  // Instead of defaulting to system_admin, throw an error so we can debug
+  throw new Error(`Unable to detect user role from authentication response. Please check the backend response format.`);
 }
 
 /**

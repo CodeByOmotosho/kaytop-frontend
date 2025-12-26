@@ -47,6 +47,8 @@ class AuthenticationService implements AuthService {
 
   async loginUnified(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log('🔐 Starting unified login for:', credentials.email);
+      
       const response = await apiClient.post<any>(
         API_ENDPOINTS.AUTH.LOGIN,
         credentials
@@ -54,20 +56,51 @@ class AuthenticationService implements AuthService {
 
       // Backend returns direct format: { access_token: "jwt...", role: "system_admin" }
       const responseData = response as any;
+      
+      console.log('📥 Raw backend response:', JSON.stringify(responseData, null, 2));
 
       // Extract token from the direct response format
       const token = responseData.access_token || responseData.token || responseData.accessToken;
       
       if (!token) {
-        console.error('No token found in response. Full response:', JSON.stringify(responseData, null, 2));
+        console.error('❌ No token found in response. Full response:', JSON.stringify(responseData, null, 2));
         throw new Error('No authentication token received from server');
       }
 
+      console.log('🎫 Token extracted successfully');
+
       // Detect user role from response
-      const role = detectUserRole(responseData);
+      let role: UserRole;
+      try {
+        role = detectUserRole(responseData);
+        console.log('✅ Role detected:', role);
+      } catch (roleError) {
+        console.error('❌ Role detection failed:', roleError);
+        // If role detection fails, let's try to extract it manually
+        const manualRole = responseData.role || responseData.user?.role;
+        console.log('🔧 Attempting manual role extraction:', manualRole);
+        
+        if (manualRole && Object.values(UserRole).includes(manualRole)) {
+          role = manualRole as UserRole;
+          console.log('✅ Manual role extraction successful:', role);
+        } else {
+          console.error('❌ Manual role extraction also failed. Available roles:', Object.values(UserRole));
+          throw new Error(`Invalid role received from backend: ${manualRole}`);
+        }
+      }
       
       // Create user profile with detected role
       const user = createUserProfile(responseData, credentials);
+      
+      // Ensure the user has the correct role
+      user.role = role;
+      
+      console.log('👤 User profile created:', {
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName
+      });
 
       const authData: AuthResponse = { token, user };
 
@@ -85,14 +118,16 @@ class AuthenticationService implements AuthService {
       if (typeof window !== 'undefined') {
         const { setAuthCookies } = require('../authCookies');
         setAuthCookies(authData.token, authData.user.role);
+        console.log('🍪 Auth cookies set with role:', authData.user.role);
       }
       
       // Add a small delay to ensure cookies are fully processed
       await new Promise(resolve => setTimeout(resolve, 100));
       
+      console.log('✅ Unified login completed successfully');
       return authData;
     } catch (error) {
-      console.error('Unified login error details:', error);
+      console.error('❌ Unified login error details:', error);
       // Clear any existing auth data on login failure
       this.clearAuthData();
       throw error;
