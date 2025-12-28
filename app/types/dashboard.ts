@@ -1,3 +1,7 @@
+import { AxiosError } from "axios";
+import { ApiError } from "next/dist/server/api-utils";
+import { ApiResponseError } from "./auth";
+
 export interface MetricProps {
   title: string;
   value?: string;
@@ -170,10 +174,20 @@ export enum PaginationKey {
   recollection_page = "recollectionPage",
   savings_page = "savingsPage",
   missed_payment_page = "missedPaymentPage",
+  credit_officers_page = "creditOfficersPage",
   credit_officer_loan_disbursed_Page = "creditOfficerLoanDisbursedPage",
   credit_officer_loan_collection_page = "creditOfficerLoanCollectionPage"
-
-
 }
 
-//export type PaginationKey = "loanPage" | "recollectionPage" | "savingsPage" | "missedPaymentPage" | "creditOfficerLoanDisbursedPage";
+
+
+export interface TableStateProps {
+  isLoading: boolean;
+  error?: AxiosError<ApiResponseError> | null;
+  isEmpty: boolean;
+  colSpan: number;
+  emptyMessage?: string
+}
+
+
+
