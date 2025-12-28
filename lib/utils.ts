@@ -1,8 +1,13 @@
-import { MetricProps } from "@/app/types/dashboard";
+import { MetricProps, SummaryProps } from "@/app/types/dashboard";
 import { MenuItem, Routes } from "@/app/types/routes";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
+import {
+  CreditOfficerProfile,
+  CreditOfficerProfileResponse,
+  Summary,
+} from "@/app/types/creditOfficer";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -43,9 +48,7 @@ export function isActiveRoute(pathname: string, item: MenuItem) {
 }
 
 export function getLinkClass(isActive: boolean) {
-  return isActive
-    ? "text-white before:w-full"
-    : "";
+  return isActive ? "text-white before:w-full" : "";
 }
 
 interface DashboardMetricsInput {
@@ -111,6 +114,44 @@ export function getCreditOfficerMetrics({
       value: data?.totalCreditOfficers.toString(),
       border: false,
     },
+  ];
+}
+
+export function getCreditOfficerIdMetrics(data: Summary): MetricProps[] {
+  return [
+    {
+      title: "Completed Loans",
+      value: data.completedLoans.toString(),
+      border: false,
+    },
+    {
+      title: "Active Loans",
+      value: data.activeLoans.toString(),
+      border: true,
+    },
+    {
+      title: "Loans Processed",
+      value: formatCurrency(data.totalAmountDisbursed),
+      border: true,
+    },
+    {
+      title: "Loan Repaid",
+      value: formatCurrency(data.totalAmountRepaid),
+      border: true,
+    },
+  ];
+}
+
+export function getCreditOfficerProfileSummary(
+  data: CreditOfficerProfile
+): SummaryProps[] {
+  return [
+    { label: "Customer Name", value: `${data.firstName} ${data.lastName}` },
+    { label: "CO ID", value: data.id.toString() },
+    { label: "Date Joined", value: formatDate(data.createdAt) },
+    { label: "Email Address", value: data.email },
+    { label: "Phone Number", value: data?.mobileNumber },
+    { label: "Gender", value: "N/A" },
   ];
 }
 
