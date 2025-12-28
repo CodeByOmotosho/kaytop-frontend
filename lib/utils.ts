@@ -8,6 +8,7 @@ import {
   CreditOfficerProfileResponse,
   Summary,
 } from "@/app/types/creditOfficer";
+import { CustomerData } from "@/app/types/customer";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -152,6 +153,19 @@ export function getCreditOfficerProfileSummary(
     { label: "Email Address", value: data.email },
     { label: "Phone Number", value: data?.mobileNumber },
     { label: "Gender", value: "N/A" },
+  ];
+}
+
+export function getBranchCustomerProfileSummary(
+  data: CustomerData
+): SummaryProps[] {
+  return [
+    { label: "Customer Name", value: `${data.firstName} ${data.lastName}` },
+    { label: "User ID", value: data.id.toString() },
+    { label: "Date Joined", value: formatDate(data.createdAt) },
+    { label: "Email Address", value: data.email },
+    { label: "Phone Number", value: data.mobileNumber },
+    { label: "Address", value: data.address ?? 'N/A' },
   ];
 }
 
