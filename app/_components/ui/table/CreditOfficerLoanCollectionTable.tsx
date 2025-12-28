@@ -5,7 +5,6 @@ import {
 import { Meta } from "@/app/types/dashboard";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { AxiosError } from "axios";
-import Badge from "../Badge";
 import Pagination from "../Pagination";
 import SpinnerLg from "../SpinnerLg";
 
