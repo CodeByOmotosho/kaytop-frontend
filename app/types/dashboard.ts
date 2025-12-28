@@ -176,7 +176,8 @@ export enum PaginationKey {
   missed_payment_page = "missedPaymentPage",
   credit_officers_page = "creditOfficersPage",
   credit_officer_loan_disbursed_Page = "creditOfficerLoanDisbursedPage",
-  credit_officer_loan_collection_page = "creditOfficerLoanCollectionPage"
+  credit_officer_loan_collection_page = "creditOfficerLoanCollectionPage",
+  branch_customer_page = "customerPage",
 }
 
 
