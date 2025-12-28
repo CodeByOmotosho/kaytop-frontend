@@ -6,6 +6,11 @@ export interface MetricProps {
   border: boolean;
 }
 
+export interface SummaryProps {
+  label: string;
+  value?: string;
+}
+
 export interface DashboardKpi {
   branch: string;
   timeFilter: string;
@@ -160,5 +165,15 @@ export interface DashboardKpiResponse {
   message?: string;
 }
 
+export enum PaginationKey {
+  loan_page = "loanPage",
+  recollection_page = "recollectionPage",
+  savings_page = "savingsPage",
+  missed_payment_page = "missedPaymentPage",
+  credit_officer_loan_disbursed_Page = "creditOfficerLoanDisbursedPage",
+  credit_officer_loan_collection_page = "creditOfficerLoanCollectionPage"
 
-export type PaginationKey = "loanPage" | "recollectionPage" | "savingsPage" | "missedPaymentPage";
+
+}
+
+//export type PaginationKey = "loanPage" | "recollectionPage" | "savingsPage" | "missedPaymentPage" | "creditOfficerLoanDisbursedPage";
