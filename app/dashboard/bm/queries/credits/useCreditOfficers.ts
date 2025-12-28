@@ -1,17 +1,15 @@
+import { useUrlPagination } from "@/app/hooks/useUrlPagination";
 import { CreditService } from "@/app/services/creditService";
 import {
   CreditOfficerErrorResponse,
   CreditOfficerListResponse,
-  
 } from "@/app/types/creditOfficer";
+import { PaginationKey } from "@/app/types/dashboard";
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { useSearchParams } from "next/navigation";
 
 export function useCreditOfficers() {
-  const searchParams = useSearchParams();
-  const page = Number(searchParams.get("creditOfficersPage") ?? "1");
-  const limit = 10;
+const {page, limit} = useUrlPagination(PaginationKey.credit_officers_page)
 
   const { isLoading, error, data } = useQuery<
     CreditOfficerListResponse,
