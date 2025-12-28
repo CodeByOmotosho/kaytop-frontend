@@ -84,7 +84,7 @@ export interface Collections {
   amount: string;
   collectionType: string;
   customerId: number;
-  customerName: "Emerald Greg";
+  customerName: string;
   id: number;
   loanDetails?: LoanDetails;
   paymentDate: string;
