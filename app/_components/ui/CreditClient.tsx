@@ -8,11 +8,10 @@ import { useDashboardQuery } from "@/app/dashboard/bm/queries/kpi/useDashboardQu
 import { useCreditOfficers } from "@/app/dashboard/bm/queries/credits/useCreditOfficers";
 import CreditOfficerTable from "./table/CreditOfficerTable";
 import { usePageChange } from "@/app/hooks/usePageChange";
+import { PaginationKey } from "@/app/types/dashboard";
 
 export default function CreditClient() {
   const { isLoading, error, data } = useDashboardQuery();
-
-  console.log(data);
 
   const metricData = getCreditOfficerMetrics({ data });
 
@@ -27,7 +26,7 @@ export default function CreditClient() {
 
   return (
     <>
-      <DashboardHeader data={data} />
+      <DashboardHeader data={data} isLoading={isLoading} />
 
       <Metric item={metricData} cols={1} isLoading={isLoading} error={error} />
 
@@ -39,7 +38,7 @@ export default function CreditClient() {
             isLoading={isLoadingCreditOfficer}
             item={creditOfficerData?.data}
             meta={creditOfficerData?.meta}
-            onPageChange={(page) => handlePageChange(page, "loanPage")}
+            onPageChange={(page) => handlePageChange(page, PaginationKey.credit_officers_page)}
           />
         </div>
       </div>
