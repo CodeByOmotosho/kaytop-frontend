@@ -155,6 +155,23 @@ export function getCreditOfficerProfileSummary(
   ];
 }
 
+export function getCustomerMetrics({
+  data,
+}: DashboardMetricsInput): MetricProps[] {
+  return [
+    {
+      title: "Total Customers",
+      value: "N/A",
+      border: false,
+    },
+    {
+      title: "Active Loans",
+      value: data?.activeLoans.toString(),
+      border: true,
+    },
+  ];
+}
+
 export const reports: MetricProps[] = [
   {
     title: "Total Reports",
