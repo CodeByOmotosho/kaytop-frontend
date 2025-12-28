@@ -34,7 +34,7 @@ export default function BranchCustomerTable({
             <th>Branch</th>
             <th>Phone number</th>
             <th>Email</th>
-            <th>Date joined</th>
+            <th>State</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -43,7 +43,7 @@ export default function BranchCustomerTable({
             isLoading={isLoading}
             error={error}
             isEmpty={!isLoading && item?.length === 0}
-            colSpan={6}
+            colSpan={7}
             emptyMessage="No credit oficer data available yet!!"
           />
 
@@ -59,7 +59,7 @@ export default function BranchCustomerTable({
                 <td>{customer.email}</td>
                 <td>{customer.state}</td>
                 <td>
-                  <Link href={`/dashboard/bm/credit/officer/${customer.id}`}>
+                  <Link href={`/dashboard/bm/customer/details/${customer.id}`}>
                     <img
                       className="w-4 cursor-pointer"
                       src="/view.svg"
