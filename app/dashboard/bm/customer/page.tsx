@@ -1,9 +1,15 @@
 import FilterButton from "@/app/_components/ui/FilterButton";
 import Metric from "@/app/_components/ui/Metric";
 import Table from "@/app/_components/ui/table/DisbursementTable";
-import React from "react";
+import React, { Suspense } from "react";
 import { customer as customerData } from "@/lib/utils";
 import { MetricProps } from "@/app/types/dashboard";
+import SpinnerLg from "@/app/_components/ui/SpinnerLg";
+import CustomerClient from "@/app/_components/ui/CustomerClient";
+
+export const metadata = {
+  title: "Customer",
+};
 
 const metricData: MetricProps[] = customerData;
 
@@ -11,7 +17,16 @@ export default function page() {
   return (
     <div className="drawer-content">
       <div className="container h-full px-5 pt-4 mx-auto max-w-7xl">
-        <div className="leading-4 text-neutral-700">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-[70vh]">
+              <SpinnerLg />
+            </div>
+          }
+        >
+          <CustomerClient />
+        </Suspense>
+        {/* <div className="leading-4 text-neutral-700">
           <h1 className="text-2xl font-medium">Overview</h1>
           <p className="text-md">Igando Branch</p>
         </div>
@@ -40,7 +55,7 @@ export default function page() {
           <div className="p-10 bg-white">
             <Table />
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
