@@ -178,19 +178,16 @@ export enum PaginationKey {
   credit_officer_loan_disbursed_Page = "creditOfficerLoanDisbursedPage",
   credit_officer_loan_collection_page = "creditOfficerLoanCollectionPage",
   branch_customer_page = "customerPage",
-  branch_customer_savings_page = "branchCustomerSavingsPage"
-
+  branch_customer_savings_page = "branchCustomerSavingsPage",
+  branch_loan_page = "branchLoanPage",
+  active_loan_id = "loanId",
+  payment_schedule_page = "paymentSchedulePage",
 }
-
-
 
 export interface TableStateProps {
   isLoading: boolean;
   error?: AxiosError<ApiResponseError> | null;
   isEmpty: boolean;
   colSpan: number;
-  emptyMessage?: string
+  emptyMessage?: string;
 }
-
-
-
