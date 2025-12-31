@@ -1,7 +1,6 @@
 import { ApiResponseError } from "@/app/types/auth";
 import { CustomerData } from "@/app/types/customer";
 import { Meta } from "@/app/types/dashboard";
-import { formatDate } from "@/lib/utils";
 import { AxiosError } from "axios";
 import Link from "next/link";
 import Pagination from "../Pagination";
