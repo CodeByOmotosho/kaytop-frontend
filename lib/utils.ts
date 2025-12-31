@@ -1,14 +1,11 @@
+import { CreditOfficerProfile, Summary } from "@/app/types/creditOfficer";
+import { CustomerData } from "@/app/types/customer";
 import { MetricProps, SummaryProps } from "@/app/types/dashboard";
+import { ActiveLoanData } from "@/app/types/loan";
 import { MenuItem, Routes } from "@/app/types/routes";
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
-import {
-  CreditOfficerProfile,
-  CreditOfficerProfileResponse,
-  Summary,
-} from "@/app/types/creditOfficer";
-import { CustomerData } from "@/app/types/customer";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -52,13 +49,23 @@ export function getLinkClass(isActive: boolean) {
   return isActive ? "text-white before:w-full" : "";
 }
 
+interface DashboardMetrics {
+  totalCreditOfficers: number;
+  loansProcessedThisPeriod: number;
+  loanValueThisPeriod: number;
+  activeLoans: number;
+}
+
 interface DashboardMetricsInput {
-  data?: {
-    totalCreditOfficers: number;
-    loansProcessedThisPeriod: number;
-    loanValueThisPeriod: number;
-    activeLoans: number;
-  };
+  data?: DashboardMetrics;
+}
+
+interface BranchLoanMetrics extends DashboardMetrics {
+  totalLoans: number;
+}
+
+interface BranchLoanMetricsInput {
+  data?: BranchLoanMetrics;
 }
 
 export function getDashboardMetrics({ data }: DashboardMetricsInput): {
@@ -159,13 +166,53 @@ export function getCreditOfficerProfileSummary(
 export function getBranchCustomerProfileSummary(
   data: CustomerData
 ): SummaryProps[] {
+  if (!data) return [];
   return [
     { label: "Customer Name", value: `${data.firstName} ${data.lastName}` },
     { label: "User ID", value: data.id.toString() },
     { label: "Date Joined", value: formatDate(data.createdAt) },
     { label: "Email Address", value: data.email },
     { label: "Phone Number", value: data.mobileNumber },
-    { label: "Address", value: data.address ?? 'N/A' },
+    { label: "Address", value: data.address ?? "N/A" },
+  ];
+}
+
+export function getActiveLoanSummary(data: ActiveLoanData): SummaryProps[] {
+  if (!data) return [];
+  return [
+    { label: "Loan Id", value: `LoanID  ${data.id}` },
+    { label: "Loan Amount", value: formatCurrency(Number(data.amount)) },
+    {
+      label: "Outstanding",
+      value: formatCurrency(Number(data.totalRepayable)),
+    },
+    { label: "Amount Paid", value: formatCurrency(Number(data.amountPaid)) },
+    { label: "Intrest Rate", value: data.interestRate },
+    { label: "Disbursement Date", value: formatDate(data.disbursementDate) },
+    { label: "Duedate", value: formatDate(data.dueDate) },
+  ];
+}
+
+export function getBranchLoanMetrics({
+  data,
+}: BranchLoanMetricsInput): MetricProps[] {
+  return [
+    {
+      title: "Total Loans",
+      value: data?.totalLoans.toString(),
+      border: false,
+    },
+    {
+      title: "Active Loans",
+      value: data?.activeLoans.toString(),
+      border: true,
+    },
+
+    {
+      title: "Completed  Loans",
+      value: data?.loansProcessedThisPeriod.toString(),
+      border: true,
+    },
   ];
 }
 
@@ -185,6 +232,8 @@ export function getCustomerMetrics({
     },
   ];
 }
+
+
 
 export const reports: MetricProps[] = [
   {
