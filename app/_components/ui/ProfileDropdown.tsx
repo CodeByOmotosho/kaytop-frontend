@@ -13,15 +13,16 @@ import {
 import { ROUTES } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { use, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function ProfileDropdown() {
+  
+ // console.log(profile);
   const [open, setOpen] = useState(false);
   const { logOut } = useAuth();
   const router = useRouter();
   const handleLogout = () => {
-    console.log("logging out");
     logOut();
     toast.success("You have successfully logged out");
     router.push(ROUTES.Bm.Auth.LOGIN);
