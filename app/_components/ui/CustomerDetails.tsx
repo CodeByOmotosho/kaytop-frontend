@@ -3,20 +3,23 @@ import { useBranchCustomerById } from "@/app/dashboard/bm/queries/customers/useB
 import {
   getActiveLoanSummary,
   getBranchCustomerProfileSummary,
+  mapLoanRepaymentProgessData,
+  mapSavingsProgressData,
   ROUTES,
 } from "@/lib/utils";
 import BreadCrumb from "./BreadCrumb";
-import DrawerTable from "./DrawerTable";
-import PieChart from "./PieChart";
 import RepaymentProgress from "./RepaymentProgress";
 
 import { useBranchCustomerLoan } from "@/app/dashboard/bm/queries/loan/useBranchCustomerLoan";
 import { useBranchCustomerSavings } from "@/app/dashboard/bm/queries/loan/useBranchCustomerSavings";
+import { useLoanPaymentSchedule } from "@/app/dashboard/bm/queries/loan/useLoanPaymentSchedule";
+import { useCustomerSavingsProgress } from "@/app/dashboard/bm/queries/savings/useCustomerSavingsProgress";
 import { usePageChange } from "@/app/hooks/usePageChange";
 import { PaginationKey } from "@/app/types/dashboard";
+import LoanRepaymentChart from "./LoanRepaymentChart";
 import ProfileSummary from "./ProfileSummary";
+import SavingsChart from "./SavingsChart";
 import BranchCustomerSavingsTable from "./table/BranchCustomerSavingsTable";
-import { useLoanPaymentSchedule } from "@/app/dashboard/bm/queries/loan/useLoanPaymentSchedule";
 import PaymentScheduleTable from "./table/PaymentScheduleTable";
 
 export default function CustomerDetails() {
@@ -58,50 +61,37 @@ export default function CustomerDetails() {
     data: paymentScheduleData,
   } = useLoanPaymentSchedule();
 
+  const {
+    isLoading: isLoadingSavingsProgress,
+    error: savingsProgressError,
+    data: savingsProgress,
+  } = useCustomerSavingsProgress();
+
+  const savingsSummary = savingsProgress
+    ? mapSavingsProgressData(savingsProgress)
+    : [];
+
+  const loanSummary = activeLoan ? mapLoanRepaymentProgessData(activeLoan) : [];
 
   return (
     <>
       <BreadCrumb title="Customer Details" link={ROUTES.Bm.CUSTOMERS} />
       <div className="flex flex-wrap gap-6 my-5 lg:flex-nowrap">
-        <div className="flex flex-col items-center w-full gap-4 px-5 bg-white rounded-lg sm:flex-row">
-          <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48">
-            <PieChart />
-          </div>
-
-          <div className="text-center sm:text-left">
-            <h1 className=" text-neutral-700 text-md">Loan Repayment</h1>
-            <div className="py-5">
-              <p className="text-sm text-gray-600">
-                Next Payment - Jan 15, 2025
-              </p>
-              <div className="flex items-center justify-between gap-4">
-                <h1 className="text-2xl font-bold">₦40,206.20</h1>
-                <span className="px-2 text-sm bg-green-200 rounded-full text-end">
-                  3.4%
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="w-full gap-4 px-10 bg-white rounded-lg">
+          <LoanRepaymentChart
+            data={loanSummary}
+            defaultIndex={0}
+            isLoading={isLoadingLoans}
+            error={loansError}
+          />
         </div>
-        <div className="flex flex-col items-center w-full gap-4 px-5 bg-white rounded-lg sm:flex-row">
-          <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48">
-            <PieChart />
-          </div>
-
-          <div className="text-center sm:text-left">
-            <h1 className=" text-neutral-700 text-md">Savings Account</h1>
-            <div className="py-5">
-              <p className="text-sm text-gray-600">
-                Next Payment - Jan 15, 2025
-              </p>
-              <div className="flex items-center justify-between gap-4">
-                <h1 className="text-2xl font-bold">₦40,206.20</h1>
-                <span className="px-2 text-sm bg-green-200 rounded-full text-end">
-                  3.4%
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="w-full gap-4 bg-white rounded-lg md:px-10">
+          <SavingsChart
+            data={savingsSummary}
+            defaultIndex={0}
+            isLoading={isLoadingSavingsProgress}
+            error={savingsProgressError}
+          />
         </div>
       </div>
 
@@ -147,15 +137,15 @@ export default function CustomerDetails() {
                   aria-label="close sidebar"
                   className="drawer-overlay"
                 ></label>
-                <ul className="z-50 min-h-full p-4 overflow-x-scroll bg-white menu w-80 md:w-140">
+                <ul className="z-50 min-h-full p-4 overflow-x-scroll bg-white menu w-80 md:w-200">
                   <h1 className="text-center text-md text-neutral-700">
                     Payment Schedule
                   </h1>
                   <PaymentScheduleTable
                     isLoading={isLoadingPaymentSchedule}
                     error={paymentScheduleError}
-                    item={paymentScheduleData?.data.schedule}
-                    meta={paymentScheduleData?.meta}
+                    item={paymentScheduleData?.schedule.items}
+                    meta={paymentScheduleData?.schedule.pagination}
                     onPageChange={(page) =>
                       handlePageChange(
                         page,
