@@ -3,7 +3,8 @@ import { useUrlParam } from "@/app/hooks/useUrlParam";
 import { CustomerService } from "@/app/services/customerService";
 import { ApiResponseError } from "@/app/types/auth";
 import { PaginationKey } from "@/app/types/dashboard";
-import { PaymentScheduleResponse } from "@/app/types/loan";
+import { PaymentSchedule } from "@/app/types/loan";
+
 
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
@@ -15,7 +16,7 @@ export function useLoanPaymentSchedule() {
     Number(value ?? 0)
   );
 
-  const { isLoading, error, data } = useQuery<PaymentScheduleResponse, AxiosError<ApiResponseError>>({
+  const { isLoading, error, data } = useQuery<PaymentSchedule, AxiosError<ApiResponseError>>({
     queryKey: ["payment-schedule", loanId, page, limit],
     queryFn: () => {
       return CustomerService.getLoanPaymentsSchedule({ loanId, page, limit });
