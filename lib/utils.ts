@@ -1,7 +1,7 @@
 import { CreditOfficerProfile, Summary } from "@/app/types/creditOfficer";
 import { CustomerData } from "@/app/types/customer";
 import { MetricProps, SummaryProps } from "@/app/types/dashboard";
-import { ActiveLoanData } from "@/app/types/loan";
+import { ActiveLoanData, SavingsProgressResponse } from "@/app/types/loan";
 import { MenuItem, Routes } from "@/app/types/routes";
 import { clsx, type ClassValue } from "clsx";
 import dayjs from "dayjs";
@@ -233,7 +233,25 @@ export function getCustomerMetrics({
   ];
 }
 
+export function mapSavingsProgressData(
+  data: SavingsProgressResponse
+): SummaryProps[] {
+  return [
+    { label: "Current Balance", value: data.currentBalance },
+    { label: "Remaining Amount", value: data.remainingAmount },
+    { label: "Total Deposited", value: data.totalDeposited },
+    { label: "Total Withdrawn", value: data.totalWithdrawn },
+  ];
+}
 
+export function mapLoanRepaymentProgessData(data: ActiveLoanData): SummaryProps[]{
+   return [
+    { label: "Total Repayable", value: Number(data.totalRepayable) },
+    { label: "Amount Paid", value: Number(data.amountPaid) },
+    
+  ];
+
+}
 
 export const reports: MetricProps[] = [
   {
