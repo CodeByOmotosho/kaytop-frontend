@@ -50,7 +50,7 @@ export interface ActiveLoanData {
   totalRepayable: string;
 }
 
-export interface Schedule {
+export interface Items {
   day: number;
   dueAmount: number;
   dueDate: string;
@@ -58,6 +58,11 @@ export interface Schedule {
   remainingBalance: number;
   shortfall: number;
   status: string;
+}
+
+export interface Schedule {
+  items: Items[];
+  pagination?: Meta;
 }
 
 export interface Summary {
@@ -77,13 +82,20 @@ export interface Summary {
 export interface PaymentSchedule {
   loanDetails: LoanDetails;
   loanId: number;
-  schedule: Schedule[];
+  schedule: Schedule;
   summary: Summary;
   userId: number;
   userName: string;
 }
 
-export interface PaymentScheduleResponse {
-  data: PaymentSchedule;
-  meta?: Meta;
+export interface SavingsProgressResponse {
+  currentBalance: number;
+  daysSinceStart: number;
+  isTargetAchieved: boolean;
+  progressPercentage: number;
+  remainingAmount: number;
+  targetAmount: number;
+  targetDescription: string;
+  totalDeposited: number;
+  totalWithdrawn: number;
 }
