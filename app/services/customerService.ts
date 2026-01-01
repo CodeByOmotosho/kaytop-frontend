@@ -9,7 +9,7 @@ import {
 import {
   ActiveLoanData,
   PaymentSchedule,
-  PaymentScheduleResponse,
+  SavingsProgressResponse,
 } from "../types/loan";
 
 interface QueryParamsProps {
@@ -105,9 +105,9 @@ export class CustomerService {
     loanId,
     page,
     limit,
-  }: QueryParamsProps): Promise<PaymentScheduleResponse> {
+  }: QueryParamsProps): Promise<PaymentSchedule> {
     try {
-      const response = await apiClient.get<PaymentSchedule>(
+      const response = await apiClient.get(
         `${apiBaseUrl}/loans/${loanId}/payment-schedule`,
         {
           params: {
@@ -116,7 +116,25 @@ export class CustomerService {
           },
         }
       );
-      return { data: response.data, meta: undefined };
+
+    //  console.log(response);
+      return response.data;
+    } catch (error: AxiosError | unknown) {
+      const err = error as AxiosError;
+      console.log("Error fetching all branch customer", err.response?.data);
+      throw err;
+    }
+  }
+
+    static async getCustomerSavingsProgress(customerId: number): Promise<SavingsProgressResponse> {
+    try {
+      const response = await apiClient.get(
+        `${apiBaseUrl}/savings/customer/${customerId}/progress`,
+        
+      );
+
+    // console.log(response);
+      return response.data;
     } catch (error: AxiosError | unknown) {
       const err = error as AxiosError;
       console.log("Error fetching all branch customer", err.response?.data);
