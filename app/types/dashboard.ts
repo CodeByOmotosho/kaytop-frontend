@@ -12,7 +12,8 @@ export interface MetricProps {
 
 export interface SummaryProps {
   label: string;
-  value?: string;
+  value?: string | number;
+  [key: string]: string | number | undefined;
 }
 
 export interface DashboardKpi {
@@ -182,6 +183,7 @@ export enum PaginationKey {
   branch_loan_page = "branchLoanPage",
   active_loan_id = "loanId",
   payment_schedule_page = "paymentSchedulePage",
+  customer_id = "customerId",
 }
 
 export interface TableStateProps {
