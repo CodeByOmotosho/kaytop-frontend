@@ -1,16 +1,15 @@
 import { ApiResponseError } from "@/app/types/auth";
-import { Transactions } from "@/app/types/customer";
 import { Meta } from "@/app/types/dashboard";
+import { Items } from "@/app/types/loan";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { AxiosError } from "axios";
 import Pagination from "../Pagination";
 import TableState from "./TableState";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { Schedule } from "@/app/types/loan";
 
 interface TableProps {
   isLoading: boolean;
   error: AxiosError<ApiResponseError> | null;
-  item?: Schedule[];
+  item?: Items[];
   meta?: Meta;
   onPageChange?: (page: number) => void;
 }
@@ -51,7 +50,7 @@ export default function PaymentScheduleTable({
             return (
               <tr key={index}>
                 <td>
-                  {schedule.day}
+                 Day {schedule.day}
                 </td>
                 <td>{formatCurrency(schedule.paidAmount)}</td>
                 <td>{formatCurrency(schedule.dueAmount)}</td>
