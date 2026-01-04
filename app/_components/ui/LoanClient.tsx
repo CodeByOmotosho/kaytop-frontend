@@ -2,21 +2,21 @@
 import { useDashboardQuery } from "@/app/dashboard/bm/queries/kpi/useDashboardQuery";
 import { useBranchLoans } from "@/app/dashboard/bm/queries/loan/useBranchLoans";
 import { useLoanDetails } from "@/app/dashboard/bm/queries/loan/useLoanDetails";
+import { useMissedPayment } from "@/app/dashboard/bm/queries/loan/useMissedPayment";
 import { usePageChange } from "@/app/hooks/usePageChange";
 import { PaginationKey } from "@/app/types/dashboard";
 import { getBranchLoanMetrics } from "@/lib/utils";
+import { useState } from "react";
 import DashboardHeader from "./DashboardHeader";
 import LoanSummary from "./LoanSummary";
 import Metric from "./Metric";
-import BranchLoanTable from "./table/BranchLoanTable";
 import LoanRepaymentTable from "./table/LoanRepaymentTable";
-import { useState } from "react";
-import { useMissedPayment } from "@/app/dashboard/bm/queries/loan/useMissedPayment";
+import LoanTable from "./table/LoanTable";
 import MissedPaymentTable from "./table/MissedPaymentTable";
 
 export default function LoanClient() {
   const { isLoading, error, data } = useDashboardQuery();
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<undefined | string>();
 
   const metricData = getBranchLoanMetrics({ data });
   const {
@@ -95,9 +95,10 @@ export default function LoanClient() {
             className="tab"
             aria-label="All Loans"
             defaultChecked
+            onClick={() => setStatus(undefined)}
           />
           <div className="p-10 bg-white tab-content">
-            <BranchLoanTable
+            <LoanTable
               isLoading={isLoadingLoan}
               error={branchLoanError}
               item={branchLoan?.data}
@@ -105,7 +106,7 @@ export default function LoanClient() {
               onPageChange={(page) =>
                 handlePageChange(page, PaginationKey.branch_loan_page)
               }
-              handleClick={handleClick}
+              onView={handleClick}
             />
           </div>
 
@@ -116,7 +117,18 @@ export default function LoanClient() {
             aria-label="Active"
             onClick={() => setStatus("active")}
           />
-          <div className="p-10 bg-white tab-content">Tab content 2</div>
+          <div className="p-10 bg-white tab-content">
+            <LoanTable
+              isLoading={isLoadingLoan}
+              error={branchLoanError}
+              item={branchLoan?.data}
+              meta={branchLoan?.meta}
+              onPageChange={(page) =>
+                handlePageChange(page, PaginationKey.active_loan_page)
+              }
+              onView={handleClick}
+            />
+          </div>
 
           <input
             type="radio"
@@ -125,12 +137,24 @@ export default function LoanClient() {
             aria-label="Completed"
             onClick={() => setStatus("completed")}
           />
-          <div className="p-10 bg-white tab-content">Tab content 3</div>
+          <div className="p-10 bg-white tab-content">
+            <LoanTable
+              isLoading={isLoadingLoan}
+              error={branchLoanError}
+              item={branchLoan?.data}
+              meta={branchLoan?.meta}
+              onPageChange={(page) =>
+                handlePageChange(page, PaginationKey.completed_loan_page)
+              }
+              onView={handleClick}
+            />
+          </div>
           <input
             type="radio"
             name="my_tabs_2"
             className="tab"
             aria-label="Missed payments"
+            onClick={() => setStatus(undefined)}
           />
           <div className="p-10 bg-white tab-content">
             <MissedPaymentTable
