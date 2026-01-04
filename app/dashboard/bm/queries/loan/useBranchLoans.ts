@@ -6,14 +6,14 @@ import { BranchLoanResponse } from "@/app/types/loan";
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
-export function useBranchLoans(status: string) {
+export function useBranchLoans(status?: string) {
   const { page, limit } = useUrlPagination(PaginationKey.branch_loan_page);
 
   const { isLoading, error, data } = useQuery<
     BranchLoanResponse,
     AxiosError<ApiResponseError>
   >({
-    queryKey: ["branch-loans", page, limit],
+    queryKey: ["branch-loans", page, limit, status],
     queryFn: () => {
       return LoanService.getBranchLoans({ page, limit, status });
     },
