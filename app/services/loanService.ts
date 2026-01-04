@@ -12,12 +12,14 @@ interface QueryParamsProps {
   loanId?: number;
   page: number;
   limit: number;
+  status?: string
 }
 
 export class LoanService {
   static async getBranchLoans({
     page,
     limit,
+    status
   }: QueryParamsProps): Promise<BranchLoanResponse> {
     try {
       const response = await apiClient.get<BranchLoanApiResponse>(
@@ -26,6 +28,7 @@ export class LoanService {
           params: {
             page,
             limit,
+            status,
           },
         }
       );
@@ -48,10 +51,6 @@ export class LoanService {
     }
   }
 
-  // {{baseUrl}}/loans/:loanId/summary
-  // {{baseUrl}}/loans/:loanId/payment-schedule
-  // {{baseUrl}}/loans/:loanId/details
-  // {{baseUrl}}/loans?page=1&limit=20
 
   static async getLoanDetails({
     loanId,
@@ -78,4 +77,6 @@ export class LoanService {
       throw err;
     }
   }
+
+  
 }
