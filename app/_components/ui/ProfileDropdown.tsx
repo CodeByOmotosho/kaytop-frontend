@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "@/app/context/AuthContext";
+import { ProfileResponse } from "@/app/types/settings";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,14 +13,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/contexts/AuthContext";
-import { profileService } from "@/lib/services/profile";
-import { useToast } from "@/app/hooks/useToast";
-import ProfileManagementModal from "./ProfileManagementModal";
-import ChangePasswordModal from "./ChangePasswordModal";
-import type { AdminProfile } from "@/lib/api/types";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import SpinnerLg from "./SpinnerLg";
+import Link from "next/link";
 
-export default function ProfileDropdown() {
+interface ProfileProps {
+  data?: ProfileResponse;
+}
+
+export default function ProfileDropdown({ data }: ProfileProps) {
+ 
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -27,94 +32,45 @@ export default function ProfileDropdown() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
   const router = useRouter();
-  const { user, logout } = useAuth();
-  const { success, error } = useToast();
-
-  // Load profile data on component mount
-  useEffect(() => {
-    if (user) {
-      setProfile(user);
-      loadProfile();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
-    try {
-      setIsLoadingProfile(true);
-      const profileData = await profileService.getProfile();
-      setProfile(profileData);
-    } catch (err) {
-      console.error('Failed to load profile:', err);
-      // Use existing user data if profile fetch fails
-      if (user) {
-        setProfile(user);
-      }
-    } finally {
-      setIsLoadingProfile(false);
-    }
+  const handleLogout = () => {
+    logOut();
+    toast.success("You have successfully logged out");
+    router.push(ROUTES.Bm.Auth.LOGIN);
   };
 
-  const handleProfileClick = () => {
-    setOpen(false);
-    setShowProfileModal(true);
-  };
-
-  const handleChangePasswordClick = () => {
-    setOpen(false);
-    setShowPasswordModal(true);
-  };
-
-  const handleSettingsClick = () => {
-    setOpen(false);
-    router.push('/dashboard/system-admin/settings');
-  };
-
-  const handleLogoutClick = () => {
-    setOpen(false);
-    setShowLogoutConfirm(true);
-  };
-
-  const handleLogoutConfirm = async () => {
-    try {
-      await logout();
-      success('Logged out successfully');
-      router.push('/auth/login');
-    } catch (err) {
-      console.error('Logout error:', err);
-      error('Failed to logout properly');
-      // Force redirect even if logout fails
-      router.push('/auth/login');
-    } finally {
-      setShowLogoutConfirm(false);
-    }
-  };
-
-  const handleProfileUpdateSuccess = (updatedProfile: AdminProfile) => {
-    setProfile(updatedProfile);
-    success('Profile updated successfully');
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutConfirm(false);
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      setShowLogoutConfirm(false);
-    }
-  };
+  const src =
+    data && data.profilePicture !== null ? data.profilePicture : "/avatar.svg";
 
   return (
-    <div 
-      className="flex items-center gap-3"
-      style={{
-        marginRight: 'calc(100% - 96.25%)', // Position dropdown arrow at 96.25% from left
-      }}
-    >
-      <DropdownMenu onOpenChange={setOpen}>
-        <DropdownMenuTrigger 
-          className="flex items-center gap-3 transition outline-none cursor-pointer hover:opacity-80 focus:ring-2 focus:ring-[#7F56D9] focus:ring-offset-2 rounded-md"
-          aria-label="User menu"
+    <DropdownMenu onOpenChange={setOpen}>
+      <DropdownMenuTrigger className="flex items-center gap-2 transition outline-none cursor-pointer hover:opacity-80">
+        <span className="font-medium">{data?.firstName}</span>
+
+        <Avatar className="h-7 w-7">
+          <AvatarImage src={src} alt="avatar" />
+          <AvatarFallback>
+            <SpinnerLg />
+          </AvatarFallback>
+        </Avatar>
+
+        <ChevronDown
+          size={18}
+          className={`transition-transform ${open ? "rotate-180" : "rotate-0"}`}
+        />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <Link href={ROUTES.Bm.SETTING}>
+          <DropdownMenuItem className="cursor-pointer">
+            Settings
+          </DropdownMenuItem>
+        </Link>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-red-600 cursor-pointer"
+          onClick={handleLogout}
         >
           {/* User name - positioned at 78.75% from left, 34.29% from top */}
           <span 
