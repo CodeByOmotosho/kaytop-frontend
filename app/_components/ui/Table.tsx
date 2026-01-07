@@ -1,115 +1,176 @@
-import React, { JSX } from "react";
-import Pagination from "./Pagination";
+'use client';
 
-export default function Table(): JSX.Element {
+import React, { useState } from 'react';
+import { ChevronUpIcon, ChevronDownIcon } from 'lucide-react';
+
+// Branch Record Interface
+export interface BranchRecord {
+  id: string;
+  branchId: string;
+  name: string;
+  cos: string;
+  customers: number;
+  dateCreated: string;
+}
+
+// Generic Table Props Interface
+interface TableProps {
+  data: any[];
+  tableType: string;
+  sortColumn?: string | null;
+  sortDirection?: 'asc' | 'desc';
+  onSort?: (column: string) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
+  onRowClick?: (row: any) => void;
+}
+
+// Column Configuration Interface
+interface ColumnConfig {
+  key: string;
+  label: string;
+  sortable?: boolean;
+  render?: (value: any, row: any) => React.ReactNode;
+}
+
+// Default export
+export default function Table({
+  data,
+  tableType,
+  sortColumn,
+  sortDirection,
+  onSort,
+  onSelectionChange,
+  onRowClick
+}: TableProps) {
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+
+  // Column configurations for different table types
+  const getColumnConfig = (type: string): ColumnConfig[] => {
+    switch (type) {
+      case 'branches':
+        return [
+          { key: 'branchId', label: 'Branch ID', sortable: true },
+          { key: 'name', label: 'Branch Name', sortable: true },
+          { key: 'cos', label: 'Credit Officers', sortable: true },
+          { key: 'customers', label: 'Customers', sortable: true },
+          { key: 'dateCreated', label: 'Date Created', sortable: true }
+        ];
+      default:
+        // Default configuration for unknown table types
+        return Object.keys(data[0] || {}).map(key => ({
+          key,
+          label: key.charAt(0).toUpperCase() + key.slice(1),
+          sortable: true
+        }));
+    }
+  };
+
+  const columns = getColumnConfig(tableType);
+
+  // Handle row selection
+  const handleRowSelect = (rowId: string, checked: boolean) => {
+    const newSelection = checked 
+      ? [...selectedRows, rowId]
+      : selectedRows.filter(id => id !== rowId);
+    
+    setSelectedRows(newSelection);
+    onSelectionChange?.(newSelection);
+  };
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    const newSelection = checked ? data.map(row => row.id) : [];
+    setSelectedRows(newSelection);
+    onSelectionChange?.(newSelection);
+  };
+
+  // Handle sort
+  const handleSort = (columnKey: string) => {
+    onSort?.(columnKey);
+  };
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-[#EAECF0] p-8 text-center">
+        <p className="text-[#475467]">No data available</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-md">
-        <thead>
+    <div className="bg-white rounded-lg border border-[#EAECF0] overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-[#F9FAFB]">
           <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Job</th>
-            <th>company</th>
-            <th>location</th>
-            <th>Last Login</th>
-            <th>Favorite Color</th>
+            {/* Selection column */}
+            {onSelectionChange && (
+              <th className="px-4 py-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.length === data.length && data.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-[#D0D5DD]"
+                />
+              </th>
+            )}
+            
+            {/* Data columns */}
+            {columns.map((column) => (
+              <th 
+                key={column.key}
+                className={`px-4 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider ${
+                  column.sortable ? 'cursor-pointer hover:bg-[#F2F4F7]' : ''
+                }`}
+                onClick={() => column.sortable && handleSort(column.key)}
+              >
+                <div className="flex items-center gap-1">
+                  {column.label}
+                  {column.sortable && sortColumn === column.key && (
+                    sortDirection === 'asc' 
+                      ? <ChevronUpIcon className="w-4 h-4" />
+                      : <ChevronDownIcon className="w-4 h-4" />
+                  )}
+                </div>
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <th>1</th>
-            <td>Cy Ganderton</td>
-            <td>Quality Control Specialist</td>
-            <td>Littel, Schaden and Vandervort</td>
-            <td>Canada</td>
-            <td>12/16/2020</td>
-            <td>Blue</td>
-          </tr>
-          <tr>
-            <th>2</th>
-            <td>Hart Hagerty</td>
-            <td>Desktop Support Technician</td>
-            <td>Zemlak, Daniel and Leannon</td>
-            <td>United States</td>
-            <td>12/5/2020</td>
-            <td>Purple</td>
-          </tr>
-          <tr>
-            <th>3</th>
-            <td>Brice Swyre</td>
-            <td>Tax Accountant</td>
-            <td>Carroll Group</td>
-            <td>China</td>
-            <td>8/15/2020</td>
-            <td>Red</td>
-          </tr>
-          <tr>
-            <th>4</th>
-            <td>Marjy Ferencz</td>
-            <td>Office Assistant I</td>
-            <td>Rowe-Schoen</td>
-            <td>Russia</td>
-            <td>3/25/2021</td>
-            <td>Crimson</td>
-          </tr>
-          <tr>
-            <th>5</th>
-            <td>Yancy Tear</td>
-            <td>Community Outreach Specialist</td>
-            <td>Wyman-Ledner</td>
-            <td>Brazil</td>
-            <td>5/22/2020</td>
-            <td>Indigo</td>
-          </tr>
-          <tr>
-            <th>6</th>
-            <td>Irma Vasilik</td>
-            <td>Editor</td>
-            <td>Wiza, Bins and Emard</td>
-            <td>Venezuela</td>
-            <td>12/8/2020</td>
-            <td>Purple</td>
-          </tr>
-          <tr>
-            <th>7</th>
-            <td>Meghann Durtnal</td>
-            <td>Staff Accountant IV</td>
-            <td>Schuster-Schimmel</td>
-            <td>Philippines</td>
-            <td>2/17/2021</td>
-            <td>Yellow</td>
-          </tr>
-          <tr>
-            <th>8</th>
-            <td>Sammy Seston</td>
-            <td>Accountant I</td>
-            <td>O&apos;Hara, Welch and Keebler</td>
-            <td>Indonesia</td>
-            <td>5/23/2020</td>
-            <td>Crimson</td>
-          </tr>
-          <tr>
-            <th>9</th>
-            <td>Lesya Tinham</td>
-            <td>Safety Technician IV</td>
-            <td>Turner-Kuhlman</td>
-            <td>Philippines</td>
-            <td>2/21/2021</td>
-            <td>Maroon</td>
-          </tr>
-          <tr>
-            <th>10</th>
-            <td>Zaneta Tewkesbury</td>
-            <td>VP Marketing</td>
-            <td>Sauer LLC</td>
-            <td>Chad</td>
-            <td>6/23/2020</td>
-            <td>Green</td>
-          </tr>
+        
+        <tbody className="bg-white divide-y divide-[#EAECF0]">
+          {data.map((row, index) => (
+            <tr 
+              key={row.id || index}
+              className={`hover:bg-[#F9FAFB] ${onRowClick ? 'cursor-pointer' : ''}`}
+              onClick={() => onRowClick?.(row)}
+            >
+              {/* Selection column */}
+              {onSelectionChange && (
+                <td className="px-4 py-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.includes(row.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleRowSelect(row.id, e.target.checked);
+                    }}
+                    className="rounded border-[#D0D5DD]"
+                  />
+                </td>
+              )}
+              
+              {/* Data columns */}
+              {columns.map((column) => (
+                <td key={column.key} className="px-4 py-4 text-sm text-[#475467]">
+                  {column.render 
+                    ? column.render(row[column.key], row)
+                    : row[column.key] || '-'
+                  }
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
-     <Pagination/>
     </div>
   );
 }
