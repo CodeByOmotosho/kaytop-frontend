@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 // import Input from "../_components/ui/input";
 
 
-export default function LoginPage() {
+export default function AgentLoginPage() {
   const [show, setShow] = useState(false);
 
   return (

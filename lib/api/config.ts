@@ -3,8 +3,10 @@
  * Centralized configuration for API endpoints and settings
  */
 
+import { apiBaseUrl } from "../config";
+
 export const API_CONFIG = {
-  BASE_URL: 'https://kaytop-production.up.railway.app',
+  BASE_URL: apiBaseUrl,
   TIMEOUT: 30000, // 30 seconds
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second
