@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { CustomerService } from "@/app/services/customerService";
 
 interface Customer {
   id: string;
@@ -13,36 +14,58 @@ interface Customer {
   dateJoined: string;
 }
 
-const customers: Customer[] = [
-  {
-    id: "43756",
-    name: "Ademola Jumoke",
-    status: "Active",
-    phone: "+2348160006000",
-    email: "elford@mac.com",
-    dateJoined: "June 03, 2024",
-  },
-  {
-    id: "43178",
-    name: "Adegboyega Precious",
-    status: "Active",
-    phone: "+2348123456789",
-    email: "bradl@comcast.net",
-    dateJoined: "Dec 24, 2023",
-  },
-  {
-    id: "70668",
-    name: "Nneka Chukwu",
-    status: "Scheduled",
-    phone: "+2349044449999",
-    email: "fwitness@yahoo.ca",
-    dateJoined: "Nov 11, 2024",
-  },
-];
+// const customers: Customer[] = [
+//   {
+//     id: "43756",
+//     name: "Ademola Jumoke",
+//     status: "Active",
+//     phone: "+2348160006000",
+//     email: "elford@mac.com",
+//     dateJoined: "June 03, 2024",
+//   },
+//   {
+//     id: "43178",
+//     name: "Adegboyega Precious",
+//     status: "Active",
+//     phone: "+2348123456789",
+//     email: "bradl@comcast.net",
+//     dateJoined: "Dec 24, 2023",
+//   },
+//   {
+//     id: "70668",
+//     name: "Nneka Chukwu",
+//     status: "Scheduled",
+//     phone: "+2349044449999",
+//     email: "fwitness@yahoo.ca",
+//     dateJoined: "Nov 11, 2024",
+//   },
+// ];
 
 export default function CustomersPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+const [loading, setLoading] = useState(true);
+const [page, setPage] = useState(1);
+const [totalPages, setTotalPages] = useState(0);
+
+useEffect(() => {
+    async function loadCustomers() {
+      try {
+        const res = await CustomerService.getCustomersByBranch({
+          page: 1,
+          limit: 20,
+        });
+        setCustomers(res.data);
+      } catch {
+        console.error("Failed to load customers");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCustomers();
+  }, []);
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -87,6 +110,9 @@ export default function CustomersPage() {
               <th className="p-4"></th>
             </tr>
           </thead>
+          {loading ? (
+  <p className="p-6 text-sm text-gray-500">Loading customers...</p>
+) : (
           <tbody>
             {customers.map((c) => (
               <tr
@@ -104,7 +130,7 @@ export default function CustomersPage() {
                   className="p-4 font-medium cursor-pointer"
                   onClick={() => goToCustomer(c.id)}
                 >
-                  {c.name}
+                  {c.firstName} {c.lastName}
                   <div className="text-xs text-gray-400">ID: {c.id}</div>
                 </td>
                 <td className="p-4">
@@ -118,7 +144,7 @@ export default function CustomersPage() {
                     {c.status}
                   </span>
                 </td>
-                <td className="p-4">{c.phone}</td>
+                <td className="p-4">{c.mobileNumber}</td>
                 <td className="p-4">{c.email}</td>
                 <td className="p-4">{c.dateJoined}</td>
                 <td className="p-4 flex gap-3">
@@ -133,6 +159,7 @@ export default function CustomersPage() {
             ))}
 
           </tbody>
+)}
         </table>
       </div>
     </div>
