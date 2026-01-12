@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MoreVertical, Calendar, Filter, Pencil, Trash2 } from "lucide-react";
+import { LoanService } from "@/app/services/loanService";
 
 
 const stats = [
@@ -52,6 +53,15 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function LoansPage() {
     const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
+    const [loans, setLoans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    LoanService.getBranchLoans({ page: 1, limit: 20 })
+      .then((res) => setLoans(res.data))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
@@ -123,7 +133,14 @@ export default function LoansPage() {
           </thead>
 
           <tbody>
-            {loans.map((loan) => (
+            {loading ? (
+          <tr>
+            <td colSpan={8} className="p-6 text-center text-slate-500">
+              Loading loans...
+            </td>
+          </tr>
+        ) : (
+            loans.map((loan) => (
               <tr key={loan.id} className="border-t">
                 <td className="p-4">
                    <input
@@ -150,7 +167,7 @@ export default function LoansPage() {
                   <Pencil size={16} className="text-slate-400 cursor-pointer" />
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>
