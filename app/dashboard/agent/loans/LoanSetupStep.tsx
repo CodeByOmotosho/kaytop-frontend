@@ -376,6 +376,11 @@ export default function LoanSetupStep({
 
   const submit = async () => {
     if (!customerId || amount <= 0 || !file) return;
+    
+    if (!file) {
+    toast.error("Please upload disbursement proof");
+    return;
+  }
 
     const draft: LoanDraft = {
       customerId,
@@ -397,6 +402,7 @@ export default function LoanSetupStep({
 
       await LoanService.disburseLoan(loan.id, formData);
 
+      toast.success("Loan created and disbursed successfully");
       onSuccess();
     } catch (error: any) {
       const message =
