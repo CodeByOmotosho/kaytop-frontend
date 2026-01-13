@@ -57,7 +57,7 @@ interface KpiCardsProps {
 }
 
 // KPI cards
-function KpiCards({
+export function KpiCards({
   loanAmount,
   nextPayment,
   nextDate,
@@ -117,7 +117,7 @@ function KpiCards({
 
 
 // ActiveLoan card
-function ActiveLoanCard({
+export function ActiveLoanCard({
   loanId,
   amount,
   outstanding,
@@ -376,7 +376,7 @@ function handleViewSchedule() {
            {/* KPI CARDS */}
                 <KpiCards
                   loanAmount={Number(loan?.totalRepayable)}
-                  nextPayment={Number(loan.dailyRepayment)}
+                  nextPayment={Number(loan?.dailyRepayment)}
                   nextDate={loan.dueDate}
                   savingsBalance={Number(savings?.data?.balance ?? 0)}
                   loanChartData={loanSummary}
@@ -406,7 +406,7 @@ function handleViewSchedule() {
             amount={Number(loan.amount)}
             outstanding={Number(loan.remainingBalance)}
              amountPaid={Number(loan.amountPaid)}
-            dailyPayment={Number(loan.dailyRepayment)}
+            dailyPayment={Number(loan?.dailyRepayment)}
             interestRate={Number(loan.interestRate)}
             disburseDate={loan.disbursementDate}
             dueDate={loan.dueDate}

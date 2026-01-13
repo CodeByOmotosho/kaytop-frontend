@@ -199,6 +199,7 @@ export enum PaginationKey {
   report_page = "ReportPage",
   report_type = "reportType",
   report_id = "reportId",
+  customer_savings_transactions_page = "customerSavingsTransactionsPage",
 }
 
 export interface TableStateProps {

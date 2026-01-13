@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
+import DashboardWrapper from "@/app/_components/ui/auth/DashboardWrapper";
 
 export default function DashboardLayout({
   children,
@@ -114,7 +115,13 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-6xl mx-auto p-6">{children}</main>
+      <main className="flex-1 w-full max-w-6xl mx-auto p-6">
+        <DashboardWrapper>
+                
+                  {children}
+              
+                </DashboardWrapper>
+      </main>
 
       {/* Footer */}
       <footer className="w-full py-4 text-center text-sm text-gray-500">
