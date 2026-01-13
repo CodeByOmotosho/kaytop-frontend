@@ -3,7 +3,6 @@
 import { Label } from "@/app/_components/ui/label";
 import { useCustomerFlow } from "../AddCustomerFlowProvider";
 import Button from "@/app/_components/ui/Button";
-import { Step1Schema } from "@/app/schema/Step1Schema";
 import { useEffect, useRef, useState } from "react";
 import { UserService } from "@/app/services/userService";
 import { Controller } from "react-hook-form";
