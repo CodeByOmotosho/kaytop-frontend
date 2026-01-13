@@ -2,9 +2,8 @@ import React from "react";
 
 type ButtonProps = {
   children: React.ReactNode;
-  variant?: "primary" | "tertiary" | "danger" | "secondary";
+  variant?: "primary" | "tertiary" | "danger";
   size?: "sm" | "md" | "lg";
-  type?: "button" | "submit" | "reset" ;
   fullWidth?: boolean;
   className?: string;
   disabled?: boolean;
@@ -13,7 +12,6 @@ type ButtonProps = {
 const variants = {
   primary: "bg-primary-300 text-primary hover:text-white font-medium",
   tertiary: "bg-brand-purple text-white hover:text-white font-medium",
-  secondary: "text-brand-purple hover:bg-brand-purple hover:text-white",
   danger: "bg-red-500 text-white hover:bg-red-600",
 };
 
@@ -27,7 +25,6 @@ export default function Button({
   children,
   variant = "primary",
   size = "md",
-  type = "submit",
   fullWidth = false,
   className = "",
   disabled = false,
@@ -51,7 +48,6 @@ export default function Button({
                        
                        `}
       disabled={disabled}
-      type={type}
     >
       {children}
     </button>
