@@ -3,7 +3,7 @@
  * Handles admin profile operations including viewing, editing, and profile picture upload
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type {
   AdminProfile,

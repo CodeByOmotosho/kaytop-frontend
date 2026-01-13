@@ -3,7 +3,7 @@
  * Single service that works for all user roles using direct backend endpoints
  */
 
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import type {
   User,
   UserFilterParams,
@@ -39,12 +39,12 @@ class UnifiedUserAPIService implements UnifiedUserService {
 
     const endpoint = `/admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<User>> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<User>> = await apiClient.get(endpoint);
     return response.data;
   }
 
   async getUserById(id: string): Promise<User> {
-    const response: ApiResponse<User> = await unifiedApiClient.get(`/admin/users/${id}`);
+    const response: ApiResponse<User> = await apiClient.get(`/admin/users/${id}`);
     return response.data;
   }
 
@@ -58,17 +58,17 @@ class UnifiedUserAPIService implements UnifiedUserService {
       state: data.state,
     };
 
-    const response: ApiResponse<User> = await unifiedApiClient.put(`/admin/users/${id}`, updateData);
+    const response: ApiResponse<User> = await apiClient.put(`/admin/users/${id}`, updateData);
     return response.data;
   }
 
   async createUser(userData: CreateUserRequest): Promise<User> {
-    const response: ApiResponse<User> = await unifiedApiClient.post('/admin/users', userData);
+    const response: ApiResponse<User> = await apiClient.post('/admin/users', userData);
     return response.data;
   }
 
   async deleteUser(id: string): Promise<void> {
-    await unifiedApiClient.delete(`/admin/users/${id}`);
+    await apiClient.delete(`/admin/users/${id}`);
   }
 
   async searchUsers(params: UserFilterParams): Promise<PaginatedResponse<User>> {
@@ -82,7 +82,7 @@ class UnifiedUserAPIService implements UnifiedUserService {
 
     const endpoint = `/users/filter${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<User>> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<User>> = await apiClient.get(endpoint);
     return response.data;
   }
 }

@@ -3,7 +3,7 @@
  * Handles system configuration management
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS, API_CONFIG } from '../api/config';
 import type { SystemSettings } from '../api/types';
 

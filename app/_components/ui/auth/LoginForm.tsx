@@ -32,7 +32,7 @@ type LoginData = z.infer<typeof schema>;
 
 export default function LoginForm() {
   const [isSubmitting, setisSubmitting] = useState(false);
-  const { login: auth, setCookie, isLoading } = useAuth();
+  const { login: auth, setCookie } = useAuth();
   const router = useRouter();
   const {
     register,
@@ -42,15 +42,6 @@ export default function LoginForm() {
   } = useForm<LoginData>({
     resolver: zodResolver(schema),
   });
-
-  // Don't render form until auth context is loaded
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <Spinner />
-      </div>
-    );
-  }
 
   const onSubmit = async (data: LoginData) => {
     setisSubmitting(true);

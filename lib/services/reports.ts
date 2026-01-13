@@ -4,7 +4,7 @@
  * Updated to use unified API client infrastructure with proper error handling and retry mechanisms
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { UnifiedAPIErrorHandler } from '../api/errorHandler';
 import { userProfileService } from './userProfile';

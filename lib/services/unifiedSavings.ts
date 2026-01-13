@@ -2,7 +2,7 @@
  * Unified Savings Service
  */
 
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import type {
   SavingsAccount,
   Transaction,
@@ -64,12 +64,12 @@ class UnifiedSavingsAPIService {
 
     const endpoint = `/savings/all${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<SavingsAccount> & { summary?: any }> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<SavingsAccount> & { summary?: any }> = await apiClient.get(endpoint);
     return response.data;
   }
 
   async getCustomerSavings(customerId: string): Promise<SavingsAccount> {
-    const response: ApiResponse<SavingsAccount> = await unifiedApiClient.get(`/savings/customer/${customerId}`);
+    const response: ApiResponse<SavingsAccount> = await apiClient.get(`/savings/customer/${customerId}`);
     return response.data;
   }
 
@@ -87,22 +87,22 @@ class UnifiedSavingsAPIService {
 
     const endpoint = `/savings/transactions/all${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<SavingsTransaction> & { summary?: any }> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<SavingsTransaction> & { summary?: any }> = await apiClient.get(endpoint);
     return response.data;
   }
 
   async approveWithdrawal(transactionId: string): Promise<Transaction> {
-    const response: ApiResponse<Transaction> = await unifiedApiClient.post(`/savings/transactions/${transactionId}/approve-withdraw`);
+    const response: ApiResponse<Transaction> = await apiClient.post(`/savings/transactions/${transactionId}/approve-withdraw`);
     return response.data;
   }
 
   async approveLoanCoverage(transactionId: string): Promise<Transaction> {
-    const response: ApiResponse<Transaction> = await unifiedApiClient.post(`/savings/transactions/${transactionId}/approve-loan-coverage`);
+    const response: ApiResponse<Transaction> = await apiClient.post(`/savings/transactions/${transactionId}/approve-loan-coverage`);
     return response.data;
   }
 
   async depositToCustomer(customerId: string, amount: number, description: string): Promise<Transaction> {
-    const response: ApiResponse<Transaction> = await unifiedApiClient.post(`/savings/customer/${customerId}/deposit`, {
+    const response: ApiResponse<Transaction> = await apiClient.post(`/savings/customer/${customerId}/deposit`, {
       amount,
       description
     });
@@ -110,7 +110,7 @@ class UnifiedSavingsAPIService {
   }
 
   async withdrawFromCustomer(customerId: string, amount: number, description: string): Promise<Transaction> {
-    const response: ApiResponse<Transaction> = await unifiedApiClient.post(`/savings/customer/${customerId}/withdraw`, {
+    const response: ApiResponse<Transaction> = await apiClient.post(`/savings/customer/${customerId}/withdraw`, {
       amount,
       description
     });

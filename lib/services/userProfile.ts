@@ -3,7 +3,7 @@
  * Handles user profile management and authentication settings
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS, API_CONFIG } from '../api/config';
 import type { AdminProfile } from '../api/types';
 import { DataTransformers } from '../api/transformers';

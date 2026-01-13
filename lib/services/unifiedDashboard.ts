@@ -3,7 +3,7 @@
  * Single service that works for all user roles using direct backend endpoints
  */
 
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { branchPerformanceService } from './branchPerformance';
 import { accurateDashboardService } from './accurateDashboard';
 import type {
@@ -95,7 +95,7 @@ class UnifiedDashboardAPIService implements UnifiedDashboardService {
     const endpoint = `/loans/disbursed/volume${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
     try {
-      const response = await unifiedApiClient.get(endpoint);
+      const response = await apiClient.get(endpoint);
       return this.transformChartData(response.data);
     } catch (error) {
       console.error('Disbursement chart fetch error:', error);

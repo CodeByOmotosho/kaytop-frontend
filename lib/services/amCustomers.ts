@@ -4,7 +4,7 @@
  * Updated to use unified endpoints after AM endpoints removal
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { DataTransformers } from '../api/transformers';
 import { APIErrorHandler } from '../api/errorHandler';

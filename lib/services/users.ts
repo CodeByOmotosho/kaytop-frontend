@@ -3,7 +3,7 @@
  * Handles user CRUD operations, filtering, and staff management
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type {
   User,

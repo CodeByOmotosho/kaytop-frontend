@@ -4,7 +4,7 @@
  * instead of using mock/calculated values
  */
 
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { growthCalculationService } from './growthCalculation';
 import type { DashboardKPIs, DashboardParams, StatisticValue } from '../api/types';
 
@@ -62,7 +62,7 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
       if (params?.branch) queryParams.append('branch', params.branch);
 
       const endpoint = `/dashboard/kpi${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      const response = await unifiedApiClient.get<any>(endpoint);
+      const response = await apiClient.get<any>(endpoint);
       
       return response.data || response;
     } catch (error) {
@@ -76,7 +76,7 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
    */
   private async fetchUsersData(): Promise<any[]> {
     try {
-      const response = await unifiedApiClient.get<any>('/admin/users?limit=1000');
+      const response = await apiClient.get<any>('/admin/users?limit=1000');
       
       if (response.data && Array.isArray(response.data.data)) {
         return response.data.data;
@@ -96,7 +96,7 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
    */
   private async fetchBranchesData(): Promise<string[]> {
     try {
-      const response = await unifiedApiClient.get<string[]>('/users/branches');
+      const response = await apiClient.get<string[]>('/users/branches');
       
       if (Array.isArray(response.data)) {
         return response.data;
@@ -126,7 +126,7 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
       queryParams.append('limit', '1000'); // Get more data for accurate calculations
       
       const endpoint = `/loans/all${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      const response = await unifiedApiClient.get<any>(endpoint);
+      const response = await apiClient.get<any>(endpoint);
       
       if (response.data && Array.isArray(response.data.data)) {
         return response.data.data;

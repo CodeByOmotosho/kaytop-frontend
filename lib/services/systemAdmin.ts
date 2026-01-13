@@ -3,7 +3,7 @@
  * Handles system admin specific data fetching following BM dashboard patterns
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type { PaginatedResponse } from '../api/types';
 

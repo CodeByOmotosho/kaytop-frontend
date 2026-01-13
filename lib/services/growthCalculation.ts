@@ -3,7 +3,7 @@
  * Calculates real growth percentages by comparing current period with previous period data
  */
 
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import type { DashboardParams } from '../api/types';
 
 export interface GrowthCalculationService {
@@ -202,7 +202,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
    */
   private async getPreviousBranchCount(params: DashboardParams): Promise<number> {
     try {
-      const response = await unifiedApiClient.get<string[]>('/users/branches');
+      const response = await apiClient.get<string[]>('/users/branches');
       const branches = Array.isArray(response.data) ? response.data : [];
       return branches.length;
     } catch (error) {
@@ -220,7 +220,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await unifiedApiClient.get<any>(`/admin/users?${queryParams.toString()}`);
+      const response = await apiClient.get<any>(`/admin/users?${queryParams.toString()}`);
       const users = response.data?.data || response.data || [];
       
       const creditOfficers = users.filter((user: any) => 
@@ -243,7 +243,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await unifiedApiClient.get<any>(`/admin/users?${queryParams.toString()}`);
+      const response = await apiClient.get<any>(`/admin/users?${queryParams.toString()}`);
       const users = response.data?.data || response.data || [];
       
       const customers = users.filter((user: any) => user.role === 'customer');
@@ -264,7 +264,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await unifiedApiClient.get<any>(`/loans/all?${queryParams.toString()}`);
+      const response = await apiClient.get<any>(`/loans/all?${queryParams.toString()}`);
       const loans = response.data?.data || response.data || [];
       
       return loans.length;
@@ -283,7 +283,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await unifiedApiClient.get<any>(`/loans/all?${queryParams.toString()}`);
+      const response = await apiClient.get<any>(`/loans/all?${queryParams.toString()}`);
       const loans = response.data?.data || response.data || [];
       
       const totalAmount = loans.reduce((sum: number, loan: any) => 
@@ -306,7 +306,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await unifiedApiClient.get<any>(`/loans/all?${queryParams.toString()}`);
+      const response = await apiClient.get<any>(`/loans/all?${queryParams.toString()}`);
       const loans = response.data?.data || response.data || [];
       
       const activeLoans = loans.filter((loan: any) => 
@@ -329,7 +329,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await unifiedApiClient.get<any>(`/loans/missed?${queryParams.toString()}`);
+      const response = await apiClient.get<any>(`/loans/missed?${queryParams.toString()}`);
       const missedLoans = response.data?.data || response.data || [];
       
       return missedLoans.length;

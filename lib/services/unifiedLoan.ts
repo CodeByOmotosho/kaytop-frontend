@@ -2,7 +2,7 @@
  * Unified Loan Service
  */
 
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import type {
   Loan,
   PaginatedResponse,
@@ -32,17 +32,17 @@ class UnifiedLoanAPIService {
 
     const endpoint = `/loans/all${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<Loan>> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<Loan>> = await apiClient.get(endpoint);
     return response.data;
   }
 
   async getLoanById(id: string): Promise<Loan> {
-    const response: ApiResponse<Loan> = await unifiedApiClient.get(`/loans/${id}`);
+    const response: ApiResponse<Loan> = await apiClient.get(`/loans/${id}`);
     return response.data;
   }
 
   async getCustomerLoans(customerId: string): Promise<PaginatedResponse<Loan>> {
-    const response: ApiResponse<PaginatedResponse<Loan>> = await unifiedApiClient.get(`/loans/customer/${customerId}`);
+    const response: ApiResponse<PaginatedResponse<Loan>> = await apiClient.get(`/loans/customer/${customerId}`);
     return response.data;
   }
 
@@ -55,7 +55,7 @@ class UnifiedLoanAPIService {
 
     const endpoint = `/loans/disbursed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<Loan>> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<Loan>> = await apiClient.get(endpoint);
     return response.data;
   }
 
@@ -68,7 +68,7 @@ class UnifiedLoanAPIService {
 
     const endpoint = `/loans/recollections${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<Loan>> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<Loan>> = await apiClient.get(endpoint);
     return response.data;
   }
 
@@ -81,7 +81,7 @@ class UnifiedLoanAPIService {
 
     const endpoint = `/loans/missed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
-    const response: ApiResponse<PaginatedResponse<Loan>> = await unifiedApiClient.get(endpoint);
+    const response: ApiResponse<PaginatedResponse<Loan>> = await apiClient.get(endpoint);
     return response.data;
   }
 
@@ -89,7 +89,7 @@ class UnifiedLoanAPIService {
    * Create new loan for customer
    */
   async createLoan(customerId: string, loanData: CreateLoanData): Promise<Loan> {
-    const response: ApiResponse<Loan> = await unifiedApiClient.post(`/loans/customer/${customerId}`, loanData);
+    const response: ApiResponse<Loan> = await apiClient.post(`/loans/customer/${customerId}`, loanData);
     return response.data;
   }
 
@@ -97,7 +97,7 @@ class UnifiedLoanAPIService {
    * Disburse loan
    */
   async disburseLoan(loanId: string): Promise<Loan> {
-    const response: ApiResponse<Loan> = await unifiedApiClient.post(`/loans/${loanId}/disburse`);
+    const response: ApiResponse<Loan> = await apiClient.post(`/loans/${loanId}/disburse`);
     return response.data;
   }
 
@@ -105,7 +105,7 @@ class UnifiedLoanAPIService {
    * Get loan repayments
    */
   async getLoanRepayments(loanId: string): Promise<any[]> {
-    const response: ApiResponse<any[]> = await unifiedApiClient.get(`/loans/${loanId}/repayments`);
+    const response: ApiResponse<any[]> = await apiClient.get(`/loans/${loanId}/repayments`);
     return response.data;
   }
 
@@ -113,7 +113,7 @@ class UnifiedLoanAPIService {
    * Get loan summary for customer
    */
   async getLoanSummary(customerId: string): Promise<any> {
-    const response: ApiResponse<any> = await unifiedApiClient.get(`/loans/customer/${customerId}/loan-summary`);
+    const response: ApiResponse<any> = await apiClient.get(`/loans/customer/${customerId}/loan-summary`);
     return response.data;
   }
 
@@ -121,7 +121,7 @@ class UnifiedLoanAPIService {
    * Get disbursement summary for customer
    */
   async getDisbursementSummary(customerId: string): Promise<any> {
-    const response: ApiResponse<any> = await unifiedApiClient.get(`/loans/customer/${customerId}/disbursement-summary`);
+    const response: ApiResponse<any> = await apiClient.get(`/loans/customer/${customerId}/disbursement-summary`);
     return response.data;
   }
 
@@ -129,7 +129,7 @@ class UnifiedLoanAPIService {
    * Approve loan
    */
   async approveLoan(id: string, notes?: string, conditions?: string[]): Promise<any> {
-    const response: ApiResponse<any> = await unifiedApiClient.post(`/loans/${id}/approve`, {
+    const response: ApiResponse<any> = await apiClient.post(`/loans/${id}/approve`, {
       notes,
       conditions
     });
@@ -140,7 +140,7 @@ class UnifiedLoanAPIService {
    * Decline loan
    */
   async declineLoan(id: string, reason: string, notes?: string): Promise<any> {
-    const response: ApiResponse<any> = await unifiedApiClient.post(`/loans/${id}/decline`, {
+    const response: ApiResponse<any> = await apiClient.post(`/loans/${id}/decline`, {
       reason,
       notes
     });
@@ -151,7 +151,7 @@ class UnifiedLoanAPIService {
    * Update loan stage
    */
   async updateLoanStage(id: string, stage: string, notes?: string): Promise<Loan> {
-    const response: ApiResponse<Loan> = await unifiedApiClient.put(`/loans/${id}/stage`, {
+    const response: ApiResponse<Loan> = await apiClient.put(`/loans/${id}/stage`, {
       stage,
       notes
     });

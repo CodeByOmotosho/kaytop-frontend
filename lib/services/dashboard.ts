@@ -4,7 +4,7 @@
  * Updated to include report statistics integration
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { branchPerformanceService } from './branchPerformance';
 import { accurateDashboardService } from './accurateDashboard';

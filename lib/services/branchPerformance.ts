@@ -3,8 +3,7 @@
  * Calculates best and worst performing branches based on multiple metrics
  */
 
-import { apiClient } from '../api/client';
-import { unifiedApiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type { BranchPerformance, DashboardParams, PaginatedResponse, Loan } from '../api/types';
 
@@ -130,7 +129,7 @@ class BranchPerformanceAPIService implements BranchPerformanceService {
       queryParams.append('limit', '1000'); // Large limit to get most data
       
       const url = `${endpoint}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      const response = await unifiedApiClient.get<any>(url);
+      const response = await apiClient.get<any>(url);
       
       // Handle different response formats
       if (response.data && Array.isArray(response.data)) {
@@ -153,7 +152,7 @@ class BranchPerformanceAPIService implements BranchPerformanceService {
    */
   private async fetchBranches(): Promise<string[]> {
     try {
-      const response = await unifiedApiClient.get<string[]>('/users/branches');
+      const response = await apiClient.get<string[]>('/users/branches');
       
       if (Array.isArray(response.data)) {
         return response.data;
@@ -190,7 +189,7 @@ class BranchPerformanceAPIService implements BranchPerformanceService {
    */
   private async fetchUsers(): Promise<any[]> {
     try {
-      const response = await unifiedApiClient.get<any>('/admin/users?limit=1000');
+      const response = await apiClient.get<any>('/admin/users?limit=1000');
       
       if (response.data && Array.isArray(response.data.data)) {
         return response.data.data;

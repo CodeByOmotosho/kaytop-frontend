@@ -3,7 +3,7 @@
  * Handles savings deposits, withdrawals, and loan coverage transactions
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type {
   SavingsAccount,

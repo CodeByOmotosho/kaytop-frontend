@@ -3,7 +3,7 @@
  * Handles fetching data for different dashboard tabs (disbursements, re-collections, savings, missed-payments)
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { bulkLoansService } from './bulkLoans';
 import { userService } from './users';

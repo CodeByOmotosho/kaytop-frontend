@@ -3,7 +3,7 @@
  * Handles loan CRUD operations, disbursements, and repayments
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type {
   Loan,

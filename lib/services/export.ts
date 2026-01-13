@@ -3,7 +3,7 @@
  * Handles data export functionality for various entities
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 
 export interface ExportService {

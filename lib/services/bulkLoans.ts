@@ -3,7 +3,7 @@
  * Handles bulk loan operations and statistics to optimize performance
  */
 
-import { apiClient } from '../api/client';
+import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { userService } from './users';
 import type {
