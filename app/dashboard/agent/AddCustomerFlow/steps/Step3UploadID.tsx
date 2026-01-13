@@ -1,138 +1,174 @@
-
-
-// "use client";
-
-// interface Step3UploadIDProps {
-//   onNext: () => void;
-//   onBack: () => void;
-//   onCapture: (file: File) => void;
-// }
-
-// export default function Step3UploadID({
-//   onNext,
-//   onBack,
-//   onCapture,
-// }: Step3UploadIDProps) {
-//   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     if (e.target.files && e.target.files[0]) {
-//       onCapture(e.target.files[0]);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <h2 className="text-xl font-semibold mb-4">Upload ID Card</h2>
-
-//       <div className="border rounded-xl p-6 text-center mb-6 bg-slate-50">
-//         <p className="font-medium mb-2">Capture or Upload a Valid ID</p>
-//         <p className="text-sm text-slate-600 mb-4">
-//           Driver’s License, NIN Slip, Voter’s Card, etc.
-//         </p>
-
-//         <label className="cursor-pointer block border border-dashed rounded-lg p-4 bg-white">
-//           <p className="text-sm text-slate-600">Click to upload</p>
-//           <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
-//         </label>
-//       </div>
-
-//       <div className="flex justify-between">
-//         <button onClick={onBack} className="btn-secondary px-6 py-3 rounded-md">
-//           Back
-//         </button>
-
-//         <button onClick={onNext} className="btn-primary px-6 py-3 rounded-md">
-//           Continue
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-
 "use client";
 
-import { useRef } from "react";
-import { UploadCloud } from "lucide-react";
+import React, { useRef, useState } from "react";
 import Button from "@/app/_components/ui/Button";
+import { UploadCloud, X } from "lucide-react";
 
 interface Step3UploadIDProps {
   onNext: () => void;
   onBack: () => void;
   onCapture: (file: File) => void;
+  openCamera: () => void;
 }
 
 export default function Step3UploadID({
   onNext,
   onBack,
   onCapture,
+  openCamera,
 }: Step3UploadIDProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileSelected, setFileSelected] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      onCapture(e.target.files[0]);
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    setFileSelected(file);
+    setPreview(URL.createObjectURL(file));
+    onCapture(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleClearPreview = () => {
+    setPreview(null);
+    setFileSelected(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const handleClickToCapture = () => {
+    openCamera();
+  };
+
+  const handleContinue = () => {
+    if (fileSelected) {
       onNext();
     }
   };
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <h2 className="text-[17px] font-semibold">Verify Your ID</h2>
-      <p className="text-[13px] text-slate-500 mt-1">
-        Kindly provide a valid government photo ID to verify your identity
+      <h2 className="text-lg font-semibold text-foreground">Verify Your ID</h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        Tell us about your customer. It only takes a few minutes.
       </p>
 
-      {/* Upload box */}
-      <div className="mt-6 bg-white rounded-xl border p-5">
-        <p className="text-[13px] font-semibold mb-3">Valid Government ID</p>
+      <div className="mt-6 bg-card rounded-xl border border-border p-5">
+        <p className="text-sm font-semibold text-foreground mb-4">Valid Government ID</p>
 
-        <div className="flex items-center gap-3">
-          {/* Icon Circle */}
-          <div className="w-10 h-10 rounded-full border flex items-center justify-center">
-            <UploadCloud className="w-5 h-5 text-slate-500" />
+        <div className="flex items-start gap-4">
+          {/* Upload Icon */}
+          <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center flex-shrink-0 bg-[hsl(220,14%,96%)]">
+            <UploadCloud className="w-5 h-5 text-[hsl(215,16%,47%)]" />
           </div>
 
-          {/* Upload area */}
-          <label className="flex-1 cursor-pointer border border-dashed rounded-md p-4 bg-bg-gray-50 hover:bg-slate-50 transition">
-            <p className="text-[13px] font-medium text-slate-700">
-              Click to Capture
-              <span className="text-slate-500"> or drag and drop</span>
-            </p>
-            <p className="text-[11px] text-slate-400">
-              SVG, PNG, JPG or GIF (max. 800×400px)
-            </p>
-
-            <input
-              type="file"
-              ref={inputRef}
-              accept="image/*"
-              onChange={handleFile}
-              className="hidden"
-            />
-          </label>
+          {/* Upload Area */}
+          <div className="flex-1">
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 transition-all cursor-pointer ${
+                isDragging
+                  ? "border-[hsl(262,83%,58%)] bg-[hsl(262,83%,58%)]/5"
+                  : "border-border hover:border-[hsl(262,83%,58%)]/50 hover:bg-[hsl(220,14%,96%)]/50"
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <div className="text-center">
+                <p className="text-sm text-foreground">
+                  <button
+                    type="button"
+                    onClick={handleClickToCapture}
+                    className="text-[hsl(262,83%,58%)] font-medium hover:underline"
+                  >
+                    Click to Capture
+                  </button>
+                  {" or "}
+                  <button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
+                    className="text-[hsl(262,83%,58%)] font-medium hover:underline"
+                  >
+                    drag and drop
+                  </button>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  SVG, PNG, JPG or GIF (max. 800×400px)
+                </p>
+              </div>
+              <input
+                type="file"
+                ref={inputRef}
+                accept="image/*"
+                onChange={handleInputChange}
+                className="hidden"
+              />
+            </div>
+          </div>
         </div>
+
+        {/* Preview Section */}
+        {preview && (
+          <div className="mt-5 relative">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Preview:</p>
+            <div className="relative inline-block">
+              <img
+                src={preview}
+                alt="ID Preview"
+                className="w-48 h-32 object-cover rounded-lg border border-border"
+              />
+              <button
+                onClick={handleClearPreview}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Buttons */}
-      <div className="flex justify-between mt-6 gap-3">
+      {/* Action Buttons */}
+       <div className="flex justify-between mt-6 gap-3">
         <Button
-        variant="secondary"
+          variant="secondary"
           onClick={onBack}
-          className="w-full py-2 border rounded-lg text-[14px] bg-gray-200"
+          className="flex-1 py-2 bg-gray-200 text-sm"
         >
           Cancel
         </Button>
 
         <Button
-        variant="tertiary"
-          onClick={onNext}
-          className="w-full py-2  text-white rounded-lg text-[14px] "
+          onClick={handleContinue}
+          variant="tertiary"
+          disabled={!fileSelected}
+          className="flex-1  text-sm py-2"
         >
           Continue
         </Button>
-      </div>
+        </div>
+
+  
     </div>
   );
 }
-
