@@ -24,7 +24,7 @@ export function CustomerHeader({ title = "Customers", data, isLoading }: Custome
   return (
     <>
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">{title}</h1>
+        <h1 className="text-2xl md:text-3xl  font-semibold text-slate-900">{title}</h1>
       </div>
 
       <div className="flex flex-wrap items-center justify-between mt-8 gap-y-2">

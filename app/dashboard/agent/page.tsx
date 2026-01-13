@@ -14,6 +14,9 @@ import {
 } from "recharts";
 import { useCustomerFlow } from "./AddCustomerFlow/AddCustomerFlowProvider";
 import CreateLoanModal from "./loans/CreateLoanModal";
+import { CustomerHeader } from "@/app/_components/ui/CustomerHeader";
+import { useDashboardQuery } from "../bm/queries/kpi/useDashboardQuery";
+import { PenLine, UserRoundPlus } from "lucide-react";
 
 type Payment = {
   name: string;
@@ -69,40 +72,14 @@ const payments: Payment[] = [
 export default function AgentDashboardPage() {
    const { start } = useCustomerFlow();
    const [isLoanModalOpen, setLoanModalOpen] = useState(false);
+    const { isLoading, error, data } = useDashboardQuery();
+   
 
   return (
     <div className="space-y-6 pb-12">
       {/* Header row: Title + controls */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-            Dashboard
-          </h1>
-        </div>        
-      </div>
+       <CustomerHeader title="Dashboard" data={data} isLoading={isLoading} />
 
-      {/* Filters */}
-      <div className="flex items-center gap-3 justify-between">
-          <div className="hidden sm:flex gap-2">
-            {["12 months", "30 days", "7 days", "24 hours"].map((t) => (
-              <button
-                key={t}
-                className="px-3 py-1.5 rounded-md border text-sm text-slate-700 bg-white hover:bg-slate-50"
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-md border text-sm bg-white hover:bg-slate-50">
-              Select dates
-            </button>
-            <button className="px-3 py-1.5 rounded-md border text-sm bg-white hover:bg-slate-50">
-              Filters
-            </button>
-          </div>
-        </div>
 
       {/* Activity area: Bar chart + donut on right */}
       <section className="bg-white rounded-2xl p-6 shadow-sm border">
@@ -216,14 +193,28 @@ export default function AgentDashboardPage() {
 
           {/* Quick actions row under cards (full width of the 3 cards when on small) */}
           <div className="sm:col-span-3 flex flex-col sm:flex-row gap-4 mt-2">
-            <button onClick={start} className="flex-1 bg-white p-4 rounded-xl shadow border text-left">
+            <button onClick={start} className="flex-1 bg-white p-4 rounded-xl shadow border text-left cursor-pointer">
+              <div className="flex items-center gap-4">
+              <div className="rounded-full w-10 h-10 bg-[#f4ebff] flex items-center justify-center">
+                <UserRoundPlus className="text-[#7f56d9]" />
+              </div>
+              <div>
               <p className="font-semibold">Add new customer</p>
               <p className="text-sm text-slate-500">Add yourself or import from CSV</p>
+              </div>
+              </div>
             </button>
 
-            <button  onClick={() => setLoanModalOpen(true)} className="flex-1 bg-white p-4 rounded-xl shadow border text-left">
+            <button  onClick={() => setLoanModalOpen(true)} className="flex-1 cursor-pointer bg-white p-4 rounded-xl shadow border text-left">
+              <div className="flex items-center gap-4">
+              <div className="rounded-full w-10 h-10 bg-[#f4ebff] flex items-center justify-center">
+                  <PenLine className="text-[#7f56d9]" />
+                </div>
+             <div>
               <p className="font-semibold">New loan application</p>
               <p className="text-sm text-slate-500">Dive into the editor and start creating</p>
+              </div>
+              </div>
             </button>
           </div>
         </div>
