@@ -95,6 +95,7 @@ export default function ResetPasswordForm(): JSX.Element {
                 id="email"
                 disabled={isReseting}
                 {...register("email")}
+                readOnly
               />
 
               {errors && <Error error={errors.email?.message} />}
