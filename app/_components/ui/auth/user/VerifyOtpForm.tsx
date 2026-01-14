@@ -3,10 +3,12 @@ import { useOtpVerification } from "@/app/hooks/useOtpVerification";
 import Button from "../../Button";
 import OtpInput from "../../OtpInput";
 import Spinner from "../../Spinner";
+import { useUserOtpVerification } from "@/app/hooks/useUserOtpVerification";
+import { Purpose } from "@/app/types/auth";
 
 export default function VerifyOtpForm() {
-  const { countDown, disabled, isLoading, resendOtp, handleOtp } =
-    useOtpVerification();
+   const { countDown, disabled, isLoading, resendOtp, handleOtp, email } =
+    useUserOtpVerification();
 
   return (
     <form action="" className="my-2">

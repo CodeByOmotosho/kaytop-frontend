@@ -44,7 +44,10 @@ export default function ForgotPasswordForm() {
       setEmail(data.email)
       toast.success(response.message);
       console.log(response);
-      router.push(ROUTES.User.Auth.VERIFY_OTP);
+      // router.push(ROUTES.User.Auth.VERIFY_OTP);
+      router.push(
+      `${ROUTES.User.Auth.VERIFY_OTP}?email=${encodeURIComponent(data.email)}&purpose=password_reset`
+    );
     } catch (error: AxiosError | unknown) {
       const err = error as AxiosError;
       console.log(err);

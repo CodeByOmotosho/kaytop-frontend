@@ -15,15 +15,16 @@ import { Controller, useForm } from "react-hook-form";
 import Error from "@/app/_components/ui/Error";
 import { Label } from "../../label";
 
-
+const nigerianPhoneRegex =
+  /^(?:\+234|234|0)(7[0-9]|8[0-9]|9[0-9])\d{8}$/;
 
  const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.email("Invalid email"),
-  mobileNumber: z
+   mobileNumber: z
     .string()
-    .regex(/^0[789][01]\d{8}$/, "Invalid Nigerian phone number"),
+    .regex(nigerianPhoneRegex, "Invalid Nigerian phone number"),
   branch: z.string().min(1, "Select a branch"),
   state: z.string().min(1, "Select a state"),
   dob: z.string().optional(),
