@@ -1,35 +1,43 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { X, Loader2, CheckCircle, XCircle } from "lucide-react";
 import Button from "@/app/_components/ui/Button";
+
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  customerId: number;
+  currentBalance: number;
+  onSave: (amount: number, description: string) => Promise<void>;
 }
 
-type Step = "amount" | "success";
+type Step = "amount" | "success" | "error";
 
-export default function AddSavingsModal({ isOpen, onClose }: Props) {
+export default function AddSavingsModal({
+  isOpen,
+  onClose,
+  customerId,
+  currentBalance,
+  onSave,
+}: Props) {
   const [step, setStep] = useState<Step>("amount");
   const [amount, setAmount] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState(10);
-  const [walletBalance, setWalletBalance] = useState(42100); // initial wallet balance
+  const [countdown, setCountdown] = useState(3);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [newBalance, setNewBalance] = useState(currentBalance);
 
-  // Countdown for auto-close
   useEffect(() => {
     if (step === "success") {
       const timer = setInterval(() => {
         setCountdown((c) => {
           if (c === 1) {
             handleClose();
-            return 2;
+            return 3;
           }
           return c - 1;
         });
       }, 1000);
-
       return () => clearInterval(timer);
     }
   }, [step]);
@@ -37,145 +45,154 @@ export default function AddSavingsModal({ isOpen, onClose }: Props) {
   function handleClose() {
     setStep("amount");
     setAmount(null);
-    setCountdown(2);
+    setCountdown(3);
+    setErrorMessage("");
+    setIsLoading(false);
     onClose();
   }
 
-  function handleSave() {
-    if (!amount) return;
-    setWalletBalance(walletBalance + amount); // update balance
-    setStep("success");
+  useEffect(() => {
+  setNewBalance(currentBalance);
+}, [currentBalance]);
+
+
+  async function handleSave() {
+    if (!amount || amount <= 0) return;
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      await onSave(amount, "Savings deposit");
+      setNewBalance(currentBalance + amount);
+      setStep("success");
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Failed to save money. Please try again.");
+      setStep("error");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   if (!isOpen) return null;
 
+  const isValidAmount = amount && amount >= 1000 && amount <= 100000;
+
   return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <motion.div
-          className="w-full max-w-md rounded-xl bg-white shadow-lg relative"
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 40, opacity: 0 }}
-          transition={{ duration: 0.25 }}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+      <div className="bg-card w-full max-w-md rounded-xl shadow-lg relative p-6 animate-in fade-in slide-in-from-bottom-3">
+        {/* Close button */}
+        <button
+          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
+          onClick={handleClose}
         >
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            className="absolute right-4 top-1 z-10 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-            aria-label="Close modal"
-          >
-            ✕
-          </button>
+          <X className="w-5 h-5" />
+        </button>
 
-          {/* Header */}
-          <div className="px-6 py-4">
-            <h2 className="text-base font-semibold">Add money to your savings</h2>
-            {step === "amount" && (
-              <p className="mt-1 text-xs text-slate-500"> How much are you saving now?</p>
-            )}
+        {/* Header */}
+        {step === "amount" && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-foreground">
+              Add Money to Savings
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              How much are you saving now?
+            </p>
           </div>
+        )}
 
-          {/* Body */}
-          <div className="px-6 py-4">
-            <AnimatePresence mode="wait">
-              {/* STEP 1 – Amount */}
-              {step === "amount" && (
-            <motion.div
-                key="amount"
-                {...anim}
-                className="flex flex-col gap-4"
-            >
-                {/* Label + Input */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                {/* Label */}
-                <label className="text-sm font-medium text-slate-700 sm:w-40">
-                    Enter specific amount
-                </label>
+        {/* STEP 1 – AMOUNT INPUT */}
+        {step === "amount" && (
+          <div className="space-y-4">
+            {/* Amount Input */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-sm font-medium text-foreground mb-1.5 sm:w-40">
+                Enter specific amount:
+              </label>
+              <input
+                type="number"
+                placeholder="₦0.00"
+                value={amount || ""}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="flex-1  rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition"
 
-                {/* Input */}
-                <input
-                    type="number"
-                    placeholder="₦0.00"
-                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition"
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                />
-                </div>
-
-                {/* Hint */}
-                <p className="text-xs text-slate-400 ml-0 sm:ml-40">
+              />
+              </div>
+              <p className="text-xs text-muted-foreground  ml-0 sm:ml-40">
                 Minimum ₦1,000 – Maximum ₦100,000
-                </p>
+              </p>
+            
 
-                {/* Buttons */}
-                <div className="mt-2 flex flex-col sm:flex-row gap-3">
-                <Button
-                    className="w-full sm:w-1/2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
-                    onClick={handleClose}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    className="w-full sm:w-1/2 bg-violet-600 text-white hover:bg-violet-700"
-                    disabled={!amount || amount < 1000 || amount > 100000}
-                    onClick={handleSave}
-                >
-                    Save Money
-                </Button>
-                </div>
-            </motion.div>
-            )}
-
-
-              {/* STEP 2 – Success */}
-              {step === "success" && (
-                <motion.div
-                  key="success"
-                  {...anim}
-                  className="flex flex-col items-center justify-center py-8 text-center"
-                >
-                  <SuccessIcon />
-                  <h3 className="mt-4 font-semibold">Saved Successfully</h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Your savings have been updated. Keep up the good work to access better options.
-                  </p>
-
-                  {/* Wallet Balance Card */}
-                    <p className="text-sm text-slate-500 mt-2">Wallet Balance</p>
-                  <div className=" px-4 rounded-lg bg-gray-200 py-2 text-center">
-                    <p className="text-lg font-semibold">₦{walletBalance.toLocaleString()}</p>
-                  </div>
-
-                  <p className="mt-4 text-xs text-slate-400">
-                    Redirecting in 0:0{countdown}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Buttons */}
+            <div className="flex gap-3 pt-2">
+              <Button variant="secondary" onClick={handleClose} className="flex-1 bg-gray-300">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={!isValidAmount || isLoading}
+                className="flex-1 bg-violet-600 text-white"
+              >
+                {isLoading ? (
+                  <>
+                   <div className="flex items-center gap-4 justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Saving...
+                    </div>
+                  </>
+                ) : (
+                  "Save Money"
+                )}
+              </Button>
+            </div>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
+        )}
 
-/* Helpers */
-const anim = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-  transition: { duration: 0.2 },
-};
+        {/* SUCCESS STATE */}
+        {step === "success" && (
+          <div className="text-center py-6">
+            <div className="w-16 h-16 rounded-full bg-[#f4ebff] flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-violet-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Saved Successfully</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
+              Your savings have been updated. Keep up the good work to access better options.
+            </p>
 
-function SuccessIcon() {
-  return (
-    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-violet-100 text-xl text-violet-600">
-      ✓
+            {/* Updated Balance Card */}
+            <div className="mt-6 bg-[#f4ebff] rounded-lg p-4">
+              <p className="text-xs text-muted-foreground">Wallet Balance</p>
+              <p className="text-2xl font-semibold text-foreground mt-1">
+                ₦{newBalance.toLocaleString()}
+              </p>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Redirecting in 0:0{countdown}
+            </p>
+          </div>
+        )}
+
+        {/* ERROR STATE */}
+        {step === "error" && (
+          <div className="text-center py-6">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Transaction Failed</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
+              {errorMessage}
+            </p>
+            <div className="flex gap-3 mt-6">
+              <Button variant="secondary" onClick={handleClose} className="flex-1 bg-gray-300">
+                Cancel
+              </Button>
+              <Button onClick={() => setStep("amount")} className="flex-1 bg-violet-600 text-white">
+                Try Again
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

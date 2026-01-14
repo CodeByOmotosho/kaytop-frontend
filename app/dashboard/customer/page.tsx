@@ -26,6 +26,9 @@ import { useMyProfile } from "./queries/useMyProfile";
 import { useMyLoans } from "./queries/useMyLoans";
 import { useMySavingsBalance } from "./queries/useMySavingsBalance";
 import { Transactions } from "@/app/types/customer";
+import { SavingsService } from "@/app/services/savingsService";
+import { LoanService } from "@/app/services/loanService";
+import toast from "react-hot-toast";
 
 
 interface ActiveLoanCardProps {
@@ -351,6 +354,57 @@ const userName = profile
   ? [profile.firstName, profile.lastName].filter(Boolean).join(" ")
   : "User";
 
+  async function handleRecordCash(amount: number, proof?: File) {
+  if (!loan?.id) throw new Error("Invalid loan");
+
+  const formData = new FormData();
+  formData.append("amount", String(amount));
+
+  if (proof) {
+    formData.append("proof", proof);
+  }
+
+  await LoanService.recordRepayment(loan.id, formData);
+
+  // Optional but recommended
+  toast.success("Repayment recorded successfully");
+
+  // Refresh data
+  setContextParam(loan?.id, PaginationKey.active_loan_id);
+}
+
+async function handleUseSavings(amount: number) {
+  if (!loan?.id || !customer?.id) {
+    throw new Error("Invalid loan or customer");
+  }
+
+  await SavingsService.useForLoanCoverage(customer?.id, {
+    loanId: loan.id,
+    amount,
+  });
+
+  toast.success("Savings repayment request sent");
+
+  // Refresh balances / loan
+  setContextParam(loan.id, PaginationKey.active_loan_id);
+}
+
+async function handleAddSavings(amount: number, description: string) {
+  if (!customer?.id) {
+    throw new Error("Invalid customer");
+  }
+
+  await SavingsService.deposit(customer.id, {
+    amount,
+    description,
+  });
+
+  toast.success("Savings added successfully");
+
+  // 🔁 Refresh savings + summaries
+  setContextParam(customer?.id, PaginationKey.branch_customer_savings_page);
+}
+
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -454,10 +508,19 @@ const userName = profile
               onClose={() => setIsRepaymentModalOpen(false)}
               loanId={loan?.id}
               customerId={customer?.id}
+              nextPayment={Number(loan?.dailyRepayment)}
+              fullPayment={Number(loan?.remainingBalance)}
+              savingsBalance={Number(savings?.balance ?? 0)}
+              onRecordCash={handleRecordCash}
+              onUseSavings={handleUseSavings}
             />
+
             <AddSavingsModal
               isOpen={isSavingsModalOpen}
               onClose={() => setIsSavingsModalOpen(false)}
+              customerId={customer?.id}
+                currentBalance={Number(savings?.balance ?? 0)}
+                onSave={handleAddSavings}
             />
     </div>
   );
