@@ -32,7 +32,7 @@ const transformBranchesToTableData = (branches: any[]): BranchRecord[] => {
 
 export default function AMBranchesPage() {
   const router = useRouter();
-  const { session, isLoading: authLoading } = useAuth();
+  const { session } = useAuth();
   const { toasts, removeToast, success, error } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last_30_days');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -139,15 +139,14 @@ export default function AMBranchesPage() {
 
   // Load initial data - only when authenticated
   useEffect(() => {
-    // Wait for authentication to complete before fetching data
-    if (!authLoading && session) {
+    if (session) {
       console.log('🔐 Authentication confirmed, loading branch data...');
       fetchBranchData();
-    } else if (!authLoading && !session) {
+    } else {
       console.log('❌ Not authenticated, redirecting to login...');
       router.push('/auth/bm/login');
     }
-  }, [authLoading, session, router]);
+  }, [session, router]);
 
   const handleRowClick = (row: any) => {
     // Extract the ID from the row object
@@ -300,20 +299,6 @@ export default function AMBranchesPage() {
     setItemsPerPage(items);
     setCurrentPage(1); // Reset to first page
   };
-
-  // Show loading spinner while authentication is being checked
-  if (authLoading) {
-    return (
-      <div className="drawer-content flex flex-col min-h-screen">
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   // Redirect to login if not authenticated (this should be handled by middleware, but just in case)
   if (!session) {

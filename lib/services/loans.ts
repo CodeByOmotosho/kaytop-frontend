@@ -12,6 +12,7 @@ import type {
   LoanSummary,
   DisbursementSummary,
 } from '../api/types';
+import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
 
 export interface LoanService {
   createLoan(customerId: string, data: CreateLoanData): Promise<Loan>;
@@ -33,7 +34,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has loan fields)
@@ -67,7 +68,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has loan fields)
@@ -103,7 +104,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has repayment fields)
@@ -128,7 +129,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has summary fields)
@@ -153,7 +154,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has disbursement fields)
@@ -178,7 +179,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct array format (loans list)
@@ -203,7 +204,7 @@ class LoanAPIService implements LoanService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct array format (repayments list)

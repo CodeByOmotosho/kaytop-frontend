@@ -6,6 +6,7 @@
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type { BranchPerformance, DashboardParams, PaginatedResponse, Loan } from '../api/types';
+import { isSuccessResponse, isFailureResponse, extractResponseData } from '../utils/responseHelpers';
 
 export interface BranchPerformanceMetrics {
   branchName: string;
@@ -134,7 +135,7 @@ class BranchPerformanceAPIService implements BranchPerformanceService {
       // Handle different response formats
       if (response.data && Array.isArray(response.data)) {
         return response.data;
-      } else if (response.success && response.data && Array.isArray(response.data.data)) {
+      } else if (isSuccessResponse(response) && Array.isArray(response.data.data)) {
         return response.data.data;
       } else if (Array.isArray(response)) {
         return response;
@@ -152,11 +153,15 @@ class BranchPerformanceAPIService implements BranchPerformanceService {
    */
   private async fetchBranches(): Promise<string[]> {
     try {
-      const response = await apiClient.get<string[]>('/users/branches');
+      const response = await apiClient.get<any>('/users/branches');
       
+      // Check if response is wrapped with success field
+      if (isSuccessResponse(response) && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      
+      // Check if response.data is directly an array
       if (Array.isArray(response.data)) {
-        return response.data;
-      } else if (response.success && Array.isArray(response.data)) {
         return response.data;
       }
       

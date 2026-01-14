@@ -12,6 +12,7 @@ import type {
   LoanStatistics,
   User,
 } from '../api/types';
+import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
 
 export interface BulkLoansService {
   getBulkLoans(filters?: BulkLoansFilters): Promise<BulkLoansResponse>;
@@ -56,8 +57,8 @@ class BulkLoansAPIService implements BulkLoansService {
               customerLoans = customerLoansResponse.loans;
             } else if (customerLoansResponse.data && Array.isArray(customerLoansResponse.data)) {
               customerLoans = customerLoansResponse.data;
-            } else if (customerLoansResponse.success && customerLoansResponse.data && Array.isArray(customerLoansResponse.data)) {
-              customerLoans = customerLoansResponse.data;
+            } else if (isSuccessResponse(customerLoansResponse) && customerLoansResponse.data.data && Array.isArray(customerLoansResponse.data.data)) {
+              customerLoans = customerLoansResponse.data.data;
             }
           }
           

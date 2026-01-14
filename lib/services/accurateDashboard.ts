@@ -100,8 +100,6 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
       
       if (Array.isArray(response.data)) {
         return response.data;
-      } else if (response.success && Array.isArray(response.data)) {
-        return response.data;
       }
       
       return [];

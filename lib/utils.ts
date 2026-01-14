@@ -437,3 +437,50 @@ export const data: MetricProps[] = [
     border: true,
   },
 ];
+// Report type validation and options
+export const REPORT_TYPE_OPTIONS = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "annual", label: "Annual" },
+  { value: "custom", label: "Custom" },
+] as const;
+
+export function isReportType(value: string | null): value is "daily" | "weekly" | "monthly" | "quarterly" | "annual" | "custom" {
+  return value !== null && ["daily", "weekly", "monthly", "quarterly", "annual", "custom"].includes(value);
+}
+
+export function isReportStatus(value: string | null): value is "pending" | "approved" | "declined" {
+  return value !== null && ["pending", "approved", "declined"].includes(value);
+}
+// Report mapping functions
+export function mapReportDetails(data: any): SummaryProps[] {
+  if (!data) return [];
+  return [
+    { label: "Report ID", value: data.id?.toString() || "N/A" },
+    { label: "Title", value: data.title || "N/A" },
+    { label: "Description", value: data.description || "N/A" },
+    { label: "Branch", value: data.branch || "N/A" },
+    { label: "State", value: data.state || "N/A" },
+    { label: "Type", value: data.type || "N/A" },
+    { label: "Status", value: data.status || "N/A" },
+    { label: "Start Date", value: data.startDate ? formatDate(data.startDate) : "N/A" },
+    { label: "End Date", value: data.endDate ? formatDate(data.endDate) : "N/A" },
+    { label: "Report Date", value: data.reportDate ? formatDate(data.reportDate) : "N/A" },
+    { label: "Submitted At", value: data.submittedAt ? formatDate(data.submittedAt) : "N/A" },
+    { label: "Submitted By", value: data.submittedBy ? `${data.submittedBy.firstName} ${data.submittedBy.lastName}` : "N/A" },
+  ];
+}
+
+export function mapReportLoanDetails(data: any): SummaryProps[] {
+  if (!data) return [];
+  return [
+    { label: "Total Loans Processed", value: data.totalLoansProcessed?.toString() || "0" },
+    { label: "Total Loans Disbursed", value: data.totalLoansDisbursed || "₦0.00" },
+    { label: "Total Recollections", value: data.totalRecollections || "₦0.00" },
+    { label: "Total Savings Processed", value: data.totalSavingsProcessed || "₦0.00" },
+    { label: "Remarks", value: data.remarks || "No remarks" },
+    { label: "Decline Reason", value: data.declineReason || "N/A" },
+  ];
+}

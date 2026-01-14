@@ -10,6 +10,7 @@ import type {
   UpdateUserData,
   ChangePasswordData,
 } from '../api/types';
+import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
 
 export interface ProfileService {
   getProfile(): Promise<AdminProfile>;
@@ -29,7 +30,7 @@ class ProfileManagementService implements ProfileService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has profile fields)
@@ -55,7 +56,7 @@ class ProfileManagementService implements ProfileService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has profile fields)
@@ -90,7 +91,7 @@ class ProfileManagementService implements ProfileService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has profile fields)
@@ -116,8 +117,8 @@ class ProfileManagementService implements ProfileService {
       // Backend may return direct success format or wrapped format
       if (response && typeof response === 'object') {
         // Check if it's wrapped format with success field
-        if (response.success === false) {
-          throw new Error(response.message || 'Failed to change password');
+        if (isFailureResponse(response)) {
+          throw new Error((response.data as any).message || 'Failed to change password');
         }
         // If response exists and no explicit failure, consider it successful
         return;

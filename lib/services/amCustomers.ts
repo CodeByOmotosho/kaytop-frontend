@@ -8,6 +8,7 @@ import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { DataTransformers } from '../api/transformers';
 import { APIErrorHandler } from '../api/errorHandler';
+import { isSuccessResponse, extractResponseData } from '../utils/responseHelpers';
 import type {
   User,
   PaginatedResponse,
@@ -96,21 +97,21 @@ class AMCustomerAPIService implements AMCustomerService {
       // Handle different response formats from the backend
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          if (response.data.customers && Array.isArray(response.data.customers)) {
+        if (isSuccessResponse(response)) {
+          if (response.data.data?.customers && Array.isArray(response.data.data.customers)) {
             // AM API format: { success: true, data: { customers: [], pagination: {} } }
             return {
-              data: response.data.customers,
-              pagination: response.data.pagination || this.createDefaultPagination(response.data.customers.length, params)
+              data: response.data.data.customers,
+              pagination: response.data.data.pagination || this.createDefaultPagination(response.data.data.customers.length, params)
             };
-          } else if (Array.isArray(response.data)) {
+          } else if (Array.isArray(response.data.data)) {
             // Direct array in data: { success: true, data: [] }
-            return this.createPaginatedResponse(response.data, response.data.length, params);
+            return this.createPaginatedResponse(response.data.data, response.data.data.length, params);
           }
         }
         // Check if it's direct array format (customers list)
-        else if (Array.isArray(response)) {
-          return this.createPaginatedResponse(response, response.length, params);
+        else if (Array.isArray(response.data)) {
+          return this.createPaginatedResponse(response.data, response.data.length, params);
         }
         // Check if it's already a paginated response object
         else if (response.data && Array.isArray(response.data)) {
@@ -134,7 +135,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return DataTransformers.transformUser(response.data);
         }
         // Check if it's direct data format (has user fields)
@@ -157,7 +158,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has user fields)
@@ -191,7 +192,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct array format
@@ -229,7 +230,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct array format
@@ -268,7 +269,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct array format
@@ -296,7 +297,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return this.transformKPIToPortfolio(response.data);
         }
         // Check if it's direct data format
@@ -340,7 +341,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return this.transformUserToAssignment(response.data, accountManagerId, notes);
         }
         // Check if it's direct data format
@@ -375,7 +376,7 @@ class AMCustomerAPIService implements AMCustomerService {
 
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct array format

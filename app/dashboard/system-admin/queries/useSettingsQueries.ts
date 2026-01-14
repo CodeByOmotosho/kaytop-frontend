@@ -80,9 +80,9 @@ export function useSystemSettings() {
       try {
         const result = await systemSettingsService.getSystemSettings();
         console.log('✅ useSystemSettings query successful:', {
-          appName: result.appName,
-          version: result.version,
-          hasId: !!result.id
+          hasId: !!result.id,
+          interestRate: result.globalDefaults?.interestRate,
+          sessionTimeout: result.security?.sessionTimeout
         });
         return result;
       } catch (error) {
@@ -107,24 +107,6 @@ export function useSystemSettings() {
 
       // Retry up to 2 times for other errors
       return failureCount < 2;
-    },
-
-    // Add error handling
-    onError: (error) => {
-      console.error('🚨 System Settings Query Error:', {
-        message: error.message,
-        status: (error as any)?.status,
-        details: (error as any)?.details
-      });
-    },
-
-    // Add success logging
-    onSuccess: (data) => {
-      console.log('🎉 System Settings Query Success:', {
-        appName: data.appName,
-        version: data.version,
-        maintenanceMode: data.maintenanceMode
-      });
     }
   });
 }
@@ -221,13 +203,6 @@ export function useUpdateSystemSettings() {
         updatedBy: data.updatedBy
       });
     },
-    onError: (error) => {
-      console.error('🚨 System Settings Update Mutation Error:', {
-        message: error.message,
-        status: (error as any)?.status,
-        details: (error as any)?.details
-      });
-    },
     retry: (failureCount, error) => {
       // Don't retry on 404 errors (endpoint doesn't exist)
       if ((error as any)?.status === 404) {
@@ -280,21 +255,6 @@ export function useActivityLogs(filters: ActivityLogFilters) {
       // Retry up to 2 times for other errors
       return failureCount < 2;
     },
-    enabled: !!filters, // Only run query when filters are provided
-    // Enhanced error handling
-    onError: (error) => {
-      console.error('🚨 Activity Logs Query Error:', {
-        message: error.message,
-        status: (error as any)?.status,
-        details: (error as any)?.details
-      });
-    },
-    // Add success logging
-    onSuccess: (data) => {
-      console.log('🎉 Activity Logs Query Success:', {
-        recordCount: data.data?.length || 0,
-        pagination: data.pagination
-      });
-    }
+    enabled: !!filters // Only run query when filters are provided
   });
 }

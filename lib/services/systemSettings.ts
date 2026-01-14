@@ -6,6 +6,7 @@
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS, API_CONFIG } from '../api/config';
 import type { SystemSettings } from '../api/types';
+import { isSuccessResponse, isFailureResponse, extractResponseData } from '../utils/responseHelpers';
 
 export interface SystemSettingsService {
   getSystemSettings(): Promise<SystemSettings>;
@@ -44,8 +45,7 @@ class SystemSettingsAPIService implements SystemSettingsService {
       console.log('🔍 Direct auth test result:', authTest);
 
       const response = await apiClient.get<SystemSettings>(
-        API_ENDPOINTS.SYSTEM_SETTINGS.GET,
-        { suppressErrorLog: true }
+        API_ENDPOINTS.SYSTEM_SETTINGS.GET
       );
 
       // ... (rest of response handling) ...
@@ -124,7 +124,7 @@ class SystemSettingsAPIService implements SystemSettingsService {
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
         // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
+        if (isSuccessResponse(response)) {
           return response.data;
         }
         // Check if it's direct data format (has settings fields)

@@ -42,31 +42,31 @@ class ActivityLogsAPIService implements ActivityLogsService {
         timestamp: new Date().toISOString()
       });
 
-      const response = await apiClient.get<any>(url, { suppressErrorLog: true });
+      const response = await apiClient.get<any>(url);
 
       console.log('✅ Activity logs response received:', {
         responseType: typeof response,
-        isArray: Array.isArray(response),
+        isArray: Array.isArray(response.data),
         hasData: !!response?.data,
         keys: response ? Object.keys(response) : []
       });
 
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
-        // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        // Check if response.data is wrapped in success/data format
+        if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+          return response.data.data;
         }
         // Check if it's direct array format (activity logs list)
-        else if (Array.isArray(response)) {
+        else if (Array.isArray(response.data)) {
           // Backend returns direct array, create paginated response structure
           return {
-            data: response,
+            data: response.data,
             pagination: {
-              total: response.length,
+              total: response.data.length,
               page: parseInt(filters.page?.toString() || '1'),
               limit: parseInt(filters.limit?.toString() || '50'),
-              totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+              totalPages: Math.ceil(response.data.length / parseInt(filters.limit?.toString() || '50'))
             }
           };
         }
@@ -145,24 +145,24 @@ class ActivityLogsAPIService implements ActivityLogsService {
         params: Object.fromEntries(params.entries())
       });
 
-      const response = await apiClient.get<any>(url, { suppressErrorLog: true });
+      const response = await apiClient.get<any>(url);
 
       // Backend returns direct data format, not wrapped in success/data
       if (response && typeof response === 'object') {
-        // Check if it's wrapped in success/data format
-        if (response.success && response.data) {
-          return response.data;
+        // Check if response.data is wrapped in success/data format
+        if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+          return response.data.data;
         }
         // Check if it's direct array format (activity logs list)
-        else if (Array.isArray(response)) {
+        else if (Array.isArray(response.data)) {
           // Backend returns direct array, create paginated response structure
           return {
-            data: response,
+            data: response.data,
             pagination: {
-              total: response.length,
+              total: response.data.length,
               page: parseInt(filters.page?.toString() || '1'),
               limit: parseInt(filters.limit?.toString() || '50'),
-              totalPages: Math.ceil(response.length / parseInt(filters.limit?.toString() || '50'))
+              totalPages: Math.ceil(response.data.length / parseInt(filters.limit?.toString() || '50'))
             }
           };
         }

@@ -17,6 +17,7 @@ import type {
   BranchPerformance,
   ReportStatistics,
 } from '../api/types';
+import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
 
 export interface DashboardService {
   getKPIs(params?: DashboardParams): Promise<DashboardKPIs>;
@@ -143,11 +144,11 @@ class DashboardAPIService implements DashboardService {
       
       const response = await apiClient.get<LoanStatistics>(url);
 
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         return response.data;
       }
 
-      throw new Error(response.message || 'Failed to fetch loan statistics');
+      throw new Error((response.data as any).message || 'Failed to fetch loan statistics');
     } catch (error) {
       console.error('Loan statistics fetch error:', error);
       throw error;

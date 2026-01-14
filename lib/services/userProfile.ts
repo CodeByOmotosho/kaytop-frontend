@@ -6,6 +6,7 @@
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS, API_CONFIG } from '../api/config';
 import type { AdminProfile } from '../api/types';
+import { isSuccessResponse, isFailureResponse, extractResponseData } from '../utils/responseHelpers';
 import { DataTransformers } from '../api/transformers';
 
 export interface UserProfileData {
@@ -84,13 +85,12 @@ class UserProfileAPIService implements UserProfileService {
   async getUserProfile(): Promise<UserProfileData> {
     try {
       const response = await apiClient.get<AdminProfile>(
-        API_ENDPOINTS.USERS.PROFILE,
-        { suppressErrorLog: true } // Suppress errors when called from server-side
+        API_ENDPOINTS.USERS.PROFILE
       );
 
       // Handle both wrapped and direct response formats
       let profileData: AdminProfile;
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         profileData = response.data;
       } else if ((response as any).id) {
         profileData = response as unknown as AdminProfile;
@@ -116,7 +116,7 @@ class UserProfileAPIService implements UserProfileService {
 
       // Handle both wrapped and direct response formats
       let profileData: AdminProfile;
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         profileData = response.data;
       } else if ((response as any).id) {
         profileData = response as unknown as AdminProfile;
@@ -182,7 +182,7 @@ class UserProfileAPIService implements UserProfileService {
       );
 
       // 3. Inspect response (optional debugging)
-      if (!response.success && !(response as any).id && !(response as any).url) {
+      if (!(response.data as any).success && !(response.data as any).id && !(response.data as any).url) {
         console.warn('Profile picture upload response might be partial', response);
       }
 

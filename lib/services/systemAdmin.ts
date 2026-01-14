@@ -6,6 +6,7 @@
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import type { PaginatedResponse } from '../api/types';
+import { isSuccessResponse, isFailureResponse, extractResponseData } from '../utils/responseHelpers';
 
 export interface SystemAdminTabData {
   disbursements: DisbursementRecord[];
@@ -69,7 +70,7 @@ class SystemAdminAPIService implements SystemAdminService {
       );
 
       // Handle ApiResponse format from unified client
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         // Check if data is already paginated
         if (Array.isArray(response.data)) {
           return {
@@ -95,7 +96,7 @@ class SystemAdminAPIService implements SystemAdminService {
         }
       }
 
-      throw new Error(response.message || 'Failed to fetch disbursements');
+      throw new Error((response.data as any).message || 'Failed to fetch disbursements');
     } catch (error) {
       console.error('Disbursements fetch error:', error);
       throw error;
@@ -109,7 +110,7 @@ class SystemAdminAPIService implements SystemAdminService {
       );
 
       // Handle ApiResponse format from unified client
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         // Check if data is already paginated
         if (Array.isArray(response.data)) {
           return {
@@ -135,7 +136,7 @@ class SystemAdminAPIService implements SystemAdminService {
         }
       }
 
-      throw new Error(response.message || 'Failed to fetch recollections');
+      throw new Error((response.data as any).message || 'Failed to fetch recollections');
     } catch (error) {
       console.error('Recollections fetch error:', error);
       throw error;
@@ -157,7 +158,7 @@ class SystemAdminAPIService implements SystemAdminService {
       console.log('🔍 getSavings - Response received:', response);
 
       // Handle ApiResponse format from unified client
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         // Check if data is already paginated
         if (Array.isArray(response.data)) {
           return {
@@ -183,7 +184,7 @@ class SystemAdminAPIService implements SystemAdminService {
         }
       }
 
-      throw new Error(response.message || 'Failed to fetch savings');
+      throw new Error((response.data as any).message || 'Failed to fetch savings');
     } catch (error) {
       console.error('Savings fetch error:', error);
       throw error;
@@ -197,7 +198,7 @@ class SystemAdminAPIService implements SystemAdminService {
       );
 
       // Handle ApiResponse format from unified client
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         // Check if data is already paginated
         if (Array.isArray(response.data)) {
           return {
@@ -223,7 +224,7 @@ class SystemAdminAPIService implements SystemAdminService {
         }
       }
 
-      throw new Error(response.message || 'Failed to fetch missed payments');
+      throw new Error((response.data as any).message || 'Failed to fetch missed payments');
     } catch (error) {
       console.error('Missed payments fetch error:', error);
       throw error;

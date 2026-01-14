@@ -2,15 +2,16 @@ import React from "react";
 
 type ButtonProps = {
   children: React.ReactNode;
-  variant?: "primary" | "tertiary" | "danger";
+  variant?: "primary" | "secondary" | "tertiary" | "danger";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   className?: string;
   disabled?: boolean;
-};
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const variants = {
   primary: "bg-primary-300 text-primary hover:text-white font-medium",
+  secondary: "bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium",
   tertiary: "bg-brand-purple text-white hover:text-white font-medium",
   danger: "bg-red-500 text-white hover:bg-red-600",
 };

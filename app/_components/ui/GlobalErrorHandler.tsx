@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/app/hooks/useToast';
-import { authService } from '@/lib/services/auth';
+import { useAuth } from '@/app/context/AuthContext';
 import { errorLogger } from '@/lib/services/errorLogging';
 
 export interface GlobalErrorHandlerOptions {
@@ -15,6 +15,7 @@ export interface GlobalErrorHandlerOptions {
 export function useGlobalErrorHandler(options: GlobalErrorHandlerOptions = {}) {
   const router = useRouter();
   const { error: showError, warning: showWarning } = useToast();
+  const { logOut } = useAuth();
   
   const {
     enableAuthRedirect = true,
@@ -39,14 +40,14 @@ export function useGlobalErrorHandler(options: GlobalErrorHandlerOptions = {}) {
     // Handle authentication errors
     if (enableAuthRedirect && (error.status === 401 || error.status === 403)) {
       if (error.status === 401) {
-        // Clear authentication data
-        authService.logout();
+        // Clear authentication data using official AuthContext
+        logOut();
         
         // Show error message
         showError('Your session has expired. Please log in again.');
         
         // Redirect to login page
-        router.push('/auth/login');
+        router.push('/auth/bm/login');
         return;
       } else if (error.status === 403) {
         showError('You don\'t have permission to perform this action.');
@@ -142,13 +143,13 @@ export function GlobalErrorHandlerProvider({
 }
 
 // Enhanced API Error Handler for interceptors
-export function createApiErrorHandler(router: any, showError: any) {
+export function createApiErrorHandler(router: any, showError: any, logOut: any) {
   return (error: any) => {
     // Handle authentication errors with redirect
     if (error.status === 401) {
-      authService.logout();
+      logOut();
       showError('Your session has expired. Please log in again.');
-      router.push('/auth/login');
+      router.push('/auth/bm/login');
       return;
     }
 

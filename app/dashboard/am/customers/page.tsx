@@ -51,7 +51,7 @@ const transformToCustomer = (customer: any): Customer => ({
 });
 
 export default function AMCustomersPage() {
-  const { session, isLoading: authLoading } = useAuth();
+  const { session } = useAuth();
   const { toasts, removeToast, success, error } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last_30_days');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -182,17 +182,17 @@ export default function AMCustomersPage() {
 
   // Load initial data
   useEffect(() => {
-    if (session && !authLoading) {
+    if (session) {
       fetchCustomersData(1, advancedFilters);
     }
-  }, [session, authLoading]);
+  }, [session]);
 
   // Refetch when page changes
   useEffect(() => {
-    if (!isLoading && session && !authLoading) {
+    if (!isLoading && session) {
       fetchCustomersData(currentPage, advancedFilters);
     }
-  }, [currentPage, session, authLoading]);
+  }, [currentPage, session]);
 
   const handlePeriodChange = (period: TimePeriod) => {
     setSelectedPeriod(period);
@@ -267,18 +267,6 @@ export default function AMCustomersPage() {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  // Show loading while authentication is being checked
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Redirect if not authenticated
   if (!session) {

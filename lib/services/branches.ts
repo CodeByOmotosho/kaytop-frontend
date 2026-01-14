@@ -5,6 +5,7 @@
 
 import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
+import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
 import type {
   PaginatedResponse,
   PaginationParams,
@@ -82,7 +83,7 @@ class BranchAPIService implements BranchService {
       // Use the working /users/branches endpoint to get branch names
       const branchesResponse = await apiClient.get<string[]>(API_ENDPOINTS.USERS.BRANCHES);
       
-      if (branchesResponse.success && branchesResponse.data) {
+      if (isSuccessResponse(branchesResponse)) {
         // Get users for each branch to build complete branch data
         const branchPromises = branchesResponse.data.map(async (branchName, index) => {
           try {
@@ -219,7 +220,7 @@ class BranchAPIService implements BranchService {
         const loansResponse = await apiClient.get<any>(API_ENDPOINTS.LOANS.ALL);
         
         let allLoans = [];
-        if (loansResponse.success && loansResponse.data) {
+        if (isSuccessResponse(loansResponse)) {
           allLoans = Array.isArray(loansResponse.data) ? loansResponse.data : [];
         } else if (Array.isArray(loansResponse)) {
           allLoans = loansResponse;
@@ -284,11 +285,11 @@ class BranchAPIService implements BranchService {
     try {
       const response = await apiClient.post<Branch>('/admin/branches', data);
 
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         return response.data;
       }
 
-      throw new Error(response.message || 'Failed to create branch');
+      throw new Error((response.data as any).message || 'Failed to create branch');
     } catch (error) {
       console.error('Branch creation error:', error);
       throw error;
@@ -299,11 +300,11 @@ class BranchAPIService implements BranchService {
     try {
       const response = await apiClient.patch<Branch>(`/admin/branches/${id}`, data);
 
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         return response.data;
       }
 
-      throw new Error(response.message || 'Failed to update branch');
+      throw new Error((response.data as any).message || 'Failed to update branch');
     } catch (error) {
       console.error('Branch update error:', error);
       throw error;
@@ -314,8 +315,8 @@ class BranchAPIService implements BranchService {
     try {
       const response = await apiClient.delete(`/admin/branches/${id}`);
 
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to delete branch');
+      if (isFailureResponse(response)) {
+        throw new Error((response.data as any).message || 'Failed to delete branch');
       }
     } catch (error) {
       console.error('Branch deletion error:', error);
@@ -327,11 +328,11 @@ class BranchAPIService implements BranchService {
     try {
       const response = await apiClient.get<BranchStatistics>(`/admin/branches/${id}/statistics`);
 
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         return response.data;
       }
 
-      throw new Error(response.message || 'Failed to fetch branch statistics');
+      throw new Error((response.data as any).message || 'Failed to fetch branch statistics');
     } catch (error) {
       console.error('Branch statistics fetch error:', error);
       throw error;
@@ -354,11 +355,11 @@ class BranchAPIService implements BranchService {
       
       const response = await apiClient.get<PaginatedResponse<Branch>>(url);
 
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         return response.data;
       }
 
-      throw new Error(response.message || 'Failed to fetch branches by state');
+      throw new Error((response.data as any).message || 'Failed to fetch branches by state');
     } catch (error) {
       console.error('Branches by state fetch error:', error);
       throw error;
@@ -381,11 +382,11 @@ class BranchAPIService implements BranchService {
       
       const response = await apiClient.get<PaginatedResponse<Branch>>(url);
 
-      if (response.success && response.data) {
+      if (isSuccessResponse(response)) {
         return response.data;
       }
 
-      throw new Error(response.message || 'Failed to fetch branches by region');
+      throw new Error((response.data as any).message || 'Failed to fetch branches by region');
     } catch (error) {
       console.error('Branches by region fetch error:', error);
       throw error;
