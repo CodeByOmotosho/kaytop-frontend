@@ -8,7 +8,7 @@ import Button from "../../Button";
 import Error from "../../Error";
 
 import Spinner from "../../Spinner";
-import Input from "../../input";
+import Input from "../../Input";
 
 const schema = z
   .object({
