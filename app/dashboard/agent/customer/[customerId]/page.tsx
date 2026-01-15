@@ -307,8 +307,8 @@ const id = Number(customerId);
    
       const activeLoanSummary = activeLoan ? getActiveLoanSummary(activeLoan) : [];
 
-  const profileSummary = customerData?.data
-    ? getBranchCustomerProfileSummary(customerData.data)
+  const profileSummary = customerData
+    ? getBranchCustomerProfileSummary(customerData)
     : [];
 
   const loanSummary = activeLoan
@@ -335,7 +335,7 @@ const savingsSummary = savingsProgress
     async function loadCustomer() {
       try {
         const customerRes = await CustomerService.getBranchCustomerById(id);
-        setCustomer(customerRes.data);
+        setCustomer(customerRes);
       } catch (err) {
         console.error("Failed to load customer", err);
       }
