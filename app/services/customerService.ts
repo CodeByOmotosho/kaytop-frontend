@@ -48,7 +48,8 @@ export class CustomerService {
         `${apiBaseUrl}/admin/users/${customerId}`
       );
       // console.log(response);
-      return { data: response.data };
+      // return { data: response.data };
+      return  response.data;
     } catch (error: AxiosError | unknown) {
       const err = error as AxiosError;
       console.log("Error fetching branch customer by id", err.response?.data);
