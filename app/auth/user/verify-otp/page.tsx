@@ -1,3 +1,5 @@
+"use client"
+
 import VerifyOtpForm from "@/app/_components/ui/auth/user/VerifyOtpForm";
 import { Purpose } from "@/app/types/auth";
 
