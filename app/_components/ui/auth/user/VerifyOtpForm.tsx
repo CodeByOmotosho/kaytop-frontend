@@ -6,9 +6,13 @@ import Spinner from "../../Spinner";
 import { useUserOtpVerification } from "@/app/hooks/useUserOtpVerification";
 import { Purpose } from "@/app/types/auth";
 
-export default function VerifyOtpForm() {
+interface VerifyOtpFormProps {
+  purpose: Purpose.Password_reset | Purpose.Email_verification;
+}
+
+export default function VerifyOtpForm({ purpose }: VerifyOtpFormProps) {
    const { countDown, disabled, isLoading, resendOtp, handleOtp, email } =
-    useUserOtpVerification();
+    useUserOtpVerification(purpose);
 
   return (
     <form action="" className="my-2">
