@@ -1,4 +1,4 @@
-import { StatusBadge } from "@/app/dashboard/agent/loans/page";
+import { StatusBadge } from "@/app/dashboard/agent/loans/LoanAgentClient";
 import { SummaryProps } from "@/app/types/dashboard";
 import React from "react";
 

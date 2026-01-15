@@ -7,7 +7,7 @@ import TableState from "./table/TableState";
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import Pagination from "./Pagination";
-import { StatusBadge } from "@/app/dashboard/agent/loans/page";
+import { StatusBadge } from "@/app/dashboard/agent/loans/LoanAgentClient";
 
 
 interface UserLoanTableProps {

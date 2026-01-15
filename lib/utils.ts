@@ -1,4 +1,3 @@
-import { StatusBadge } from "@/app/dashboard/agent/loans/page";
 import { CreditOfficerProfile, Summary } from "@/app/types/creditOfficer";
 import { CustomerData } from "@/app/types/customer";
 import { DashboardKpi, MetricProps, SummaryProps } from "@/app/types/dashboard";
