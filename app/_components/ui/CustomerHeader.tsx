@@ -9,9 +9,10 @@ interface CustomerHeaderProps {
   data?: {
     branch: string;
   };
+   showBranch?: boolean;
 }
 
-export function CustomerHeader({ title = "Customers", data, isLoading }: CustomerHeaderProps) {
+export function CustomerHeader({ title = "Customers", data, isLoading, showBranch = false }: CustomerHeaderProps) {
   const {
     open,
     setOpen,
@@ -25,6 +26,11 @@ export function CustomerHeader({ title = "Customers", data, isLoading }: Custome
     <>
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl  font-semibold text-slate-900">{title}</h1>
+         {showBranch && data?.branch && !isLoading && (
+          <p className="text-sm text-slate-500">
+            {data.branch} Branch
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between mt-8 gap-y-2">

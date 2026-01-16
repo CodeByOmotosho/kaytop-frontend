@@ -466,16 +466,16 @@ async function handleAddSavings(amount: number, description: string) {
         <>
           <div className="px-5 py-3 my-3 bg-white rounded-md">
               <ActiveLoanCard
-            loanId={loan.id}
-            amount={Number(loan.amount)}
-            outstanding={Number(loan.remainingBalance)}
-             amountPaid={Number(loan.amountPaid)}
+            loanId={loan?.id}
+            amount={Number(loan?.amount)}
+            outstanding={Number(loan?.remainingBalance)}
+             amountPaid={Number(loan?.amountPaid)}
             dailyPayment={Number(loan?.dailyRepayment)}
-            interestRate={Number(loan.interestRate)}
-            disburseDate={loan.disbursementDate}
-            dueDate={loan.dueDate}
+            interestRate={Number(loan?.interestRate)}
+            disburseDate={loan?.disbursementDate}
+            dueDate={loan?.dueDate}
             progress={Math.round(
-              (Number(loan.amountPaid) / Number(loan?.totalRepayable)) * 100
+              (Number(loan?.amountPaid) / Number(loan?.totalRepayable)) * 100
             )}
             onRecordRepayment={() => setIsRepaymentModalOpen(true)}
             onAddSavings={() => setIsSavingsModalOpen(true)}

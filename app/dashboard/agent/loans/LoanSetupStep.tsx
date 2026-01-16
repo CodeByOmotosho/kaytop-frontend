@@ -143,7 +143,7 @@ export default function LoanSetupStep({
       </p>
 
       {/* Select Customer */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <label className="text-sm font-medium text-slate-700 sm:w-40">
           Select Customer
         </label>
@@ -162,13 +162,13 @@ export default function LoanSetupStep({
       </div>
 
       {checked && hasLoan && (
-        <p className="text-red-600 text-xs ml-40 mt-1">
+        <p className="text-red-600 text-xs ml-44 mb-2">
           This user has an existing loan and cannot access a new one.
         </p>
       )}
 
       {/* Loan Amount */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3 mt-4">
         <label className="text-sm font-medium text-slate-700 sm:w-40">
           Loan amount
         </label>

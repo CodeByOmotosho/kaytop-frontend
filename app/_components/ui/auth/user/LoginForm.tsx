@@ -51,9 +51,14 @@ export default function LoginForm() {
 
       const accessToken = response.access_token;
       const role = response.role;
-      console.log("role",role);
+      const isVerified = response.isVerified;
       auth(accessToken, role);
       setCookie(accessToken, role);
+       if (!isVerified) {
+      toast.success("Your account is under review");
+      router.push("/review");
+      return;
+    }
       toast.success("You have logged in successfuly");
       router.push(ROUTES.Bm.DASHBOARD);
     } catch (error: AxiosError | unknown) {

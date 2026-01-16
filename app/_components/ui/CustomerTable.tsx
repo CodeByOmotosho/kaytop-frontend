@@ -63,7 +63,7 @@ export function CustomerTable({
           />
 
           {item?.map((c) => (
-            <tr key={c.id} className="border-t hover:bg-gray-50">
+            <tr key={c.id} className="border-t hover:bg-gray-50 text-nowrap">
               <td onClick={() => goToCustomer(c.id)}   className="p-4">
                 <input
                   type="checkbox"
