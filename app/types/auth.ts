@@ -48,6 +48,7 @@ export interface ApiErrorResponse {
 export interface LoginResponse {
   access_token: string;
   role: string;
+  isVerified: boolean;
 }
 
 //Generic response type
