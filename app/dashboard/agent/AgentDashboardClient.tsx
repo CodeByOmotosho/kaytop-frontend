@@ -59,7 +59,7 @@ const recollections: UpcomingPaymentUI[] =
   return (
     <div className="space-y-6 pb-12 px-6">
       {/* Header row: Title + controls */}
-       <CustomerHeader title="Dashboard" data={dashboardData} isLoading={isDashboardLoading} />
+       <CustomerHeader title="Dashboard" data={dashboardData} isLoading={isDashboardLoading} showBranch />
 
 
       {/* Activity area: Bar chart + donut on right */}
