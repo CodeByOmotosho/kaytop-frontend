@@ -33,7 +33,7 @@ export default function UserLoanTable({
   return (
     <div className="overflow-x-auto p-2">
       <table className="table table-md text-sm">
-        <thead className="bg-slate-50 text-slate-500">
+        <thead className="bg-slate-50 text-slate-500 ">
             <tr>
               <th className="p-4">
                 <input type="checkbox" />
@@ -58,7 +58,7 @@ export default function UserLoanTable({
 
           {item?.map((loan, index) => {
             return (
-               <tr key={loan.id} className="border-t">
+               <tr key={loan.id} className="border-t text-nowrap">
                 <td className="p-4">
                    <input
                     type="checkbox"
