@@ -1,12 +1,11 @@
-
 export interface Routes {
+  Auth: {
+    LOGIN: string;
+    FORGOT_PASSWORD: string;
+    VERIFY_OTP: string;
+    RESET_PASSWORD: string;
+  };
   Bm: {
-    Auth: {
-      LOGIN: string;
-      FORGOT_PASSWORD: string;
-      VERIFY_OTP: string;
-      RESET_PASSWORD: string;
-    },
     DASHBOARD: string;
     CREDIT: string;
     CUSTOMERS: string;
@@ -23,8 +22,6 @@ export interface Routes {
     },
   };
 }
-
-
 
 export interface MenuItem {
   icon: string;
