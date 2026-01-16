@@ -408,7 +408,7 @@ async function handleAddSavings(amount: number, description: string) {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-6 sm:pt-4 lg:pt-2">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold">Welcome back, {userName}!</h1>
         </div>
