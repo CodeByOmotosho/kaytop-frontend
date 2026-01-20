@@ -347,7 +347,7 @@ export default function TransactionHistoryTable({ transactions, onTransactionAct
       {totalPages > 1 && (
         <div className="mt-4">
           <Pagination
-            currentPage={currentPage}
+            page={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />

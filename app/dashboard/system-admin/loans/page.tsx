@@ -538,7 +538,7 @@ export default function LoansPage() {
                       </div>
 
                       <Pagination
-                        currentPage={currentPage}
+                        page={currentPage}
                         totalPages={totalPages}
                         onPageChange={handlePageChange}
                       />

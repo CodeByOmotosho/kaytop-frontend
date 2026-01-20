@@ -757,7 +757,7 @@ export default function SystemAdminDashboard() {
                   {totalPages > 1 && (
                     <Pagination
                       totalPages={totalPages}
-                      currentPage={currentPage}
+                      page={currentPage}
                       onPageChange={handlePageChange}
                     />
                   )}

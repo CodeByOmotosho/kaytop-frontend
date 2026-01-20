@@ -440,7 +440,7 @@ export default function AMBranchesPage() {
                     
                     <Pagination
                       totalPages={totalPages}
-                      currentPage={currentPage}
+                      page={currentPage}
                       onPageChange={handlePageChange}
                     />
                   </div>

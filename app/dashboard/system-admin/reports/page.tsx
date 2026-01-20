@@ -547,7 +547,7 @@ export default function ReportsPage() {
 
                       <Pagination
                         totalPages={totalPages}
-                        currentPage={currentPage}
+                        page={currentPage}
                         onPageChange={handlePageChange}
                       />
                     </div>

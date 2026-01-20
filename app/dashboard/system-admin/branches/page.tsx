@@ -491,7 +491,7 @@ export default function BranchesPage() {
                     
                     <Pagination
                       totalPages={totalPages}
-                      currentPage={currentPage}
+                      page={currentPage}
                       onPageChange={handlePageChange}
                     />
                   </div>

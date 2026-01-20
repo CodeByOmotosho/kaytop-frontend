@@ -475,7 +475,7 @@ export default function AMReportsPage() {
 
                       <Pagination
                         totalPages={totalPages}
-                        currentPage={currentPage}
+                        page={currentPage}
                         onPageChange={handlePageChange}
                       />
                     </div>

@@ -502,7 +502,7 @@ export default function AMCreditOfficersPage() {
                     
                     <Pagination
                       totalPages={totalPages}
-                      currentPage={currentPage}
+                      page={currentPage}
                       onPageChange={handlePageChange}
                     />
                   </div>

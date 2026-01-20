@@ -520,7 +520,7 @@ export default function CreditOfficersPage() {
                   <div className="mt-4">
                     <Pagination
                       totalPages={totalPages}
-                      currentPage={currentPage}
+                      page={currentPage}
                       onPageChange={handlePageChange}
                     />
                   </div>

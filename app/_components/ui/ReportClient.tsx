@@ -30,7 +30,12 @@ import ReportsTable from "./table/ReportsTable";
 export default function ReportClient() {
   const [reportType, setReportType] = useState<ReportType | undefined>();
   const { isLoading, error, data } = useDashboardQuery();
-  const metricData = data ? getReportMetrics(data) : [];
+  const metricData = data?.reportStats ? getReportMetrics({
+    totalReports: data.reportStats.totalReports,
+    missedReports: data.reportStats.totalPending,
+    totalReportsGrowth: 0, // TODO: Add growth calculation when available
+    missedReportsGrowth: 0, // TODO: Add growth calculation when available
+  }) : [];
 
   const branch = data?.branch;
 
