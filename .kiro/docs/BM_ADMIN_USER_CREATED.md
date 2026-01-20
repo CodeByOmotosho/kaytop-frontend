@@ -7,8 +7,8 @@
 | Field | Value |
 |-------|-------|
 | **Name** | John Manager |
-| **Email** | bmadmin@kaytop.com |
-| **Password** | BMAdmin123 |
+| **Email** | [MOVED TO .kiro/admin-credentials.md] |
+| **Password** | [MOVED TO .kiro/admin-credentials.md] |
 | **Role** | branch_manager |
 | **Branch** | Lagos Main Branch |
 | **State** | Lagos |
@@ -17,9 +17,11 @@
 
 ### 🔐 **Login Credentials**
 
+⚠️ **SECURITY NOTICE:** Credentials have been moved to `.kiro/admin-credentials.md` for security purposes.
+
 ```
-Email: bmadmin@kaytop.com
-Password: BMAdmin123
+Email: [See .kiro/admin-credentials.md]
+Password: [See .kiro/admin-credentials.md]
 User Type: admin
 Dashboard: /dashboard/bm
 ```
@@ -40,8 +42,8 @@ Dashboard: /dashboard/bm
 
 2. **Login with Credentials:**
    ```
-   Email: bmadmin@kaytop.com
-   Password: BMAdmin123
+   Email: [See .kiro/admin-credentials.md]
+   Password: [See .kiro/admin-credentials.md]
    ```
 
 3. **Dashboard Access:**

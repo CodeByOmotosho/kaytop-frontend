@@ -28,9 +28,12 @@ export function AuthGuard({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const { session } = useAuth();
+  const { session, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
+    // Wait for auth context to finish loading
+    if (authLoading) return;
+
     const checkAuth = () => {
       if (!session) {
         router.push(fallbackPath);
@@ -53,9 +56,9 @@ export function AuthGuard({
     };
 
     checkAuth();
-  }, [router, requiredRole, requiredRoles, fallbackPath, session]);
+  }, [router, requiredRole, requiredRoles, fallbackPath, session, authLoading]);
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7F56D9]"></div>

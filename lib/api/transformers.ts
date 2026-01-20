@@ -398,7 +398,8 @@ export class DataTransformers {
       const fullName = `${firstName} ${lastName}`.toLowerCase();
 
       // System Admin detection
-      if (email === 'admin@kaytop.com' ||
+      if (email === process.env.SYSTEM_ADMIN_EMAIL?.toLowerCase() ||
+        email?.includes('admin@') ||
         firstName === 'system' ||
         fullName.includes('system admin')) {
         return 'system_admin';

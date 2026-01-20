@@ -429,7 +429,7 @@ export default function SettingsPage() {
         role: backendRole as any,
         // Branch is often required for staff, default to a sensible value or empty
         branch: adminData.branch || 'Head Office',
-        password: 'Password123!', // Backend usually requires a temporary password
+        password: process.env.DEFAULT_ADMIN_PASSWORD || 'TempPassword123!', // Backend usually requires a temporary password
       };
 
       await createStaffMutation.mutateAsync(staffData);

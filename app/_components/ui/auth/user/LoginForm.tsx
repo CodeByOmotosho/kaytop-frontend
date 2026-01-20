@@ -101,6 +101,7 @@ export default function LoginForm() {
           type="email"
           placeholder="Enter your email"
           id="email"
+          autoComplete="email"
           disabled={isSubmitting}
           {...register("email")}
           className="mt-1"
@@ -114,6 +115,7 @@ export default function LoginForm() {
           type="password"
           placeholder="Enter your password"
           id="password"
+          autoComplete="current-password"
           disabled={isSubmitting}
           {...register("password")}
           className="mt-1"

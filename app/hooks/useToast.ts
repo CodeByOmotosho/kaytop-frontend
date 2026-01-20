@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 
 export interface Toast {
   id: string;
@@ -9,9 +9,10 @@ export interface Toast {
 
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const baseId = useId();
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'info', duration = 5000) => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = `${baseId}-${Date.now()}-${toasts.length}`;
     const toast: Toast = { id, message, type, duration };
     
     setToasts(prev => [...prev, toast]);
@@ -23,7 +24,7 @@ export function useToast() {
     }
     
     return id;
-  }, []);
+  }, [baseId, toasts.length]);
 
   const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));

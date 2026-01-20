@@ -18,52 +18,52 @@
   
   "user_credentials": {
     "system_admin": {
-      "email": "admin@kaytop.com",
-      "password": "Admin123",
+      "email": "{{SYSTEM_ADMIN_EMAIL}}",
+      "password": "{{SYSTEM_ADMIN_PASSWORD}}",
       "role": "system_admin",
       "status": "✅ EXISTING - VERIFIED",
       "dashboard": "/dashboard/system-admin",
-      "note": "Primary admin account for user creation"
+      "note": "⚠️ CREDENTIALS MOVED TO .kiro/admin-credentials.md FOR SECURITY"
     },
     "branch_manager": {
-      "email": "branchmanager@kaytop.com",
-      "password": "BranchManager123",
+      "email": "{{BRANCH_MANAGER_EMAIL}}",
+      "password": "{{BRANCH_MANAGER_PASSWORD}}",
       "role": "branch_manager",
       "status": "✅ CREATED AND VERIFIED",
       "dashboard": "/dashboard/bm",
-      "note": "Branch Manager with access to BM dashboard"
+      "note": "⚠️ CREDENTIALS MOVED TO .kiro/admin-credentials.md FOR SECURITY"
     },
     "account_manager": {
-      "email": "accountmanager@kaytop.com",
-      "password": "AccountManager123",
+      "email": "{{ACCOUNT_MANAGER_EMAIL}}",
+      "password": "{{ACCOUNT_MANAGER_PASSWORD}}",
       "role": "account_manager",
       "status": "✅ CREATED AND VERIFIED",
       "dashboard": "/dashboard/am",
-      "note": "Account Manager with access to AM dashboard"
+      "note": "⚠️ CREDENTIALS MOVED TO .kiro/admin-credentials.md FOR SECURITY"
     },
     "hq_manager": {
-      "email": "hqmanager@kaytop.com",
-      "password": "HQManager123",
+      "email": "{{HQ_MANAGER_EMAIL}}",
+      "password": "{{HQ_MANAGER_PASSWORD}}",
       "role": "hq_manager",
       "status": "✅ CREATED AND VERIFIED",
       "dashboard": "/dashboard/am",
-      "note": "HQ Manager with access to AM dashboard (backend role mapping)"
+      "note": "⚠️ CREDENTIALS MOVED TO .kiro/admin-credentials.md FOR SECURITY"
     },
     "credit_officer": {
-      "email": "creditofficer@kaytop.com",
-      "password": "CreditOfficer123",
+      "email": "{{CREDIT_OFFICER_EMAIL}}",
+      "password": "{{CREDIT_OFFICER_PASSWORD}}",
       "role": "credit_officer",
       "status": "✅ CREATED AND VERIFIED",
       "dashboard": "/dashboard/credit-officer",
-      "note": "Credit Officer with access to CO dashboard"
+      "note": "⚠️ CREDENTIALS MOVED TO .kiro/admin-credentials.md FOR SECURITY"
     },
     "customer": {
-      "email": "customer@kaytop.com",
-      "password": "Customer123",
+      "email": "{{CUSTOMER_EMAIL}}",
+      "password": "{{CUSTOMER_PASSWORD}}",
       "role": "customer",
       "status": "✅ CREATED AND VERIFIED",
       "dashboard": "/dashboard/customer",
-      "note": "Customer user with access to customer dashboard"
+      "note": "⚠️ CREDENTIALS MOVED TO .kiro/admin-credentials.md FOR SECURITY"
     }
   },
   

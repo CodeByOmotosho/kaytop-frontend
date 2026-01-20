@@ -298,14 +298,14 @@ export function AccessibleField({
   required = false,
   className = ''
 }: AccessibleFieldProps) {
-  const fieldId = useRef(`field-${Math.floor(Math.random() * 1000000)}`);
-  const errorId = useRef(`error-${fieldId.current}`);
-  const hintId = useRef(`hint-${fieldId.current}`);
+  const fieldId = useId();
+  const errorId = `error-${fieldId}`;
+  const hintId = `hint-${fieldId}`;
 
   return (
     <div className={`space-y-2 ${className}`}>
       <label 
-        htmlFor={fieldId.current}
+        htmlFor={fieldId}
         className="block text-sm font-medium text-[#344054]"
       >
         {label}
@@ -317,17 +317,17 @@ export function AccessibleField({
       </label>
       
       {hint && (
-        <p id={hintId.current} className="text-sm text-[#667085]">
+        <p id={hintId} className="text-sm text-[#667085]">
           {hint}
         </p>
       )}
       
       <div>
         {React.cloneElement(children as React.ReactElement, {
-          id: fieldId.current,
+          id: fieldId,
           'aria-describedby': [
-            hint ? hintId.current : '',
-            error ? errorId.current : ''
+            hint ? hintId : '',
+            error ? errorId : ''
           ].filter(Boolean).join(' ') || undefined,
           'aria-invalid': error ? 'true' : undefined,
           'aria-required': required ? 'true' : undefined
@@ -336,7 +336,7 @@ export function AccessibleField({
       
       {error && (
         <p 
-          id={errorId.current} 
+          id={errorId} 
           className="text-sm text-red-600 flex items-center"
           role="alert"
         >
@@ -368,7 +368,7 @@ export function AccessibleModal({
 }: AccessibleModalProps) {
   const { trapFocus, restoreFocus } = useFocusManagement();
   const modalRef = useRef<HTMLDivElement>(null);
-  const titleId = useRef(`modal-title-${Math.floor(Math.random() * 1000000)}`);
+  const titleId = useId();
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -419,11 +419,11 @@ export function AccessibleModal({
         className={`bg-white rounded-lg shadow-lg max-w-md w-full mx-4 ${className}`}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId.current}
+        aria-labelledby={titleId}
         tabIndex={-1}
       >
         <div className="p-6">
-          <h2 id={titleId.current} className="text-lg font-semibold text-[#021C3E] mb-4">
+          <h2 id={titleId} className="text-lg font-semibold text-[#021C3E] mb-4">
             {title}
           </h2>
           {children}

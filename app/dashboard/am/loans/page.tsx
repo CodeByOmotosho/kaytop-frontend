@@ -82,7 +82,7 @@ const transformAMLoanToLoanData = (loan: any): LoanData => {
     amount: loan.amount,
     interestRate: loan.interestRate || 15,
     nextRepaymentDate: loan.nextRepaymentDate || loan.dueDate || new Date().toISOString(),
-    disbursementDate: loan.disbursementDate ? loan.disbursementDate : new Date(loan.createdAt || Date.now()).toISOString(),
+    disbursementDate: loan.disbursementDate || loan.createdAt || new Date().toISOString(),
     term: loan.term || loan.tenure || 12,
     branchId: loan.branch || 'Unknown',
     creditOfficer: loan.creditOfficer || 'Unassigned',
