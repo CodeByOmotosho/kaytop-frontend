@@ -16,6 +16,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const ROUTES: Routes = {
+  Auth: {
+    LOGIN: "/auth/login",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    VERIFY_OTP: "/auth/verify-otp",
+    RESET_PASSWORD: "/auth/reset-password",
+  },
   Bm: {
     Auth: {
       LOGIN: "/auth/bm/login",
@@ -29,6 +35,14 @@ export const ROUTES: Routes = {
     LOAN: "/dashboard/bm/loan",
     REPORT: "/dashboard/bm/report",
     SETTING: "/dashboard/bm/setting",
+  },
+  User: {
+    Auth: {
+      LOGIN: "/auth/user/login",
+      FORGOT_PASSWORD: "/auth/user/forgot-password",
+      VERIFY_OTP: "/auth/user/verify-otp",
+      RESET_PASSWORD: "/auth/user/reset-password",
+    },
   },
 };
 

@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { StatisticsCard } from "@/app/_components/ui/StatisticsCard";

@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from 'react';
 import { userProfileService, UserProfileData, ChangePasswordData } from '@/lib/services/userProfile';
 import { ToastContainer } from '@/app/_components/ui/ToastContainer';

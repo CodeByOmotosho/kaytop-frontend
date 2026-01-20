@@ -5,6 +5,8 @@
  * Displays comprehensive loan pipeline management for Account Managers
  */
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import SimpleStatisticsCard from '@/app/_components/ui/SimpleStatisticsCard';
 import LoansTabNavigation from '@/app/_components/ui/LoansTabNavigation';
