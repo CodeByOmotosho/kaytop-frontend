@@ -47,6 +47,16 @@ function useAuth() {
   const context = useContext(AuthContext);
 
   if (context === undefined) {
+    // During build time or when used outside provider, return a safe default
+    if (typeof window === 'undefined') {
+      // Build time - return safe defaults
+      return {
+        session: null,
+        login: () => {},
+        logOut: () => {},
+        setCookie: () => {},
+      };
+    }
     throw new Error("AuthContext was used outside of AuthProvider");
   }
 

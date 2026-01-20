@@ -1,10 +1,10 @@
-'use client';
-
-export const dynamic = 'force-dynamic';
-
 import CreditClient from "@/app/_components/ui/CreditClient";
 import SpinnerLg from "@/app/_components/ui/SpinnerLg";
 import { Suspense } from "react";
+
+export const metadata = {
+  title: "Credit officer",
+};
 
 export default function page() {
   return (

@@ -1,7 +1,3 @@
-'use client';
-
-export const dynamic = 'force-dynamic';
-
 import BreadCrumb from "@/app/_components/ui/BreadCrumb";
 import DrawerTable from "@/app/_components/ui/DrawerTable";
 import PieChart from "@/app/_components/ui/PieChart";
