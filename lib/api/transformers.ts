@@ -426,7 +426,7 @@ export class DataTransformers {
    * Normalize user role to match frontend expectations
    * Enhanced with intelligent role detection when backend doesn't provide role field
    */
-  private static normalizeRole(role: string, user?: any): 'system_admin' | 'branch_manager' | 'account_manager' | 'hq_manager' | 'credit_officer' | 'customer' {
+  private static normalizeRole(role: string, user?: Record<string, unknown>): 'system_admin' | 'branch_manager' | 'account_manager' | 'hq_manager' | 'credit_officer' | 'customer' {
     // If role is provided and valid, use it
     if (role && role !== 'undefined') {
       const normalizedRole = role.toLowerCase().replace(/[-\s]/g, '_');
@@ -597,7 +597,7 @@ export class DataTransformers {
   /**
    * Validate and sanitize data to prevent errors
    */
-  static validateAndSanitize<T>(data: any, validator: (item: any) => T): T | null {
+  static validateAndSanitize<T>(data: unknown, validator: (item: unknown) => T): T | null {
     try {
       if (!data || typeof data !== 'object') {
         return null;
@@ -613,8 +613,8 @@ export class DataTransformers {
    * Transform array of items with error handling
    */
   static transformArray<T>(
-    items: any[],
-    transformer: (item: any) => T
+    items: unknown[],
+    transformer: (item: unknown) => T
   ): T[] {
     if (!Array.isArray(items)) {
       return [];
@@ -629,30 +629,30 @@ export class DataTransformers {
    * Transform backend savings account data to frontend format
    * Updated to handle actual backend response structure from /savings endpoints
    */
-  static transformSavingsAccount(backendSavings: any): any {
+  static transformSavingsAccount(backendSavings: Record<string, unknown>): Record<string, unknown> {
     console.log('🔄 Transforming savings data:', backendSavings);
 
     // Extract customer info from nested user object
-    const user = backendSavings.user || {};
-    const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown Customer';
+    const user = (backendSavings.user as Record<string, unknown>) || {};
+    const customerName = `${(user.firstName as string) || ''} ${(user.lastName as string) || ''}`.trim() || 'Unknown Customer';
 
     return {
-      id: backendSavings.id?.toString() || backendSavings.accountId?.toString() || '',
-      customerId: user.id?.toString() || backendSavings.customerId?.toString() || backendSavings.customer_id?.toString() || '',
+      id: (backendSavings.id as string)?.toString() || (backendSavings.accountId as string)?.toString() || '',
+      customerId: (user.id as string)?.toString() || (backendSavings.customerId as string)?.toString() || (backendSavings.customer_id as string)?.toString() || '',
       customerName: customerName,
       // Generate account number if not provided
-      accountNumber: backendSavings.accountNumber || backendSavings.account_number || `SAV-${backendSavings.id}`,
+      accountNumber: (backendSavings.accountNumber as string) || (backendSavings.account_number as string) || `SAV-${backendSavings.id}`,
       // Convert string balance to number
-      balance: parseFloat(backendSavings.balance) || 0,
+      balance: parseFloat((backendSavings.balance as string) || '0') || 0,
       // Default status since backend doesn't provide it
-      status: DataTransformers.normalizeSavingsStatus(backendSavings.status || 'active'),
-      createdAt: backendSavings.createdAt || backendSavings.created_at || new Date().toISOString(),
-      updatedAt: backendSavings.updatedAt || backendSavings.updated_at || backendSavings.createdAt || new Date().toISOString(),
-      branch: user.branch || backendSavings.branch || backendSavings.branchName || '',
+      status: DataTransformers.normalizeSavingsStatus((backendSavings.status as string) || 'active'),
+      createdAt: (backendSavings.createdAt as string) || (backendSavings.created_at as string) || new Date().toISOString(),
+      updatedAt: (backendSavings.updatedAt as string) || (backendSavings.updated_at as string) || (backendSavings.createdAt as string) || new Date().toISOString(),
+      branch: (user.branch as string) || (backendSavings.branch as string) || (backendSavings.branchName as string) || '',
       // Convert string interest rate to number if provided
-      interestRate: parseFloat(backendSavings.interestRate) || parseFloat(backendSavings.interest_rate) || 0,
+      interestRate: parseFloat((backendSavings.interestRate as string) || '0') || parseFloat((backendSavings.interest_rate as string) || '0') || 0,
       // Transform nested transactions if present
-      transactions: backendSavings.transactions ? backendSavings.transactions.map((t: any) => DataTransformers.transformTransaction(t)) : undefined,
+      transactions: backendSavings.transactions ? (backendSavings.transactions as Record<string, unknown>[]).map((t: Record<string, unknown>) => DataTransformers.transformTransaction(t)) : undefined,
     };
   }
 
@@ -660,7 +660,7 @@ export class DataTransformers {
    * Transform backend transaction data to frontend format
    * Updated to handle actual backend response structure from /savings/transactions endpoints
    */
-  static transformTransaction(backendTransaction: any): any {
+  static transformTransaction(backendTransaction: Record<string, unknown>): Record<string, unknown> {
     console.log('🔄 Transforming transaction data:', backendTransaction);
 
     // Extract customer info from nested savings.user object if present
@@ -694,28 +694,28 @@ export class DataTransformers {
    * Transform backend report data to frontend Report interface
    * Updated to handle actual backend response structure from /reports endpoints
    */
-  static transformReport(backendReport: any): any {
+  static transformReport(backendReport: Record<string, unknown>): Record<string, unknown> {
     console.log('🔄 Transforming report data:', backendReport);
 
     // Extract credit officer info from nested user object if present
-    const user = backendReport.user || backendReport.creditOfficer || {};
-    const creditOfficerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-      backendReport.creditOfficer ||
+    const user = (backendReport.user as Record<string, unknown>) || (backendReport.creditOfficer as Record<string, unknown>) || {};
+    const creditOfficerName = `${(user.firstName as string) || ''} ${(user.lastName as string) || ''}`.trim() ||
+      (backendReport.creditOfficer as string) ||
       'Unknown Officer';
 
     return {
-      id: backendReport.id?.toString() || backendReport.reportId?.toString() || '',
-      reportId: backendReport.reportId?.toString() || backendReport.id?.toString() || '',
+      id: (backendReport.id as string)?.toString() || (backendReport.reportId as string)?.toString() || '',
+      reportId: (backendReport.reportId as string)?.toString() || (backendReport.id as string)?.toString() || '',
       creditOfficer: creditOfficerName,
-      creditOfficerId: user.id?.toString() || backendReport.creditOfficerId?.toString() || backendReport.userId?.toString() || '',
-      branch: user.branch || backendReport.branch || backendReport.branchName || '',
-      branchId: backendReport.branchId?.toString() || backendReport.branch_id?.toString() || '',
-      email: user.email || backendReport.email || '',
+      creditOfficerId: (user.id as string)?.toString() || (backendReport.creditOfficerId as string)?.toString() || (backendReport.userId as string)?.toString() || '',
+      branch: (user.branch as string) || (backendReport.branch as string) || (backendReport.branchName as string) || '',
+      branchId: (backendReport.branchId as string)?.toString() || (backendReport.branch_id as string)?.toString() || '',
+      email: (user.email as string) || (backendReport.email as string) || '',
       // Handle date and time fields
-      dateSent: backendReport.dateSent || backendReport.date_sent || backendReport.submittedAt || backendReport.createdAt || new Date().toISOString().split('T')[0],
-      timeSent: backendReport.timeSent || backendReport.time_sent || new Date().toISOString().split('T')[1]?.split('.')[0] || '00:00:00',
+      dateSent: (backendReport.dateSent as string) || (backendReport.date_sent as string) || (backendReport.submittedAt as string) || (backendReport.createdAt as string) || new Date().toISOString().split('T')[0],
+      timeSent: (backendReport.timeSent as string) || (backendReport.time_sent as string) || new Date().toISOString().split('T')[1]?.split('.')[0] || '00:00:00',
       // Normalize report type
-      reportType: DataTransformers.normalizeReportType(backendReport.reportType || backendReport.type),
+      reportType: DataTransformers.normalizeReportType((backendReport.reportType as string) || (backendReport.type as string)),
       // Normalize status
       status: DataTransformers.normalizeReportStatus(backendReport.status),
       // Handle approval status
@@ -737,7 +737,7 @@ export class DataTransformers {
   /**
    * Transform backend report statistics data to frontend ReportStatistics interface
    */
-  static transformReportStatistics(backendStats: any): any {
+  static transformReportStatistics(backendStats: Record<string, unknown>): Record<string, unknown> {
     console.log('🔄 Transforming report statistics:', backendStats);
 
     // Helper function to create statistic value with growth
@@ -821,12 +821,18 @@ export class DataTransformers {
         return 'pending';
     }
   }
-  static transformChartData(backendData: any): any {
+  static transformChartData(backendData: unknown): Record<string, unknown> {
     // Handle different backend response formats
     if (Array.isArray(backendData)) {
       // Format: [{ month: 'Jan', amount: 1000000 }, ...]
-      const labels = backendData.map(item => item.month || item.label || item.name || '');
-      const data = backendData.map(item => item.amount || item.value || item.total || 0);
+      const labels = backendData.map(item => {
+        const itemObj = item as Record<string, unknown>;
+        return (itemObj.month as string) || (itemObj.label as string) || (itemObj.name as string) || '';
+      });
+      const data = backendData.map(item => {
+        const itemObj = item as Record<string, unknown>;
+        return (itemObj.amount as number) || (itemObj.value as number) || (itemObj.total as number) || 0;
+      });
 
       return {
         labels,
@@ -869,8 +875,8 @@ export class DataTransformers {
    * Transform API response with proper error handling and validation
    */
   static transformApiResponse<T>(
-    response: any,
-    transformer: (item: any) => T,
+    response: unknown,
+    transformer: (item: unknown) => T,
     options: {
       isArray?: boolean;
       isPaginated?: boolean;

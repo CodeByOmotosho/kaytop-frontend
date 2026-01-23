@@ -257,8 +257,15 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await apiClient.get<any>(`/loans/all?${queryParams.toString()}`);
-      const loans = response.data?.data || response.data || [];
+      const response = await apiClient.get<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/loans/all?${queryParams.toString()}`);
+      const responseData = response.data;
+      let loans: Record<string, unknown>[] = [];
+      
+      if (Array.isArray(responseData)) {
+        loans = responseData;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        loans = (responseData.data as Record<string, unknown>[]) || [];
+      }
       
       return loans.length;
     } catch {
@@ -276,11 +283,18 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await apiClient.get<any>(`/loans/all?${queryParams.toString()}`);
-      const loans = response.data?.data || response.data || [];
+      const response = await apiClient.get<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/loans/all?${queryParams.toString()}`);
+      const responseData = response.data;
+      let loans: Record<string, unknown>[] = [];
       
-      const totalAmount = loans.reduce((sum: number, loan: any) => 
-        sum + (parseFloat(loan.amount) || 0), 0
+      if (Array.isArray(responseData)) {
+        loans = responseData;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        loans = (responseData.data as Record<string, unknown>[]) || [];
+      }
+      
+      const totalAmount = loans.reduce((sum: number, loan: Record<string, unknown>) => 
+        sum + (parseFloat((loan.amount as string) || '0') || 0), 0
       );
       
       return totalAmount;
@@ -299,11 +313,18 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await apiClient.get<any>(`/loans/all?${queryParams.toString()}`);
-      const loans = response.data?.data || response.data || [];
+      const response = await apiClient.get<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/loans/all?${queryParams.toString()}`);
+      const responseData = response.data;
+      let loans: Record<string, unknown>[] = [];
       
-      const activeLoans = loans.filter((loan: any) => 
-        loan.status === 'active' || loan.status === 'disbursed'
+      if (Array.isArray(responseData)) {
+        loans = responseData;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        loans = (responseData.data as Record<string, unknown>[]) || [];
+      }
+      
+      const activeLoans = loans.filter((loan: Record<string, unknown>) => 
+        (loan.status as string) === 'active' || (loan.status as string) === 'disbursed'
       );
       
       return activeLoans.length;
@@ -322,8 +343,15 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       queryParams.append('limit', '1000');
       
-      const response = await apiClient.get<any>(`/loans/missed?${queryParams.toString()}`);
-      const missedLoans = response.data?.data || response.data || [];
+      const response = await apiClient.get<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(`/loans/missed?${queryParams.toString()}`);
+      const responseData = response.data;
+      let missedLoans: Record<string, unknown>[] = [];
+      
+      if (Array.isArray(responseData)) {
+        missedLoans = responseData;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        missedLoans = (responseData.data as Record<string, unknown>[]) || [];
+      }
       
       return missedLoans.length;
     } catch {
