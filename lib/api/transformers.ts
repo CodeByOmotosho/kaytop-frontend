@@ -12,35 +12,50 @@ import type {
   BranchPerformance,
   PaginatedResponse
 } from './types';
+import type { UserApiData, LoanApiData, DashboardKPIData } from '../types/api-responses';
 
 // Export individual transformer functions for convenience
-export const transformUserData = (data: any) => DataTransformers.transformUser(data);
-export const transformAdminProfileData = (data: any) => DataTransformers.transformAdminProfile(data);
-export const transformLoanData = (data: any) => DataTransformers.transformLoan(data);
-export const transformDashboardKPIData = (data: any) => DataTransformers.transformDashboardKPIs(data);
-export const transformSavingsData = (data: any) => DataTransformers.transformSavingsAccount(data);
-export const transformTransactionData = (data: any) => DataTransformers.transformTransaction(data);
-export const transformReportData = (data: any) => DataTransformers.transformReport(data);
-export const transformReportStatisticsData = (data: any) => DataTransformers.transformReportStatistics(data);
+export const transformUserData = (data: UserApiData) => DataTransformers.transformUser(data);
+export const transformAdminProfileData = (data: UserApiData) => DataTransformers.transformAdminProfile(data);
+export const transformLoanData = (data: LoanApiData) => DataTransformers.transformLoan(data);
+export const transformDashboardKPIData = (data: DashboardKPIData) => DataTransformers.transformDashboardKPIs(data);
+export const transformSavingsData = (data: Record<string, unknown>) => DataTransformers.transformSavingsAccount(data);
+export const transformTransactionData = (data: Record<string, unknown>) => DataTransformers.transformTransaction(data);
+export const transformReportData = (data: Record<string, unknown>) => DataTransformers.transformReport(data);
+export const transformReportStatisticsData = (data: Record<string, unknown>) => DataTransformers.transformReportStatistics(data);
 
 export class DataTransformers {
 
   /**
    * Transform backend user data to frontend User interface
-   * Updated to handle actual backend response structure from /admin/users endpoints
+   * Updated to handle actual backend response structure from /admin/users and /admin/staff/my-staff endpoints
    */
-  static transformUser(backendUser: any): User {
-    console.log('🔄 Transforming user data:', backendUser);
+  static transformUser(backendUser: UserApiData): User {
+    console.log('🔄 Transforming user data:', {
+      id: backendUser.id,
+      firstName: backendUser.firstName,
+      lastName: backendUser.lastName,
+      email: backendUser.email,
+      originalRole: backendUser.role,
+      hasCreatedBy: !!backendUser.createdBy,
+      source: backendUser.createdBy ? 'staff-endpoint' : 'users-endpoint',
+      allFields: Object.keys(backendUser || {})
+    });
 
-    return {
+    // If user has a valid role from backend (likely from /admin/staff/my-staff), use it directly
+    const hasValidRole = backendUser.role && backendUser.role !== 'undefined' && backendUser.role !== null;
+    
+    const transformedUser = {
       id: backendUser.id?.toString() || backendUser.userId?.toString() || '',
       firstName: backendUser.firstName || backendUser.first_name || '',
       lastName: backendUser.lastName || backendUser.last_name || '',
       profilePicture: backendUser.profilePicture || backendUser.profile_picture || undefined,
       email: backendUser.email || '',
       mobileNumber: backendUser.mobileNumber || backendUser.mobile_number || backendUser.phone || '',
-      // Normalize role - backend may return different role values, with intelligent detection fallback
-      role: DataTransformers.normalizeRole(backendUser.role, backendUser),
+      // Use backend role if valid, otherwise use intelligent detection
+      role: hasValidRole ? 
+        DataTransformers.normalizeBackendRole(backendUser.role) : 
+        DataTransformers.normalizeRole(backendUser.role, backendUser),
       branch: backendUser.branch || backendUser.branchName || '',
       state: backendUser.state || '',
       // Handle both verificationStatus and accountStatus fields
@@ -50,6 +65,18 @@ export class DataTransformers {
       createdAt: backendUser.createdAt || backendUser.created_at || new Date().toISOString(),
       updatedAt: backendUser.updatedAt || backendUser.updated_at || backendUser.createdAt || new Date().toISOString(),
     };
+
+    console.log('✅ Transformed user result:', {
+      id: transformedUser.id,
+      firstName: transformedUser.firstName,
+      lastName: transformedUser.lastName,
+      email: transformedUser.email,
+      mobileNumber: transformedUser.mobileNumber,
+      detectedRole: transformedUser.role,
+      roleSource: hasValidRole ? 'backend' : 'detected'
+    });
+
+    return transformedUser;
   }
 
   /**
@@ -357,12 +384,51 @@ export class DataTransformers {
   }
 
   /**
+   * Normalize backend role values to match frontend expectations
+   * This handles roles that come directly from the backend (like from /admin/staff/my-staff)
+   */
+  private static normalizeBackendRole(role: string): 'system_admin' | 'branch_manager' | 'account_manager' | 'hq_manager' | 'credit_officer' | 'customer' {
+    if (!role || role === 'undefined' || role === null) {
+      return 'customer';
+    }
+
+    const normalizedRole = role.toLowerCase().replace(/[-\s]/g, '_');
+
+    switch (normalizedRole) {
+      case 'system_admin':
+      case 'systemadmin':
+      case 'admin':
+        return 'system_admin';
+      case 'branch_manager':
+      case 'branchmanager':
+      case 'manager':
+        return 'branch_manager';
+      case 'account_manager':
+      case 'accountmanager':
+        return 'account_manager';
+      case 'hq_manager':
+      case 'hqmanager':
+        return 'hq_manager';
+      case 'credit_officer':
+      case 'creditofficer':
+      case 'officer':
+        return 'credit_officer';
+      case 'customer':
+      case 'client':
+        return 'customer';
+      default:
+        console.warn(`Unknown backend role: ${role}, defaulting to customer`);
+        return 'customer';
+    }
+  }
+
+  /**
    * Normalize user role to match frontend expectations
    * Enhanced with intelligent role detection when backend doesn't provide role field
    */
   private static normalizeRole(role: string, user?: any): 'system_admin' | 'branch_manager' | 'account_manager' | 'hq_manager' | 'credit_officer' | 'customer' {
     // If role is provided and valid, use it
-    if (role) {
+    if (role && role !== 'undefined') {
       const normalizedRole = role.toLowerCase().replace(/[-\s]/g, '_');
 
       switch (normalizedRole) {
@@ -390,29 +456,43 @@ export class DataTransformers {
       }
     }
 
-    // If no role provided, use intelligent detection based on user attributes
+    // If no role provided or role is undefined, use intelligent detection based on user attributes
     if (user) {
       const email = (user.email || '').toLowerCase();
       const firstName = (user.firstName || '').toLowerCase();
       const lastName = (user.lastName || '').toLowerCase();
       const fullName = `${firstName} ${lastName}`.toLowerCase();
 
+      console.log(`🔍 [DataTransformers] Detecting role for user: ${fullName} (${email})`);
+
       // System Admin detection
-      if (email === process.env.SYSTEM_ADMIN_EMAIL?.toLowerCase() ||
+      if (email === 'admin@kaytop.com' ||
         email?.includes('admin@') ||
         firstName === 'system' ||
         fullName.includes('system admin')) {
+        console.log(`✅ [DataTransformers] Detected role: system_admin`);
         return 'system_admin';
+      }
+
+      // HQ Manager detection (check this before branch manager)
+      if (email.includes('hqmanager') ||
+        email.includes('adminhq') ||
+        fullName.includes('hq manager') ||
+        (firstName === 'ade' && lastName === 'mark') || // From backend dev's example
+        email === 'adminhq@mailsac.com') {
+        console.log(`✅ [DataTransformers] Detected role: hq_manager`);
+        return 'hq_manager';
       }
 
       // Branch Manager detection
       if (email.includes('branch') ||
         email.includes('bm@') ||
+        email.includes('lagos_branch') ||
         firstName === 'branch' ||
         lastName === 'manager' ||
         fullName.includes('branch manager') ||
-        email.includes('hqmanager') ||
-        fullName.includes('hq manager')) {
+        email.includes('bmadmin')) {
+        console.log(`✅ [DataTransformers] Detected role: branch_manager`);
         return 'branch_manager';
       }
 
@@ -421,16 +501,28 @@ export class DataTransformers {
         email.includes('am@') ||
         firstName === 'account' ||
         fullName.includes('account manager')) {
+        console.log(`✅ [DataTransformers] Detected role: account_manager`);
         return 'account_manager';
       }
 
-      // Credit Officer detection
+      // Credit Officer detection - expanded patterns
       if (email.includes('credit') ||
         email.includes('officer') ||
+        email.includes('co@') ||
+        email.includes('loan') ||
         firstName === 'credit' ||
-        fullName.includes('credit officer')) {
+        lastName === 'officer' ||
+        fullName.includes('credit officer') ||
+        fullName.includes('loan officer') ||
+        // Add more specific patterns based on common naming conventions
+        (firstName.length <= 4 && lastName.length <= 4) || // Short names like "Co Officer"
+        email.includes('field') || // Field officers
+        email.includes('agent')) { // Loan agents
+        console.log(`✅ [DataTransformers] Detected role: credit_officer`);
         return 'credit_officer';
       }
+
+      console.log(`⚠️ [DataTransformers] No specific role detected, defaulting to customer`);
     }
 
     // Default to customer for regular users

@@ -217,7 +217,7 @@ export function ReportDetailsModal({
                 className="text-[16px] font-bold leading-[24px] text-[#021C3E]"
                 style={{ fontFamily: 'Open Sauce Sans, sans-serif' }}
               >
-                {reportData.branch || 'Igando Branch'}
+                {reportData.branch || 'Report Overview'}
               </p>
             </div>
           </div>

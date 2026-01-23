@@ -8,7 +8,6 @@ import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { branchPerformanceService } from './branchPerformance';
 import { accurateDashboardService } from './accurateDashboard';
-import { reportsService } from './reports';
 import type {
   DashboardParams,
   DashboardKPIs,
@@ -17,7 +16,7 @@ import type {
   BranchPerformance,
   ReportStatistics,
 } from '../api/types';
-import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
+import { isSuccessResponse } from '../utils/responseHelpers';
 
 export interface DashboardService {
   getKPIs(params?: DashboardParams): Promise<DashboardKPIs>;
@@ -198,6 +197,32 @@ class DashboardAPIService implements DashboardService {
         const totalCount = (data.totalPending || 0) + (data.totalApproved || 0) + (data.totalDeclined || 0);
         
         // The endpoint returns report statistics in a different format
+        // Backend returns: { totalPending: number, totalApproved: number, totalDeclined: number }
+        // Frontend expects: ReportStatistics format
+        reportStats = {
+          totalReports: {
+            count: totalCount,
+            growth: 0 // Backend doesn't provide growth data
+          },
+          submittedReports: {
+            count: totalCount, // All reports are submitted
+            growth: 0
+          },
+          pendingReports: {
+            count: data.totalPending || 0,
+            growth: 0
+          },
+          approvedReports: {
+            count: data.totalApproved || 0,
+            growth: 0
+          },
+          missedReports: {
+            count: data.totalDeclined || 0, // Using declined as missed for now
+            growth: 0
+          }
+        };
+        
+        console.log('✅ Transformed report statistics:', reportStats);
         // Transform to match the expected ReportStatistics interface
         reportStats = {
           totalReports: {

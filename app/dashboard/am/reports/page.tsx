@@ -10,6 +10,7 @@ import Pagination from '@/app/_components/ui/Pagination';
 import ReportsFiltersModal, { ReportsFilters } from '@/app/_components/ui/ReportsFiltersModal';
 import ReportDetailsModal, { ReportDetailsData } from '@/app/_components/ui/ReportDetailsModal';
 import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
+import { PAGINATION_LIMIT } from '@/lib/config';
 import { reportsService } from '@/lib/services/reports';
 import type { Report, ReportStatistics, ReportFilters as APIReportFilters } from '@/lib/api/types';
 import { DateRange } from 'react-day-picker';
@@ -19,10 +20,38 @@ import { useAuth } from '@/app/context/AuthContext';
 export default function AMReportsPage() {
   const { session } = useAuth();
   const { toasts, removeToast, success, error } = useToast();
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last_30_days');
+  
+  // Role-based access control
+  useEffect(() => {
+    if (session && !['account_manager', 'hq_manager', 'system_admin'].includes(session.role)) {
+      error('Access denied. This page is only accessible to Account Managers, HQ Managers, and System Administrators.');
+      // Redirect to appropriate dashboard based on role
+      const roleRedirects = {
+        'credit_officer': '/dashboard/co',
+        'branch_manager': '/dashboard/bm'
+      };
+      const redirectPath = roleRedirects[session.role as keyof typeof roleRedirects] || '/dashboard';
+      window.location.href = redirectPath;
+      return;
+    }
+  }, [session, error]);
+
+  // Don't render the page if user doesn't have proper access
+  if (session && !['account_manager', 'hq_manager', 'system_admin'].includes(session.role)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">This page is only accessible to Account Managers, HQ Managers, and System Administrators.</p>
+        </div>
+      </div>
+    );
+  }
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(PAGINATION_LIMIT);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -39,9 +68,8 @@ export default function AMReportsPage() {
   // API data state
   const [reportStatistics, setReportStatistics] = useState<ReportStatistics | null>(null);
   const [totalReports, setTotalReports] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [apiError, setApiError] = useState<string | null>(null);
-
-  const itemsPerPage = 10;
 
   // Fetch reports data from API
   const fetchReportsData = async (filters?: APIReportFilters) => {
@@ -112,13 +140,23 @@ export default function AMReportsPage() {
         apiFilters.reportType = appliedFilters.reportType.toLowerCase() as 'daily' | 'weekly' | 'monthly';
       }
 
-      // Fetch reports and statistics
+      // Fetch reports and statistics with error handling
       const [reportsResponse, statisticsResponse] = await Promise.all([
         reportsService.getAllReports(apiFilters),
         reportsService.getReportStatistics({
           dateFrom: statsDateFrom,
           dateTo: statsDateTo,
           branchId: apiFilters.branchId,
+        }).catch(statsError => {
+          console.warn('Failed to fetch report statistics, using defaults:', statsError);
+          // Return default statistics if the call fails
+          return {
+            totalReports: { count: 0, growth: 0 },
+            submittedReports: { count: 0, growth: 0 },
+            pendingReports: { count: 0, growth: 0 },
+            approvedReports: { count: 0, growth: 0 },
+            missedReports: { count: 0, growth: 0 },
+          };
         }),
       ]);
 
@@ -158,9 +196,11 @@ export default function AMReportsPage() {
       }));
 
       setReports(reportsData);
-      // Handle pagination - use total from pagination object
+      // Handle pagination - use data from backend pagination object
       const totalCount = reportsResponse?.pagination?.total || reportsData.length || 0;
+      const backendTotalPages = reportsResponse?.pagination?.totalPages || 1;
       setTotalReports(totalCount);
+      setTotalPages(backendTotalPages);
       setReportStatistics(statisticsResponse);
 
     } catch (err) {
@@ -175,7 +215,7 @@ export default function AMReportsPage() {
   // Load initial data
   useEffect(() => {
     fetchReportsData();
-  }, [currentPage]);
+  }, [currentPage, itemsPerPage]);
 
   // Reload data when filters change
   useEffect(() => {
@@ -190,33 +230,41 @@ export default function AMReportsPage() {
   const statistics = useMemo(() => {
     if (!reportStatistics) return [];
 
+    // Ensure all required properties exist with fallback values
+    const safeStats = {
+      totalReports: reportStatistics.totalReports || { count: 0, growth: 0 },
+      pendingReports: reportStatistics.pendingReports || { count: 0, growth: 0 },
+      approvedReports: reportStatistics.approvedReports || { count: 0, growth: 0 },
+      missedReports: reportStatistics.missedReports || { count: 0, growth: 0 },
+    };
+
     const statSections: StatSection[] = [
       {
         label: 'Total Reports',
-        value: reportStatistics.totalReports.count,
-        change: reportStatistics.totalReports.growth,
-        changeLabel: `${reportStatistics.totalReports.growth >= 0 ? '+' : ''}${reportStatistics.totalReports.growth}% this month`,
+        value: safeStats.totalReports.count,
+        change: safeStats.totalReports.growth,
+        changeLabel: `${safeStats.totalReports.growth >= 0 ? '+' : ''}${safeStats.totalReports.growth}% this month`,
         isCurrency: false,
       },
       {
         label: 'Pending Reports',
-        value: reportStatistics.pendingReports.count,
-        change: reportStatistics.pendingReports.growth,
-        changeLabel: `${reportStatistics.pendingReports.growth >= 0 ? '+' : ''}${reportStatistics.pendingReports.growth}% this month`,
+        value: safeStats.pendingReports.count,
+        change: safeStats.pendingReports.growth,
+        changeLabel: `${safeStats.pendingReports.growth >= 0 ? '+' : ''}${safeStats.pendingReports.growth}% this month`,
         isCurrency: false,
       },
       {
         label: 'Approved Reports',
-        value: reportStatistics.approvedReports.count,
-        change: reportStatistics.approvedReports.growth,
-        changeLabel: `${reportStatistics.approvedReports.growth >= 0 ? '+' : ''}${reportStatistics.approvedReports.growth}% this month`,
+        value: safeStats.approvedReports.count,
+        change: safeStats.approvedReports.growth,
+        changeLabel: `${safeStats.approvedReports.growth >= 0 ? '+' : ''}${safeStats.approvedReports.growth}% this month`,
         isCurrency: false,
       },
       {
         label: 'Missed Reports',
-        value: reportStatistics.missedReports.count,
-        change: reportStatistics.missedReports.growth,
-        changeLabel: `${reportStatistics.missedReports.growth >= 0 ? '+' : ''}${reportStatistics.missedReports.growth}% this month`,
+        value: safeStats.missedReports.count,
+        change: safeStats.missedReports.growth,
+        changeLabel: `${safeStats.missedReports.growth >= 0 ? '+' : ''}${safeStats.missedReports.growth}% this month`,
         isCurrency: false,
       },
     ];
@@ -226,14 +274,24 @@ export default function AMReportsPage() {
 
   const handlePeriodChange = (period: TimePeriod) => {
     setSelectedPeriod(period);
+    // Clear custom date range when selecting a preset period
+    if (period !== 'custom') {
+      setDateRange(undefined);
+    }
     setCurrentPage(1);
-    console.log('Time period changed:', period);
+    // Refetch data with the new period filter
+    fetchReportsData();
   };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
+    // When a custom date range is selected, set period to 'custom'
+    if (range) {
+      setSelectedPeriod('custom');
+    }
     setCurrentPage(1);
-    console.log('Date range changed:', range);
+    // Refetch data with the new date range
+    fetchReportsData();
   };
 
   const handleFilterClick = () => {
@@ -353,14 +411,18 @@ export default function AMReportsPage() {
     console.log('Selected reports:', selectedIds);
   };
 
-  // Pagination (now handled by API)
-  const totalPages = Math.ceil(totalReports / itemsPerPage);
+  // Pagination (handled by backend API)
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalReports);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   return (
@@ -459,18 +521,28 @@ export default function AMReportsPage() {
                     reports={reports}
                     selectedReports={selectedReports}
                     onSelectionChange={handleSelectionChange}
-                    onEdit={() => { }} // AM users can't edit reports directly
-                    onDelete={() => { }} // AM users can't delete reports
+                    // HQ Managers can't edit/delete reports - only approve/decline
+                    // Edit/Delete buttons will be hidden when these props are undefined
                     onReportClick={handleReportClick}
                   />
 
                   {/* Pagination Controls */}
-                  {totalPages > 1 && (
+                  {totalReports > 0 && (
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-[#475467]">
                           Showing {startIndex + 1}-{endIndex} of {totalReports} results
                         </span>
+                        <select
+                          value={itemsPerPage}
+                          onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                          className="px-3 py-1.5 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
+                          aria-label="Items per page"
+                        >
+                          <option value={10}>10 per page</option>
+                          <option value={25}>25 per page</option>
+                          <option value={50}>50 per page</option>
+                        </select>
                       </div>
 
                       <Pagination

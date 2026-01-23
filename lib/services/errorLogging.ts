@@ -77,14 +77,10 @@ class ErrorLoggingService implements ErrorLogger {
     }
 
     // Console logging based on configuration
-    if (API_CONFIG.DEBUG || API_CONFIG.LOG_LEVEL === 'debug') {
-      console.log(`[${entry.level.toUpperCase()}] ${entry.message}`, entry);
-    } else if (entry.level === 'error') {
+    if (entry.level === 'error') {
       console.error(entry.message, entry);
     } else if (entry.level === 'warn') {
       console.warn(entry.message, entry);
-    } else if (entry.level === 'info' && ['info', 'debug'].includes(API_CONFIG.LOG_LEVEL)) {
-      console.info(entry.message, entry);
     }
 
     // Send to external error tracking service if configured

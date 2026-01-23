@@ -4,9 +4,9 @@
  */
 
 import apiClient from '@/lib/apiClient';
-import { API_ENDPOINTS, API_CONFIG } from '../api/config';
+import { API_ENDPOINTS } from '../api/config';
 import type { SystemSettings } from '../api/types';
-import { isSuccessResponse, isFailureResponse, extractResponseData } from '../utils/responseHelpers';
+import { isSuccessResponse } from '../utils/responseHelpers';
 
 export interface SystemSettingsService {
   getSystemSettings(): Promise<SystemSettings>;

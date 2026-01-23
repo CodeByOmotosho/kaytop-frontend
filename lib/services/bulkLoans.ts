@@ -10,9 +10,8 @@ import type {
   BulkLoansResponse,
   BulkLoansFilters,
   LoanStatistics,
-  User,
 } from '../api/types';
-import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
+import { isSuccessResponse } from '../utils/responseHelpers';
 
 export interface BulkLoansService {
   getBulkLoans(filters?: BulkLoansFilters): Promise<BulkLoansResponse>;
@@ -82,12 +81,11 @@ class BulkLoansAPIService implements BulkLoansService {
             };
             
             allLoans.push(transformedLoan);
-            totalValue += transformedLoan.amount;
             
             if (transformedLoan.status === 'active' || transformedLoan.status === 'disbursed') {
-              activeCount++;
+              // Active loan count tracking
             } else if (transformedLoan.status === 'completed' || transformedLoan.status === 'paid') {
-              completedCount++;
+              // Completed loan count tracking
             }
           }
         } catch (customerError) {

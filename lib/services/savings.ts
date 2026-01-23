@@ -20,6 +20,7 @@ export interface SavingsService {
   approveTransaction(transactionId: string, type: 'withdrawal' | 'loan-coverage'): Promise<Transaction>;
   getCustomerSavings(customerId: string): Promise<SavingsAccount>;
   getCustomerTransactions(customerId: string, filters?: { page?: number; limit?: number; type?: string }): Promise<{ transactions: Transaction[]; pagination: { total: number; page: number; limit: number } }>;
+  getAllSavingsTransactions(filters?: { page?: number; limit?: number; type?: string }): Promise<Transaction[]>;
 }
 
 class SavingsAPIService implements SavingsService {
@@ -189,6 +190,43 @@ class SavingsAPIService implements SavingsService {
       throw new Error('Failed to fetch customer transactions - invalid response format');
     } catch (error) {
       console.error('Customer transactions fetch error:', error);
+      throw error;
+    }
+  }
+
+  async getAllSavingsTransactions(filters: { page?: number; limit?: number; type?: string } = {}): Promise<Transaction[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.type) params.append('type', filters.type);
+
+      const url = `${API_ENDPOINTS.SAVINGS.ALL_TRANSACTIONS}${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await apiClient.get<any>(url);
+
+      // Extract data from Axios response
+      const data = response.data || response;
+
+      // Backend returns direct data format, not wrapped in success/data
+      if (data && typeof data === 'object') {
+        // Check if it's wrapped in success/data format
+        if ((data as any).success && (data as any).data) {
+          const responseData = (data as any).data;
+          return Array.isArray(responseData) ? responseData : responseData.transactions || [];
+        }
+        // Check if it's direct data format (has transactions array)
+        else if (data.transactions && Array.isArray(data.transactions)) {
+          return data.transactions;
+        }
+        // Check if it's just an array of transactions
+        else if (Array.isArray(data)) {
+          return data;
+        }
+      }
+
+      throw new Error('Failed to fetch all savings transactions - invalid response format');
+    } catch (error) {
+      console.error('All savings transactions fetch error:', error);
       throw error;
     }
   }

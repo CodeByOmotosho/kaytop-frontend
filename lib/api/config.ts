@@ -119,7 +119,7 @@ export function validateConfiguration(): ConfigValidationResult {
 /**
  * Get configuration summary for debugging
  */
-export function getConfigurationSummary(): Record<string, any> {
+export function getConfigurationSummary(): Record<string, string | number | boolean> {
   return {
     baseUrl: API_CONFIG.BASE_URL,
     timeout: API_CONFIG.TIMEOUT,
@@ -140,10 +140,6 @@ export function getConfigurationSummary(): Record<string, any> {
  */
 export function initializeConfiguration(): void {
   const validation = validateConfiguration();
-
-  if (API_CONFIG.DEBUG || API_CONFIG.LOG_LEVEL === 'debug') {
-    console.log('🔧 API Configuration Summary:', getConfigurationSummary());
-  }
 
   if (validation.warnings.length > 0) {
     console.warn('⚠️ Configuration warnings:', validation.warnings);

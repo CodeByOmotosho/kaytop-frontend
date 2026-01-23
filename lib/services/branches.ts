@@ -115,8 +115,6 @@ class BranchAPIService implements BranchService {
             const branchUsers = await userService.getUsersByBranch(branchName, { page: 1, limit: 1000 });
             
             const usersData = branchUsers?.data || [];
-            const creditOfficers = usersData.filter(user => user.role === 'credit_officer');
-            const customers = usersData.filter(user => user.role === 'customer');
             
             // Create branch ID from name (consistent with frontend routing)
             const branchId = branchName.toLowerCase().replace(/\s+/g, '-');
@@ -216,7 +214,7 @@ class BranchAPIService implements BranchService {
       const totalCustomers = customers.length;
       
       // Get dashboard KPIs for growth calculations
-      let growthMetrics = {
+      const growthMetrics = {
         creditOfficersGrowth: 0,
         customersGrowth: 0,
         activeLoansGrowth: 0,

@@ -10,7 +10,6 @@ import type {
   DashboardParams,
   DashboardKPIs,
   BranchPerformance,
-  ApiResponse,
 } from '../api/types';
 
 export interface ChartData {

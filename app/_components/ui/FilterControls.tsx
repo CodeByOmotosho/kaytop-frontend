@@ -16,7 +16,7 @@ interface FilterControlsProps {
 }
 
 export default function FilterControls({
-  selectedPeriod = 'last_30_days',
+  selectedPeriod = null,
   onPeriodChange,
   onDateRangeChange,
   onFilter,

@@ -8,7 +8,7 @@ import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { DataTransformers } from '../api/transformers';
 import { APIErrorHandler } from '../api/errorHandler';
-import { isSuccessResponse, extractResponseData } from '../utils/responseHelpers';
+import { isSuccessResponse } from '../utils/responseHelpers';
 import type {
   User,
   PaginatedResponse,
@@ -327,12 +327,6 @@ class AMCustomerAPIService implements AMCustomerService {
 
   async assignCustomer(customerId: string, accountManagerId: string, notes?: string): Promise<AMCustomerAssignment> {
     try {
-      const data = {
-        customerId,
-        accountManagerId,
-        notes,
-      };
-
       // Use admin user update endpoint for assignment
       const response = await apiClient.put<any>(API_ENDPOINTS.ADMIN.UPDATE_USER(customerId), {
         accountManagerId,

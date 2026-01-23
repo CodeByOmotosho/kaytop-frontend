@@ -4,10 +4,8 @@
  */
 
 import apiClient from '@/lib/apiClient';
-import { API_ENDPOINTS } from '../api/config';
 import { unifiedUserService } from './unifiedUser';
-import type { BranchPerformance, DashboardParams, PaginatedResponse, Loan } from '../api/types';
-import { isSuccessResponse, isFailureResponse, extractResponseData } from '../utils/responseHelpers';
+import type { BranchPerformance, DashboardParams, Loan } from '../api/types';
 
 export interface BranchPerformanceMetrics {
   branchName: string;

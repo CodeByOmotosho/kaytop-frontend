@@ -40,8 +40,8 @@ class ReportsAPIService implements ReportsService {
     try {
       const userProfile = await userProfileService.getUserProfile();
 
-      // System admins and account managers can access all branches
-      if (userProfile.role === 'system_admin' || userProfile.role === 'account_manager') {
+      // System admins, account managers, and HQ managers can access all branches
+      if (userProfile.role === 'system_admin' || userProfile.role === 'account_manager' || userProfile.role === 'hq_manager') {
         return;
       }
 
@@ -105,10 +105,44 @@ class ReportsAPIService implements ReportsService {
       console.log('🔍 Get all reports URL params:', params.toString());
 
       const url = `${API_ENDPOINTS.REPORTS.LIST}${params.toString() ? `?${params.toString()}` : ''}`;
-      const response: ApiResponse<PaginatedResponse<Report>> = await apiClient.get(url);
+      const response = await apiClient.get(url);
 
-      // The unified API client handles transformation automatically
-      return response.data;
+      console.log('🔍 Raw API response structure:', {
+        hasData: 'data' in response.data,
+        hasReports: 'reports' in response.data,
+        hasPagination: 'pagination' in response.data,
+        hasTotal: 'total' in response.data,
+        keys: Object.keys(response.data)
+      });
+
+      // Transform backend response to expected frontend format
+      // Backend returns: { reports: [], total: number, page: number, totalPages: number }
+      // Frontend expects: { data: [], pagination: { total: number, page: number, totalPages: number } }
+      const backendData = response.data;
+      
+      if (backendData.reports && Array.isArray(backendData.reports)) {
+        // Transform to expected format
+        const transformedResponse: PaginatedResponse<Report> = {
+          data: backendData.reports,
+          pagination: {
+            total: backendData.total || 0,
+            page: backendData.page || 1,
+            totalPages: backendData.totalPages || 1,
+            limit: filters.limit || 10
+          }
+        };
+        
+        console.log('✅ Transformed response:', {
+          dataCount: transformedResponse.data.length,
+          total: transformedResponse.pagination.total
+        });
+        
+        return transformedResponse;
+      } else {
+        // If response is already in expected format, return as-is
+        console.log('✅ Response already in expected format');
+        return response.data;
+      }
     } catch (error) {
       const errorMessage = UnifiedAPIErrorHandler.handleApiError(error, {
         logError: true,

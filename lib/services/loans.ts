@@ -12,7 +12,7 @@ import type {
   LoanSummary,
   DisbursementSummary,
 } from '../api/types';
-import { isSuccessResponse, isFailureResponse } from '../utils/responseHelpers';
+import { isSuccessResponse } from '../utils/responseHelpers';
 
 export interface LoanService {
   createLoan(customerId: string, data: CreateLoanData): Promise<Loan>;
@@ -21,6 +21,7 @@ export interface LoanService {
   getLoanSummary(customerId: string): Promise<LoanSummary>;
   getDisbursementSummary(customerId: string): Promise<DisbursementSummary>;
   getCustomerLoans(customerId: string): Promise<Loan[]>;
+  getAllLoans(): Promise<Loan[]>;
 }
 
 class LoanAPIService implements LoanService {
@@ -216,6 +217,32 @@ class LoanAPIService implements LoanService {
       throw new Error('Failed to fetch loan repayments - invalid response format');
     } catch (error) {
       console.error('Loan repayments fetch error:', error);
+      throw error;
+    }
+  }
+
+  async getAllLoans(): Promise<Loan[]> {
+    try {
+      const response = await apiClient.get<any>(API_ENDPOINTS.LOANS.ALL);
+
+      // Extract data from Axios response
+      const data = response.data || response;
+
+      // Backend returns direct data format, not wrapped in success/data
+      if (data && typeof data === 'object') {
+        // Check if it's wrapped in success/data format
+        if ((data as any).success && (data as any).data) {
+          return (data as any).data;
+        }
+        // Check if it's direct array format (loans list)
+        else if (Array.isArray(data)) {
+          return data;
+        }
+      }
+
+      throw new Error('Failed to fetch all loans - invalid response format');
+    } catch (error) {
+      console.error('All loans fetch error:', error);
       throw error;
     }
   }

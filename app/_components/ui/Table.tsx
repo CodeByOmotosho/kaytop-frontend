@@ -55,6 +55,42 @@ export default function Table({
           { key: 'customers', label: 'Customers', sortable: true },
           { key: 'dateCreated', label: 'Date Created', sortable: true }
         ];
+      case 'missed-payments':
+        return [
+          { key: 'loanId', label: 'Loan ID', sortable: true },
+          { key: 'name', label: 'Name', sortable: true },
+          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'dueDate', label: 'Due Date', sortable: true },
+          { key: 'daysMissed', label: 'Days Missed', sortable: true },
+          { key: 'status', label: 'Status', sortable: true }
+        ];
+      case 'disbursements':
+        return [
+          { key: 'loanId', label: 'Loan ID', sortable: true },
+          { key: 'name', label: 'Name', sortable: true },
+          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'interest', label: 'Interest', sortable: true },
+          { key: 'dateDisbursed', label: 'Date Disbursed', sortable: true },
+          { key: 'status', label: 'Status', sortable: true }
+        ];
+      case 're-collections':
+        return [
+          { key: 'loanId', label: 'Loan ID', sortable: true },
+          { key: 'name', label: 'Name', sortable: true },
+          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'interest', label: 'Interest', sortable: true },
+          { key: 'dateCollected', label: 'Date Collected', sortable: true },
+          { key: 'status', label: 'Status', sortable: true }
+        ];
+      case 'savings':
+        return [
+          { key: 'accountId', label: 'Account ID', sortable: true },
+          { key: 'name', label: 'Name', sortable: true },
+          { key: 'amount', label: 'Amount', sortable: true },
+          { key: 'interest', label: 'Interest', sortable: true },
+          { key: 'dateCreated', label: 'Date Created', sortable: true },
+          { key: 'status', label: 'Status', sortable: true }
+        ];
       default:
         // Default configuration for unknown table types
         return Object.keys(data[0] || {}).map(key => ({
@@ -69,10 +105,10 @@ export default function Table({
 
   // Handle row selection
   const handleRowSelect = (rowId: string, checked: boolean) => {
-    const newSelection = checked 
+    const newSelection = checked
       ? [...selectedRows, rowId]
       : selectedRows.filter(id => id !== rowId);
-    
+
     setSelectedRows(newSelection);
     onSelectionChange?.(newSelection);
   };
@@ -113,20 +149,19 @@ export default function Table({
                 />
               </th>
             )}
-            
+
             {/* Data columns */}
             {columns.map((column) => (
-              <th 
+              <th
                 key={column.key}
-                className={`px-4 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider ${
-                  column.sortable ? 'cursor-pointer hover:bg-[#F2F4F7]' : ''
-                }`}
+                className={`px-4 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider ${column.sortable ? 'cursor-pointer hover:bg-[#F2F4F7]' : ''
+                  }`}
                 onClick={() => column.sortable && handleSort(column.key)}
               >
                 <div className="flex items-center gap-1">
                   {column.label}
                   {column.sortable && sortColumn === column.key && (
-                    sortDirection === 'asc' 
+                    sortDirection === 'asc'
                       ? <ChevronUpIcon className="w-4 h-4" />
                       : <ChevronDownIcon className="w-4 h-4" />
                   )}
@@ -135,10 +170,10 @@ export default function Table({
             ))}
           </tr>
         </thead>
-        
+
         <tbody className="bg-white divide-y divide-[#EAECF0]">
           {data.map((row, index) => (
-            <tr 
+            <tr
               key={row.id || index}
               className={`hover:bg-[#F9FAFB] ${onRowClick ? 'cursor-pointer' : ''}`}
               onClick={() => onRowClick?.(row)}
@@ -157,13 +192,13 @@ export default function Table({
                   />
                 </td>
               )}
-              
+
               {/* Data columns */}
               {columns.map((column) => (
                 <td key={column.key} className="px-4 py-4 text-sm text-[#475467]">
-                  {column.render 
+                  {column.render
                     ? column.render(row[column.key], row)
-                    : row[column.key] || '-'
+                    : (row[column.key] ?? '-')
                   }
                 </td>
               ))}

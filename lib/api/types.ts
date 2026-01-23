@@ -4,7 +4,7 @@
  */
 
 // Base API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;
@@ -259,7 +259,7 @@ export interface DashboardKPIs {
 export interface ApiError extends Error {
   status?: number;
   code?: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export interface NetworkError extends ApiError {
@@ -342,7 +342,7 @@ export interface ActivityLog {
   actionType: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve' | 'decline';
   entityType: 'user' | 'loan' | 'report' | 'savings' | 'system';
   entityId?: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   ipAddress: string;
   userAgent: string;
   timestamp: string;

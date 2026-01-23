@@ -18,23 +18,11 @@ import { useAuth } from '@/app/context/AuthContext';
 
 type TimePeriod = 'last_24_hours' | 'last_7_days' | 'last_30_days' | 'custom' | null;
 
-// Transform unified branch data to table format
-const transformBranchesToTableData = (branches: any[]): BranchRecord[] => {
-  return branches.map((branch, index) => ({
-    id: branch.id,
-    branchId: `ID: ${branch.code || `BR-${branch.id.toString().padStart(4, '0')}`}`,
-    name: branch.name,
-    cos: '0', // Will be populated from branch statistics
-    customers: 0, // Will be populated from branch statistics
-    dateCreated: branch.dateCreated || branch.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0]
-  }));
-};
-
 export default function AMBranchesPage() {
   const router = useRouter();
   const { session } = useAuth();
   const { toasts, removeToast, success, error } = useToast();
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('last_30_days');
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,34 +53,61 @@ export default function AMBranchesPage() {
       setIsLoading(true);
       setApiError(null);
 
-      // Fetch branches using unified user service
-      // For now, we'll create mock data since branches endpoint needs to be implemented
-      const mockBranches = [
-        {
-          id: '1',
-          name: 'Ikeja Branch',
-          code: 'IKJ001',
-          dateCreated: '2024-01-15',
-          createdAt: '2024-01-15T10:00:00Z'
-        },
-        {
-          id: '2', 
-          name: 'Victoria Island Branch',
-          code: 'VI002',
-          dateCreated: '2024-02-20',
-          createdAt: '2024-02-20T10:00:00Z'
-        },
-        {
-          id: '3',
-          name: 'Surulere Branch', 
-          code: 'SUR003',
-          dateCreated: '2024-03-10',
-          createdAt: '2024-03-10T10:00:00Z'
+      // Fetch branches using branch service (same as System Admin)
+      const { branchService } = await import('@/lib/services/branches');
+      const branchesResponse = await branchService.getAllBranches({ limit: 1000 });
+
+      // Get user counts for each branch
+      const branchRecordsWithCounts = await Promise.all(
+        branchesResponse.data.map(async (branch) => {
+          try {
+            const { userService } = await import('@/lib/services/users');
+            const branchUsers = await userService.getUsersByBranch(branch.name, { page: 1, limit: 1000 });
+            const usersData = branchUsers?.data || [];
+            const creditOfficers = usersData.filter(user => user.role === 'credit_officer');
+            const customers = usersData.filter(user => user.role === 'customer');
+
+            return {
+              id: branch.id,
+              branchId: `ID: ${branch.code}`,
+              name: branch.name,
+              cos: creditOfficers.length.toString(),
+              customers: customers.length,
+              dateCreated: branch.dateCreated.split('T')[0]
+            };
+          } catch (error: any) {
+            // Log warning but don't fail - return record with zero counts
+            const errorMsg = error?.message || 'Unknown error';
+            const statusCode = error?.response?.status || error?.status;
+            console.warn(`Failed to get user counts for branch "${branch.name}" (${statusCode || 'no status'}): ${errorMsg}`);
+
+            return {
+              id: branch.id,
+              branchId: `ID: ${branch.code}`,
+              name: branch.name,
+              cos: '0',
+              customers: 0,
+              dateCreated: branch.dateCreated.split('T')[0]
+            };
+          }
+        })
+      );
+
+      // Apply time period and date range filters
+      let filteredBranches = branchRecordsWithCounts;
+      if (selectedPeriod || dateRange) {
+        const { filterByTimePeriod, filterByDateRange } = await import('@/lib/utils/dateFilters');
+
+        if (selectedPeriod && selectedPeriod !== 'custom') {
+          // Apply preset time period filter
+          filteredBranches = filterByTimePeriod(branchRecordsWithCounts, 'dateCreated', selectedPeriod);
+        } else if (dateRange) {
+          // Apply custom date range filter
+          filteredBranches = filterByDateRange(branchRecordsWithCounts, 'dateCreated', dateRange);
         }
-      ];
-      
-      const branchRecords = transformBranchesToTableData(mockBranches);
-      setBranchData(branchRecords);
+      }
+
+      setBranchData(filteredBranches);
 
       // Fetch unified dashboard statistics
       const dashboardData = await dashboardService.getKPIs();
@@ -155,15 +170,21 @@ export default function AMBranchesPage() {
 
   const handlePeriodChange = (period: TimePeriod) => {
     setSelectedPeriod(period);
-    console.log('Time period changed:', period);
-    // Refresh data with time filter
+    // Clear custom date range when selecting a preset period
+    if (period !== 'custom') {
+      setDateRange(undefined);
+    }
+    // Refetch data with the new period filter
     fetchBranchData();
   };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
-    console.log('Date range changed:', range);
-    // Refresh data with date range filter
+    // When a custom date range is selected, set period to 'custom'
+    if (range) {
+      setSelectedPeriod('custom');
+    }
+    // Refetch data with the new date range
     fetchBranchData();
   };
 
@@ -174,7 +195,7 @@ export default function AMBranchesPage() {
   const handleApplyAdvancedFilters = (filters: AdvancedFilters) => {
     setAdvancedFilters(filters);
     setCurrentPage(1); // Reset to first page
-    
+
     const activeCount = Object.values(filters).filter((v) => v !== '').length;
     if (activeCount > 0) {
       success(`${activeCount} filter${activeCount > 1 ? 's' : ''} applied successfully!`);
@@ -266,7 +287,7 @@ export default function AMBranchesPage() {
     // Handle different data types
     if (sortColumn === 'customers') {
       // Numeric comparison
-      return sortDirection === 'asc' 
+      return sortDirection === 'asc'
         ? (aValue as number) - (bValue as number)
         : (bValue as number) - (aValue as number);
     } else if (sortColumn === 'dateCreated') {
@@ -378,7 +399,7 @@ export default function AMBranchesPage() {
                   onChange={handleSearchChange}
                   placeholder="Search by Name or ID..."
                   className="w-full pl-10 pr-10 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 transition-all"
-                  style={{ 
+                  style={{
                     border: '1px solid var(--color-border-gray-300)',
                     '--tw-ring-color': 'var(--color-primary-600)'
                   } as React.CSSProperties}
@@ -410,8 +431,8 @@ export default function AMBranchesPage() {
                 <TableSkeleton rows={itemsPerPage} />
               ) : paginatedBranches.length > 0 ? (
                 <>
-                  <Table 
-                    data={paginatedBranches} 
+                  <Table
+                    data={paginatedBranches}
                     tableType="branches"
                     onSelectionChange={handleSelectionChange}
                     onRowClick={handleRowClick}
@@ -419,7 +440,7 @@ export default function AMBranchesPage() {
                     sortDirection={sortDirection}
                     onSort={handleSort}
                   />
-                  
+
                   {/* Pagination Controls */}
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -437,7 +458,7 @@ export default function AMBranchesPage() {
                         <option value={50}>50 per page</option>
                       </select>
                     </div>
-                    
+
                     <Pagination
                       totalPages={totalPages}
                       page={currentPage}
