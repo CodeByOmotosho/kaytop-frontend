@@ -124,5 +124,5 @@ export async function debugCreditOfficersDiscrepancy() {
 
 // Make it available globally for browser console
 if (typeof window !== 'undefined') {
-  (window as any).debugCreditOfficers = debugCreditOfficersDiscrepancy;
+  (window as Window & { debugCreditOfficers?: typeof debugCreditOfficersDiscrepancy }).debugCreditOfficers = debugCreditOfficersDiscrepancy;
 }

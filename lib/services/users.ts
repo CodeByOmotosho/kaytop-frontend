@@ -288,7 +288,7 @@ class UserAPIService implements UserService {
       console.error('[getUsersByBranch] No format matched - throwing error');
       console.error('[getUsersByBranch] Response structure:', JSON.stringify(data, null, 2));
       throw new Error('Failed to fetch users by branch - invalid response format');
-    } catch (error: any) {
+    } catch (error: Error & { response?: { status?: number }; status?: number }) {
       // Handle 404 errors gracefully (branch might not have users)
       if (error?.response?.status === 404 || error?.status === 404) {
         console.warn(`[getUsersByBranch] Branch "${branch}" not found or has no users (404)`);

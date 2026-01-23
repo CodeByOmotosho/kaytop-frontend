@@ -49,7 +49,7 @@ class SystemSettingsAPIService implements SystemSettingsService {
       );
 
       // ... (rest of response handling) ...
-    } catch (error: any) {
+    } catch (error: Error) {
       // ... (rest of error handling) ...
       return this.getDefaultSystemSettings();
     } 

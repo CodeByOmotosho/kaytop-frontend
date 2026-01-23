@@ -20,8 +20,8 @@ import type {
 export interface ReportsService {
   getAllReports(filters?: ReportFilters): Promise<PaginatedResponse<Report>>;
   getReportById(id: string): Promise<Report>;
-  createReport(data: any): Promise<Report>;
-  updateReport(id: string, data: any): Promise<Report>;
+  createReport(data: Record<string, unknown>): Promise<Report>;
+  updateReport(id: string, data: Record<string, unknown>): Promise<Report>;
   deleteReport(id: string): Promise<void>;
   approveReport(id: string, data: ReportApprovalData): Promise<Report>;
   declineReport(id: string, data: ReportApprovalData): Promise<Report>;
@@ -179,7 +179,7 @@ class ReportsAPIService implements ReportsService {
    * Create a new report
    * Uses unified API client with automatic retry and error handling
    */
-  async createReport(data: any): Promise<Report> {
+  async createReport(data: Record<string, unknown>): Promise<Report> {
     try {
       const response: ApiResponse<Report> = await apiClient.post(
         API_ENDPOINTS.REPORTS.LIST,
@@ -203,7 +203,7 @@ class ReportsAPIService implements ReportsService {
    * Uses unified API client with automatic retry and error handling
    * Implements status-based edit restrictions
    */
-  async updateReport(id: string, data: any): Promise<Report> {
+  async updateReport(id: string, data: Record<string, unknown>): Promise<Report> {
     try {
       // First get the current report to check its status
       const currentReport = await this.getReportById(id);
@@ -444,7 +444,7 @@ class ReportsAPIService implements ReportsService {
    * Since the backend doesn't have a dedicated branch statistics endpoint,
    * we'll use the general reports endpoint with branch filtering and calculate statistics
    */
-  async getBranchReportStatistics(branchId: string, filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<ReportStatistics> {
+  async getBranchReportStatistics(branchId: string, _filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<ReportStatistics> {
     try {
       // Validate branch ID format
       const validatedBranchId: string | null = this.validateBranchId(branchId);
@@ -512,7 +512,7 @@ class ReportsAPIService implements ReportsService {
    * Includes branch authorization checks for branch managers
    * Note: Since 'missed' status may not be supported by backend, we'll return empty array for now
    */
-  async getMissedReports(branchId?: string, filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<Report[]> {
+  async getMissedReports(branchId?: string, _filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<Report[]> {
     try {
       // Validate branch ID if provided
       let validatedBranchId: string | null = null;
@@ -543,7 +543,7 @@ class ReportsAPIService implements ReportsService {
       const url = `${API_ENDPOINTS.REPORTS.LIST}${params.toString() ? `?${params.toString()}` : ''}`;
 
       try {
-        const response: ApiResponse<PaginatedResponse<Report>> = await apiClient.get(url);
+        await apiClient.get(url);
 
         // Since we can't filter by 'missed' status on the backend, 
         // we'll return an empty array for now to prevent errors

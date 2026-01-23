@@ -20,7 +20,7 @@ const pendingUserRequests = new Map<string, Promise<any>>();
 
 // Simple cache for user requests (5 minute TTL)
 interface UserCacheEntry {
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
   expiresAt: number;
 }
@@ -161,7 +161,7 @@ class UnifiedUserAPIService implements UnifiedUserService {
         const responseData = response.data || response;
         
         // Handle different response formats
-        let users: any[] = [];
+        let users: Record<string, unknown>[] = [];
         let pagination = {
           page: parseInt(params?.page?.toString() || '1'),
           limit: parseInt(params?.limit?.toString() || '10'),

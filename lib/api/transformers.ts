@@ -82,7 +82,7 @@ export class DataTransformers {
   /**
    * Transform backend admin profile data to frontend AdminProfile interface
    */
-  static transformAdminProfile(backendProfile: any): AdminProfile {
+  static transformAdminProfile(backendProfile: UserApiData): AdminProfile {
     return {
       id: backendProfile.id?.toString() || backendProfile.userId?.toString() || '',
       firstName: backendProfile.firstName || backendProfile.first_name || '',
@@ -103,7 +103,7 @@ export class DataTransformers {
    * Transform backend loan data to frontend Loan interface
    * Updated to handle actual backend response structure from /loans endpoints
    */
-  static transformLoan(backendLoan: any): Loan {
+  static transformLoan(backendLoan: LoanApiData): Loan {
     console.log('🔄 Transforming loan data:', backendLoan);
 
     return {
@@ -129,7 +129,7 @@ export class DataTransformers {
    * Transform backend dashboard KPI data to frontend DashboardKPIs interface
    * Updated to handle the actual backend response structure from /dashboard/kpi
    */
-  static transformDashboardKPIs(backendKPIs: any): DashboardKPIs {
+  static transformDashboardKPIs(backendKPIs: DashboardKPIData): DashboardKPIs {
     console.log('🔄 Transforming dashboard KPIs:', backendKPIs);
 
     // Calculate mock growth percentages based on current values (temporary solution)
@@ -246,7 +246,7 @@ export class DataTransformers {
   /**
    * Transform branch performance data
    */
-  private static transformBranchPerformance(branches: any[]): BranchPerformance[] {
+  private static transformBranchPerformance(branches: Record<string, unknown>[]): BranchPerformance[] {
     if (!Array.isArray(branches)) {
       return [];
     }
@@ -262,7 +262,7 @@ export class DataTransformers {
    * Transform officer performance data to branch performance format
    * Maps officer performance data from backend to branch performance expected by frontend
    */
-  private static transformOfficerPerformanceToBranches(officers: any[]): BranchPerformance[] {
+  private static transformOfficerPerformanceToBranches(officers: Record<string, unknown>[]): BranchPerformance[] {
     if (!Array.isArray(officers)) {
       return [];
     }
@@ -297,14 +297,14 @@ export class DataTransformers {
    * Updated to handle backend's meta/data structure
    */
   static transformPaginatedResponse<T>(
-    backendResponse: any,
-    transformItem: (item: any) => T
+    backendResponse: Record<string, unknown>,
+    transformItem: (item: Record<string, unknown>) => T
   ): PaginatedResponse<T> {
     console.log('🔄 Transforming paginated response:', backendResponse);
 
     // Handle different backend response formats
-    let data: any[] = [];
-    let pagination: any = {};
+    let data: Record<string, unknown>[] = [];
+    let pagination: Record<string, unknown> = {};
 
     // Handle null or undefined response
     if (!backendResponse) {

@@ -6,6 +6,7 @@
 import apiClient from '@/lib/apiClient';
 import { unifiedUserService } from './unifiedUser';
 import type { BranchPerformance, DashboardParams, Loan } from '../api/types';
+import { isSuccessResponse } from '../utils/responseHelpers';
 
 export interface BranchPerformanceMetrics {
   branchName: string;

@@ -91,5 +91,5 @@ class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 if (typeof window !== 'undefined') {
-  (window as any).performanceMonitor = performanceMonitor;
+  (window as Window & { performanceMonitor?: typeof performanceMonitor }).performanceMonitor = performanceMonitor;
 }

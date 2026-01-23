@@ -50,7 +50,7 @@ export function isDateInRange(dateString: string, range: DateRange | undefined |
         const to = range.to || range.from; // If no 'to' date, use 'from' date
 
         return isWithinInterval(date, { start: from, end: to });
-    } catch (error) {
+    } catch {
         return true; // On error, don't filter out
     }
 }

@@ -201,12 +201,12 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
   /**
    * Get previous period branch count
    */
-  private async getPreviousBranchCount(params: DashboardParams): Promise<number> {
+  private async getPreviousBranchCount(_params: DashboardParams): Promise<number> {
     try {
       const response = await apiClient.get<string[]>('/users/branches');
       const branches = Array.isArray(response.data) ? response.data : [];
       return branches.length;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
@@ -214,7 +214,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
   /**
    * Get previous period credit officer count
    */
-  private async getPreviousCreditOfficerCount(params: DashboardParams): Promise<number> {
+  private async getPreviousCreditOfficerCount(_params: DashboardParams): Promise<number> {
     try {
       // Use unifiedUserService which applies DataTransformers
       const response = await unifiedUserService.getUsers({ limit: 1000 });
@@ -225,7 +225,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       );
       
       return creditOfficers.length;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
@@ -233,7 +233,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
   /**
    * Get previous period customer count
    */
-  private async getPreviousCustomerCount(params: DashboardParams): Promise<number> {
+  private async getPreviousCustomerCount(_params: DashboardParams): Promise<number> {
     try {
       // Use unifiedUserService which applies DataTransformers
       const response = await unifiedUserService.getUsers({ limit: 1000 });
@@ -242,7 +242,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       const customers = users.filter(user => user.role === 'customer');
       
       return customers.length;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
@@ -261,7 +261,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       const loans = response.data?.data || response.data || [];
       
       return loans.length;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
@@ -284,7 +284,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       );
       
       return totalAmount;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
@@ -307,7 +307,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       );
       
       return activeLoans.length;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
@@ -326,7 +326,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       const missedLoans = response.data?.data || response.data || [];
       
       return missedLoans.length;
-    } catch (error) {
+    } catch {
       return 0;
     }
   }
