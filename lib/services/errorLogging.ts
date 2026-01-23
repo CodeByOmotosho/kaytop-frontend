@@ -11,7 +11,7 @@ export interface ErrorLogEntry {
   level: 'error' | 'warn' | 'info' | 'debug';
   message: string;
   stack?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   userId?: string;
   userAgent?: string;
   url?: string;
@@ -19,10 +19,10 @@ export interface ErrorLogEntry {
 }
 
 export interface ErrorLogger {
-  logError(error: Error, context?: Record<string, any>): void;
-  logWarning(message: string, context?: Record<string, any>): void;
-  logInfo(message: string, context?: Record<string, any>): void;
-  logDebug(message: string, context?: Record<string, any>): void;
+  logError(error: Error, context?: Record<string, unknown>): void;
+  logWarning(message: string, context?: Record<string, unknown>): void;
+  logInfo(message: string, context?: Record<string, unknown>): void;
+  logDebug(message: string, context?: Record<string, unknown>): void;
   getErrorLogs(limit?: number): ErrorLogEntry[];
   clearErrorLogs(): void;
 }
@@ -39,7 +39,7 @@ class ErrorLoggingService implements ErrorLogger {
     level: ErrorLogEntry['level'],
     message: string,
     stack?: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): ErrorLogEntry {
     const entry: ErrorLogEntry = {
       id: this.generateId(),
@@ -60,7 +60,7 @@ class ErrorLoggingService implements ErrorLogger {
           const user = JSON.parse(authData);
           entry.userId = user.id?.toString();
         }
-      } catch (e) {
+      } catch {
         // Ignore localStorage errors
       }
     }
@@ -151,7 +151,7 @@ class ErrorLoggingService implements ErrorLogger {
   }
 
   // Additional utility methods
-  logApiError(endpoint: string, error: Error, requestData?: any): void {
+  logApiError(endpoint: string, error: Error, requestData?: unknown): void {
     this.logError(error, {
       type: 'api_error',
       endpoint,
@@ -159,7 +159,7 @@ class ErrorLoggingService implements ErrorLogger {
     });
   }
 
-  logComponentError(componentName: string, error: Error, props?: any): void {
+  logComponentError(componentName: string, error: Error, props?: unknown): void {
     this.logError(error, {
       type: 'component_error',
       component: componentName,
@@ -174,7 +174,7 @@ class ErrorLoggingService implements ErrorLogger {
     });
   }
 
-  logValidationError(field: string, value: any, rule: string): void {
+  logValidationError(field: string, value: unknown, rule: string): void {
     this.logWarning(`Validation failed for field: ${field}`, {
       type: 'validation_error',
       field,

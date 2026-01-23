@@ -201,7 +201,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
   /**
    * Get previous period branch count
    */
-  private async getPreviousBranchCount(_params: DashboardParams): Promise<number> {
+  private async getPreviousBranchCount(): Promise<number> {
     try {
       const response = await apiClient.get<string[]>('/users/branches');
       const branches = Array.isArray(response.data) ? response.data : [];
@@ -214,7 +214,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
   /**
    * Get previous period credit officer count
    */
-  private async getPreviousCreditOfficerCount(_params: DashboardParams): Promise<number> {
+  private async getPreviousCreditOfficerCount(): Promise<number> {
     try {
       // Use unifiedUserService which applies DataTransformers
       const response = await unifiedUserService.getUsers({ limit: 1000 });
@@ -233,7 +233,7 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
   /**
    * Get previous period customer count
    */
-  private async getPreviousCustomerCount(_params: DashboardParams): Promise<number> {
+  private async getPreviousCustomerCount(): Promise<number> {
     try {
       // Use unifiedUserService which applies DataTransformers
       const response = await unifiedUserService.getUsers({ limit: 1000 });

@@ -34,10 +34,7 @@ class BulkLoansAPIService implements BulkLoansService {
       console.log(`Found ${customers.length} customers to fetch loans for`);
       
       // Step 2: Fetch loans for each customer
-      const allLoans: any[] = [];
-      let totalValue = 0;
-      let activeCount = 0;
-      let completedCount = 0;
+      const allLoans: unknown[] = [];
       
       for (const customer of customers) {
         try {

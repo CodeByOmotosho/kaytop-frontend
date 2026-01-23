@@ -444,7 +444,7 @@ class ReportsAPIService implements ReportsService {
    * Since the backend doesn't have a dedicated branch statistics endpoint,
    * we'll use the general reports endpoint with branch filtering and calculate statistics
    */
-  async getBranchReportStatistics(branchId: string, _filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<ReportStatistics> {
+  async getBranchReportStatistics(branchId: string, filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<ReportStatistics> {
     try {
       // Validate branch ID format
       const validatedBranchId: string | null = this.validateBranchId(branchId);
@@ -512,7 +512,7 @@ class ReportsAPIService implements ReportsService {
    * Includes branch authorization checks for branch managers
    * Note: Since 'missed' status may not be supported by backend, we'll return empty array for now
    */
-  async getMissedReports(branchId?: string, _filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<Report[]> {
+  async getMissedReports(branchId?: string, filters: Pick<ReportFilters, 'dateFrom' | 'dateTo'> = {}): Promise<Report[]> {
     try {
       // Validate branch ID if provided
       let validatedBranchId: string | null = null;

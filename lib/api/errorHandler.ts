@@ -222,11 +222,11 @@ export class UnifiedAPIErrorHandler {
         ...Object.getOwnPropertyNames(safeError).reduce((acc, key) => {
           try {
             acc[key] = safeError[key];
-          } catch (e) {
+          } catch {
             acc[key] = 'Unable to serialize';
           }
           return acc;
-        }, {} as any),
+        }, {} as Record<string, unknown>),
         // Include details if available
         details: safeError.details || null,
         // Include response data if available
