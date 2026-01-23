@@ -284,22 +284,22 @@ export function getReportMetrics({
   return [
     {
       title: "Total Reports",
-      value: data?.reportStats.totalReports.toString(),
+      value: data?.reportStats?.totalReports?.toString(),
       border: false,
     },
     {
       title: "Total Approved",
-      value: data?.reportStats.totalApproved.toString(),
+      value: data?.reportStats?.totalApproved?.toString(),
       border: true,
     },
     {
       title: "Total Pending",
-      value: data?.reportStats.totalPending.toString(),
+      value: data?.reportStats?.totalPending?.toString(),
       border: true,
     },
     {
       title: "Total Declined",
-      value: data?.reportStats.totalDeclined.toString(),
+      value: data?.reportStats?.totalDeclined?.toString(),
       border: true,
     },
   ];
