@@ -1,7 +1,10 @@
 import { Meta } from "./dashboard";
 
 export enum ReportStatus {
-  PENDING = "pending",
+  DEFAULT = "",
+  DRAFT = "draft",
+  SUBMITTED = "submitted",
+  FORWARDED = "forwarded",
   APPROVED = "approved",
   DECLINED = "declined",
 }
@@ -139,6 +142,95 @@ export interface ApproveFormData {
   remarks: string;
 }
 
+
+
+export interface SubmitHqReportFormData {
+  remarks: string;
+}
+
+
 export interface ReportByIdResponse {
   data: ReportById;
 }
+
+
+
+export interface BaseReportFormData {
+  title: string;
+  description: string;
+  type: string;
+}
+
+export interface GenerateReportFormData extends BaseReportFormData {
+  reportDate: Date;
+}
+
+export interface GenerateReportPostFormData extends BaseReportFormData {
+  reportDate: string;
+
+}
+
+export interface SubmittedBy {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  mobileNumber: string;
+  dob: string | null;
+  address: string | null;
+  branch: string;
+  state: string;
+  role: string;
+  isVerified: boolean;
+  profilePicture: string | null;
+}
+
+export interface IncludedReport {
+  id: number;
+  title: string;
+}
+
+export interface WorkflowAction {
+  action: string;
+  comment: string;
+  includedReports: IncludedReport[];
+  timestamp: string;
+  userId: number;
+  userName: string;
+}
+
+export interface ReportData {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  status: string;
+  state: string;
+  branch: string;
+  startDate: string; 
+  endDate: string;   
+  reportDate: string; 
+  submittedAt: string;
+  updatedAt: string;
+  forwardedAt: string | null;
+  forwardedRemarks: string | null;
+  returnedReason: string | null;
+  declineReason: string | null;
+  remarks: string | null;
+  branchTotalLoans: string;
+  branchTotalSavings: string;
+  totalCreditOfficers: number;
+  totalLoansDisbursed: number;
+  totalLoansProcessed: number;
+  totalRecollections: number;
+  totalSavingsProcessed: number;
+  officerPerformance: unknown | null; 
+  workflowHistory: WorkflowAction[];
+  submittedBy: SubmittedBy;
+}
+
+export interface GenerateReportResponse {
+  data: ReportData;
+}
+
+
