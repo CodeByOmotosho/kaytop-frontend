@@ -107,8 +107,8 @@ export default function AMCreditOfficerDetailsPage({ params }: { params: Promise
 
   // Transform Loan to DisbursedLoan
   const transformLoanToDisbursed = (loan: Loan, customerName: string): DisbursedLoan => ({
-    id: String(loan.id),
-    loanId: String(loan.id).slice(-8).toUpperCase(),
+    id: loan.id ? String(loan.id) : `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    loanId: loan.id ? String(loan.id).slice(-8).toUpperCase() : `TEMP${Date.now().toString().slice(-6)}`,
     customerName,
     amount: loan.amount,
     date: new Date(loan.createdAt).toLocaleDateString('en-US', { 
@@ -151,19 +151,21 @@ export default function AMCreditOfficerDetailsPage({ params }: { params: Promise
 
       // Transform loans to disbursed loans format
       const transformedLoans = await Promise.all(
-        creditOfficerLoans.map(async (loan: Loan) => {
-          let customerName = 'Unknown Customer';
-          try {
-            if (loan.customerId) {
-              const customer = await userService.getUserById(String(loan.customerId));
-              customerName = `${customer.firstName} ${customer.lastName}`;
+        creditOfficerLoans
+          .filter((loan: Loan) => loan && (loan.id !== null && loan.id !== undefined)) // Filter out loans without valid IDs
+          .map(async (loan: Loan) => {
+            let customerName = 'Unknown Customer';
+            try {
+              if (loan.customerId) {
+                const customer = await userService.getUserById(String(loan.customerId));
+                customerName = `${customer.firstName} ${customer.lastName}`;
+              }
+            } catch (err) {
+              console.warn('Failed to fetch customer name for loan:', loan.id);
             }
-          } catch (err) {
-            console.warn('Failed to fetch customer name for loan:', loan.id);
-          }
-          
-          return transformLoanToDisbursed(loan, customerName);
-        })
+            
+            return transformLoanToDisbursed(loan, customerName);
+          })
       );
       setLoansData(transformedLoans);
 
