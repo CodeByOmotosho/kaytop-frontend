@@ -10,6 +10,7 @@ interface Props {
 }
 
 const statusConfig: Record<ReportStatus, { label: string; color: string; icon: typeof CheckCircle }> = {
+ "": {label: "Default", color: "bg-gray-200 text-secondary-foreground", icon: FileText },
   draft: { label: "Draft", color: "bg-gray-200 text-secondary-foreground", icon: FileText },
   submitted: { label: "Submitted", color: "bg-blue-100 text-blue-700", icon: Clock },
   forwarded: { label: "Forwarded", color: "bg-purple-100 text-purple-700", icon: AlertCircle },
