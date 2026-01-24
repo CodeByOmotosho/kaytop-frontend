@@ -1,11 +1,12 @@
 import { CreditOfficerProfile, Summary } from "@/app/types/creditOfficer";
 import { CustomerData } from "@/app/types/customer";
-import { MetricProps, SummaryProps } from "@/app/types/dashboard";
+import { DashboardKpi, MetricProps, SummaryProps } from "@/app/types/dashboard";
 import {
   ActiveLoanData,
   LoanDetailsApiResponse,
   SavingsProgressResponse,
 } from "@/app/types/loan";
+import { ReportStatus } from "@/app/types/report";
 import { MenuItem, Routes } from "@/app/types/routes";
 import { clsx, type ClassValue } from "clsx";
 import dayjs from "dayjs";
@@ -93,6 +94,11 @@ interface BranchLoanMetrics extends DashboardMetrics {
 
 interface BranchLoanMetricsInput {
   data?: BranchLoanMetrics;
+}
+
+
+interface DashboardReportMetrics {
+  data?: DashboardKpi;
 }
 
 export function getDashboardMetrics({ data }: DashboardMetricsInput): {
@@ -275,6 +281,30 @@ export function getCustomerMetrics({
     {
       title: "Active Loans",
       value: data?.activeLoans.toString(),
+      border: true,
+    },
+  ];
+}
+
+
+
+export function getBmReportMetrics({
+  data,
+}: DashboardReportMetrics): MetricProps[] {
+  return [
+    {
+      title: "Total Reports",
+      value: data?.reportStats.totalReports.toString(),
+      border: false,
+    },
+    {
+      title: "Total Approved",
+      value: data?.reportStats.totalApproved.toString(),
+      border: true,
+    },
+    {
+      title: "Total Declined",
+      value: data?.reportStats.totalDeclined.toString(),
       border: true,
     },
   ];
@@ -469,8 +499,8 @@ export function isReportType(value: string | null): value is "daily" | "weekly" 
   return value !== null && ["daily", "weekly", "monthly", "quarterly", "annual", "custom"].includes(value);
 }
 
-export function isReportStatus(value: string | null): value is "pending" | "approved" | "declined" {
-  return value !== null && ["pending", "approved", "declined"].includes(value);
+export function isReportStatus(value: string | null): value is ReportStatus {
+  return value !== null && ["pending", "approved", "declined", "draft", "submitted", "forwarded"].includes(value);
 }
 // Report mapping functions
 interface ReportData {
