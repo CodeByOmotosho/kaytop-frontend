@@ -668,17 +668,21 @@ export default function AMBranchesPage() {
                   <button
                     onClick={handleCalculateRatings}
                     disabled={isCalculatingRatings}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 border rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex-1 sm:flex-initial justify-center focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
                       isCalculatingRatings
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-[#7F56D9] text-white hover:bg-[#6941C6]'
+                        ? 'bg-gray-50 border-[#D0D5DD] text-gray-400 cursor-not-allowed'
+                        : 'bg-white border-[#D0D5DD] text-[#344054] hover:bg-gray-50 active:bg-gray-100'
                     }`}
+                    style={{
+                      boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)',
+                    }}
+                    aria-label="Calculate performance ratings"
                   >
                     {isCalculatingRatings ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <>
+                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                         Calculating...
-                      </div>
+                      </>
                     ) : (
                       'Calculate Ratings'
                     )}
