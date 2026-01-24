@@ -306,6 +306,80 @@ export interface Report {
   }>;
 }
 
+// Enhanced types for HQ Dashboard functionality
+export interface BranchReport {
+  id: string;
+  branchName: string;
+  branchId: string;
+  totalSavings: number;
+  totalDisbursed: number;
+  totalRepaid: number;
+  status: 'pending' | 'approved' | 'declined' | 'mixed';
+  reportCount: number;
+  pendingReports: number;
+  approvedReports: number;
+  declinedReports: number;
+  lastSubmissionDate: string;
+  oldestPendingDate?: string;
+  creditOfficerCount: number;
+  activeCreditOfficers: string[];
+}
+
+export interface HQReviewData {
+  action: 'APPROVE' | 'DECLINE';
+  remarks: string;
+}
+
+// Branch Performance and Ratings Types
+export type RatingPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+export type RatingType = 'SAVINGS' | 'MONEY_DISBURSED' | 'LOAN_REPAYMENT';
+
+export interface BranchRating {
+  branchName: string;
+  branchId?: string;
+  rank: number;
+  totalScore: number;
+  savingsScore: number;
+  disbursementScore: number;
+  repaymentScore: number;
+  period: RatingPeriod;
+  calculatedAt: string;
+  // Raw performance data
+  savingsCollected?: number;
+  loansDispursed?: number;
+  repaymentsReceived?: number;
+}
+
+export interface RatingCalculationParams {
+  period: RatingPeriod;
+  periodDate?: string;
+}
+
+export interface RatingCalculationResult {
+  success: boolean;
+  message?: string;
+  calculatedAt?: string;
+  period?: RatingPeriod;
+  periodDate?: string;
+  error?: string;
+}
+
+export interface LeaderboardFilters {
+  type?: RatingType;
+  period?: RatingPeriod;
+  limit?: number;
+}
+
+export interface BranchReportFilters {
+  branchId?: string;
+  status?: string;
+  reportType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface ReportStatistics {
   totalReports: { count: number; growth: number };
   submittedReports: { count: number; growth: number };

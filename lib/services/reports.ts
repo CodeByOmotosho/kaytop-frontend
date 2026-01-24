@@ -8,6 +8,7 @@ import apiClient from '@/lib/apiClient';
 import { API_ENDPOINTS } from '../api/config';
 import { UnifiedAPIErrorHandler } from '../api/errorHandler';
 import { userProfileService } from './userProfile';
+import { cacheManager, CacheKeys, CacheTTL } from '../utils/cache';
 import type {
   Report,
   ReportStatistics,
@@ -15,6 +16,9 @@ import type {
   ReportFilters,
   PaginatedResponse,
   ApiResponse,
+  BranchReport,
+  BranchReportFilters,
+  HQReviewData,
 } from '../api/types';
 
 export interface ReportsService {
@@ -28,6 +32,9 @@ export interface ReportsService {
   getReportStatistics(filters?: Pick<ReportFilters, 'dateFrom' | 'dateTo' | 'branchId'>): Promise<ReportStatistics>;
   getBranchReportStatistics(branchId: string, filters?: Pick<ReportFilters, 'dateFrom' | 'dateTo'>): Promise<ReportStatistics>;
   getMissedReports(branchId?: string, filters?: Pick<ReportFilters, 'dateFrom' | 'dateTo'>): Promise<Report[]>;
+  // Enhanced HQ review methods
+  getBranchAggregateReports(filters?: BranchReportFilters): Promise<PaginatedResponse<BranchReport>>;
+  hqReviewReport(id: string, data: HQReviewData): Promise<Report>;
 }
 
 class ReportsAPIService implements ReportsService {
@@ -561,6 +568,163 @@ class ReportsAPIService implements ReportsService {
       console.error('Missed reports fetch error:', error);
       // Return empty array instead of throwing to prevent breaking the page
       return [];
+    }
+  }
+
+  /**
+   * Get branch aggregate reports for HQ dashboard
+   * Transforms individual reports into branch-level aggregates
+   * Uses unified API client with automatic retry and error handling
+   */
+  async getBranchAggregateReports(filters: BranchReportFilters = {}): Promise<PaginatedResponse<BranchReport>> {
+    try {
+      // Check HQ manager authorization
+      const userProfile = await userProfileService.getUserProfile();
+      if (userProfile.role !== 'hq_manager' && userProfile.role !== 'system_admin') {
+        throw new Error('Access denied: Only HQ managers and system admins can access branch aggregate reports');
+      }
+
+      // Get all reports and transform them into branch aggregates
+      const reportsResponse = await this.getAllReports({
+        branchId: filters.branchId,
+        status: filters.status,
+        reportType: filters.reportType,
+        page: filters.page || 1,
+        limit: filters.limit || 50,
+      });
+
+      // Transform individual reports into branch aggregates
+      const branchMap = new Map<string, BranchReport>();
+
+      reportsResponse.data.forEach(report => {
+        const branchKey = report.branchId || report.branch;
+        
+        if (!branchMap.has(branchKey)) {
+          branchMap.set(branchKey, {
+            id: branchKey,
+            branchName: report.branch,
+            branchId: report.branchId,
+            totalSavings: 0,
+            totalDisbursed: 0,
+            totalRepaid: 0,
+            status: 'pending',
+            reportCount: 0,
+            pendingReports: 0,
+            approvedReports: 0,
+            declinedReports: 0,
+            lastSubmissionDate: report.createdAt,
+            creditOfficerCount: 0,
+            activeCreditOfficers: [],
+          });
+        }
+
+        const branchAggregate = branchMap.get(branchKey)!;
+        
+        // Aggregate financial data
+        branchAggregate.totalSavings += parseFloat(report.savingsCollected) || 0;
+        branchAggregate.totalDisbursed += parseFloat(report.loansValueDispursed) || 0;
+        branchAggregate.totalRepaid += report.repaymentsCollected || 0;
+        
+        // Count reports by status
+        branchAggregate.reportCount++;
+        if (report.status === 'pending' || report.status === 'submitted') {
+          branchAggregate.pendingReports++;
+        } else if (report.status === 'approved') {
+          branchAggregate.approvedReports++;
+        } else if (report.status === 'declined') {
+          branchAggregate.declinedReports++;
+        }
+
+        // Track credit officers
+        if (!branchAggregate.activeCreditOfficers.includes(report.creditOfficer)) {
+          branchAggregate.activeCreditOfficers.push(report.creditOfficer);
+          branchAggregate.creditOfficerCount++;
+        }
+
+        // Update last submission date
+        if (new Date(report.createdAt) > new Date(branchAggregate.lastSubmissionDate)) {
+          branchAggregate.lastSubmissionDate = report.createdAt;
+        }
+
+        // Determine overall status
+        if (branchAggregate.pendingReports > 0 && branchAggregate.approvedReports > 0) {
+          branchAggregate.status = 'mixed';
+        } else if (branchAggregate.pendingReports > 0) {
+          branchAggregate.status = 'pending';
+        } else if (branchAggregate.approvedReports > 0 && branchAggregate.declinedReports === 0) {
+          branchAggregate.status = 'approved';
+        } else if (branchAggregate.declinedReports > 0) {
+          branchAggregate.status = 'declined';
+        }
+      });
+
+      const branchReports = Array.from(branchMap.values());
+
+      return {
+        data: branchReports,
+        pagination: {
+          page: filters.page || 1,
+          limit: filters.limit || 50,
+          total: branchReports.length,
+          totalPages: Math.ceil(branchReports.length / (filters.limit || 50)),
+        },
+      };
+
+    } catch (error) {
+      const errorMessage = UnifiedAPIErrorHandler.handleApiError(error, {
+        logError: true,
+        showToast: false
+      });
+      console.error('Branch aggregate reports fetch error:', errorMessage);
+      throw error;
+    }
+  }
+
+  /**
+   * HQ review report (approve or decline) with optimistic updates
+   * Uses the PUT /reports/{id}/hq-review endpoint with action: "APPROVE" or "DECLINE"
+   * Uses unified API client with automatic retry and error handling
+   * Implements optimistic UI updates and cache invalidation
+   */
+  async hqReviewReport(id: string, data: HQReviewData): Promise<Report> {
+    try {
+      // Check HQ manager authorization
+      const userProfile = await userProfileService.getUserProfile();
+      if (userProfile.role !== 'hq_manager' && userProfile.role !== 'system_admin') {
+        throw new Error('Access denied: Only HQ managers and system admins can review reports');
+      }
+
+      // Validate action
+      if (data.action !== 'APPROVE' && data.action !== 'DECLINE') {
+        throw new Error('Invalid action: Must be either "APPROVE" or "DECLINE"');
+      }
+
+      // Invalidate related cache entries before making the request
+      // This ensures fresh data is fetched after the review
+      console.log('🗑️ Invalidating reports cache before HQ review');
+      const cacheStats = cacheManager.getStats();
+      cacheStats.keys.forEach(key => {
+        if (key.startsWith('branch_aggregates:') || 
+            key.startsWith('report_statistics:')) {
+          cacheManager.delete(key);
+        }
+      });
+
+      const response: ApiResponse<Report> = await apiClient.put(
+        API_ENDPOINTS.REPORTS.HQ_REVIEW(id),
+        data
+      );
+
+      console.log(`✅ Report ${id} ${data.action.toLowerCase()}d successfully`);
+      return response.data;
+
+    } catch (error) {
+      const errorMessage = UnifiedAPIErrorHandler.handleApiError(error, {
+        logError: true,
+        showToast: false
+      });
+      console.error(`HQ review error for report ${id}:`, errorMessage);
+      throw error;
     }
   }
 }

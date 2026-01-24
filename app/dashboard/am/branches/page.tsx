@@ -4,25 +4,36 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FilterControls from '@/app/_components/ui/FilterControls';
 import { StatisticsCard, StatSection } from '@/app/_components/ui/StatisticsCard';
+import { PerformanceStatisticsCard, PerformanceStatSection } from '@/app/_components/ui/PerformanceStatisticsCard';
+import { PerformanceLeaderboard, LeaderboardEntry } from '@/app/_components/ui/PerformanceLeaderboard';
 import Table, { BranchRecord } from '@/app/_components/ui/Table';
 import { ToastContainer } from '@/app/_components/ui/ToastContainer';
 import { useToast } from '@/app/hooks/useToast';
 import Pagination from '@/app/_components/ui/Pagination';
 import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
 import AdvancedFiltersModal, { AdvancedFilters } from '@/app/_components/ui/AdvancedFiltersModal';
+import { LeaderboardErrorBoundary, HQDashboardErrorBoundary } from '@/app/_components/ui/HQDashboardErrorBoundary';
 import { DateRange } from 'react-day-picker';
 import { dashboardService } from '@/lib/services/dashboard';
+import { ratingsService } from '@/lib/services/ratings';
 import { unifiedUserService } from '@/lib/services/unifiedUser';
 import { extractValue } from '@/lib/utils/dataExtraction';
 import { useAuth } from '@/app/context/AuthContext';
 
 type TimePeriod = 'last_24_hours' | 'last_7_days' | 'last_30_days' | 'custom' | null;
+type TabType = 'branches' | 'leaderboard';
+type LeaderboardType = 'MONEY_DISBURSED' | 'LOAN_REPAYMENT' | 'SAVINGS';
+type LeaderboardPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
 export default function AMBranchesPage() {
   const router = useRouter();
   const { session } = useAuth();
   const { toasts, removeToast, success, error } = useToast();
+  const [activeTab, setActiveTab] = useState<TabType>('branches');
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
+  const [isCalculatingRatings, setIsCalculatingRatings] = useState(false);
+  const [leaderboardType, setLeaderboardType] = useState<LeaderboardType>('MONEY_DISBURSED');
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState<LeaderboardPeriod>('MONTHLY');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,6 +56,8 @@ export default function AMBranchesPage() {
   // API data state
   const [branchData, setBranchData] = useState<BranchRecord[]>([]);
   const [branchStatistics, setBranchStatistics] = useState<StatSection[]>([]);
+  const [performanceStatistics, setPerformanceStatistics] = useState<PerformanceStatSection[]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Fetch branch data from unified API
@@ -114,39 +127,214 @@ export default function AMBranchesPage() {
       const stats: StatSection[] = [
         {
           label: 'All Branches',
-          value: extractValue(dashboardData.branches.value, 0),
-          change: extractValue(dashboardData.branches.change, 0),
-          changeLabel: extractValue(dashboardData.branches.changeLabel, 'No change this month'),
-          isCurrency: extractValue(dashboardData.branches.isCurrency, false),
+          value: extractValue(dashboardData.branches.value, 0) as number,
+          change: extractValue(dashboardData.branches.change, 0) as number,
+          changeLabel: extractValue(dashboardData.branches.changeLabel, 'No change this month') as string,
+          isCurrency: extractValue(dashboardData.branches.isCurrency, false) as boolean,
         },
         {
           label: "All CO's",
-          value: extractValue(dashboardData.creditOfficers.value, 0),
-          change: extractValue(dashboardData.creditOfficers.change, 0),
-          changeLabel: extractValue(dashboardData.creditOfficers.changeLabel, 'No change this month'),
-          isCurrency: extractValue(dashboardData.creditOfficers.isCurrency, false),
+          value: extractValue(dashboardData.creditOfficers.value, 0) as number,
+          change: extractValue(dashboardData.creditOfficers.change, 0) as number,
+          changeLabel: extractValue(dashboardData.creditOfficers.changeLabel, 'No change this month') as string,
+          isCurrency: extractValue(dashboardData.creditOfficers.isCurrency, false) as boolean,
         },
         {
           label: 'All Customers',
-          value: extractValue(dashboardData.customers.value, 0),
-          change: extractValue(dashboardData.customers.change, 0),
-          changeLabel: extractValue(dashboardData.customers.changeLabel, 'No change this month'),
-          isCurrency: extractValue(dashboardData.customers.isCurrency, false),
+          value: extractValue(dashboardData.customers.value, 0) as number,
+          change: extractValue(dashboardData.customers.change, 0) as number,
+          changeLabel: extractValue(dashboardData.customers.changeLabel, 'No change this month') as string,
+          isCurrency: extractValue(dashboardData.customers.isCurrency, false) as boolean,
         },
         {
           label: 'Active Loans',
-          value: extractValue(dashboardData.activeLoans.value, 0),
-          change: extractValue(dashboardData.activeLoans.change, 0),
-          changeLabel: extractValue(dashboardData.activeLoans.changeLabel, 'No change this month'),
-          isCurrency: extractValue(dashboardData.activeLoans.isCurrency, false),
+          value: extractValue(dashboardData.activeLoans.value, 0) as number,
+          change: extractValue(dashboardData.activeLoans.change, 0) as number,
+          changeLabel: extractValue(dashboardData.activeLoans.changeLabel, 'No change this month') as string,
+          isCurrency: extractValue(dashboardData.activeLoans.isCurrency, false) as boolean,
         },
       ];
       setBranchStatistics(stats);
+
+      // Fetch performance statistics for leaderboard
+      await fetchPerformanceStatistics();
 
     } catch (err) {
       console.error('Failed to fetch branch data:', err);
       setApiError(err instanceof Error ? err.message : 'Failed to load branch data');
       error('Failed to load branch data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch performance statistics for leaderboard
+  const fetchPerformanceStatistics = async () => {
+    try {
+      // Mock performance data - in real implementation, this would come from ratings API
+      const mockPerformanceStats: PerformanceStatSection[] = [
+        {
+          label: 'Top by Savings',
+          branchName: 'Lagos Main Branch',
+          value: 2500000,
+          change: 15.2,
+          isCurrency: true,
+          rank: 1
+        },
+        {
+          label: 'Top by Loan Disbursement',
+          branchName: 'Abuja Central Branch',
+          value: 4200000,
+          change: 22.8,
+          isCurrency: true,
+          rank: 1
+        },
+        {
+          label: 'Top by Loan Repayment',
+          branchName: 'Port Harcourt Branch',
+          value: 3800000,
+          change: 18.5,
+          isCurrency: true,
+          rank: 1
+        }
+      ];
+      
+      setPerformanceStatistics(mockPerformanceStats);
+
+      // Mock leaderboard data
+      const mockLeaderboardData: LeaderboardEntry[] = [
+        {
+          rank: 1,
+          branchName: 'Lagos Main Branch',
+          branchId: 'ID: LMB001',
+          value: 2500000,
+          change: 15.2,
+          isCurrency: true
+        },
+        {
+          rank: 2,
+          branchName: 'Abuja Central Branch',
+          branchId: 'ID: ACB002',
+          value: 2200000,
+          change: 12.8,
+          isCurrency: true
+        },
+        {
+          rank: 3,
+          branchName: 'Port Harcourt Branch',
+          branchId: 'ID: PHB003',
+          value: 1950000,
+          change: 8.5,
+          isCurrency: true
+        },
+        {
+          rank: 4,
+          branchName: 'Kano Branch',
+          branchId: 'ID: KNB004',
+          value: 1800000,
+          change: 5.2,
+          isCurrency: true
+        },
+        {
+          rank: 5,
+          branchName: 'Ibadan Branch',
+          branchId: 'ID: IBB005',
+          value: 1650000,
+          change: -2.1,
+          isCurrency: true
+        }
+      ];
+      
+      setLeaderboardData(mockLeaderboardData);
+    } catch (err) {
+      console.error('Failed to fetch performance statistics:', err);
+      // Don't show error for performance stats as it's supplementary data
+    }
+  };
+
+  // Handle ratings calculation
+  const handleCalculateRatings = async () => {
+    try {
+      setIsCalculatingRatings(true);
+      
+      // Determine the period and date for calculation
+      const period = selectedPeriod === 'last_24_hours' ? 'DAILY' : 
+                    selectedPeriod === 'last_7_days' ? 'WEEKLY' :
+                    selectedPeriod === 'last_30_days' ? 'MONTHLY' : 'DAILY';
+      
+      const periodDate = dateRange?.from ? 
+        dateRange.from.toISOString().split('T')[0] : 
+        new Date().toISOString().split('T')[0];
+      
+      // Call ratings calculation API
+      const result = await ratingsService.calculateRatings({
+        period: period as any,
+        periodDate: periodDate
+      });
+      
+      success('Ratings calculated successfully!');
+      
+      // Refresh performance statistics after calculation
+      await fetchPerformanceStatistics();
+      
+    } catch (err) {
+      console.error('Failed to calculate ratings:', err);
+      error('Failed to calculate ratings. Please try again.');
+    } finally {
+      setIsCalculatingRatings(false);
+    }
+  };
+
+  const handleLeaderboardRowClick = (entry: LeaderboardEntry) => {
+    // Navigate to branch details - extract ID from branchId
+    const id = entry.branchId.replace('ID: ', '').toLowerCase();
+    router.push(`/dashboard/am/branches/${id}`);
+  };
+
+  const handleApplyLeaderboardFilters = async () => {
+    try {
+      setIsLoading(true);
+      
+      // In a real implementation, this would call the ratings API with filters
+      // For now, we'll simulate different data based on the selected type
+      let filteredData: LeaderboardEntry[] = [];
+      
+      switch (leaderboardType) {
+        case 'MONEY_DISBURSED':
+          filteredData = [
+            { rank: 1, branchName: 'Abuja Central Branch', branchId: 'ID: ACB002', value: 4200000, change: 22.8, isCurrency: true },
+            { rank: 2, branchName: 'Lagos Main Branch', branchId: 'ID: LMB001', value: 3800000, change: 18.5, isCurrency: true },
+            { rank: 3, branchName: 'Port Harcourt Branch', branchId: 'ID: PHB003', value: 3200000, change: 15.2, isCurrency: true },
+            { rank: 4, branchName: 'Kano Branch', branchId: 'ID: KNB004', value: 2900000, change: 12.1, isCurrency: true },
+            { rank: 5, branchName: 'Ibadan Branch', branchId: 'ID: IBB005', value: 2600000, change: 8.7, isCurrency: true }
+          ];
+          break;
+        case 'LOAN_REPAYMENT':
+          filteredData = [
+            { rank: 1, branchName: 'Port Harcourt Branch', branchId: 'ID: PHB003', value: 3800000, change: 25.3, isCurrency: true },
+            { rank: 2, branchName: 'Lagos Main Branch', branchId: 'ID: LMB001', value: 3500000, change: 20.1, isCurrency: true },
+            { rank: 3, branchName: 'Kano Branch', branchId: 'ID: KNB004', value: 3100000, change: 16.8, isCurrency: true },
+            { rank: 4, branchName: 'Abuja Central Branch', branchId: 'ID: ACB002', value: 2800000, change: 14.2, isCurrency: true },
+            { rank: 5, branchName: 'Ibadan Branch', branchId: 'ID: IBB005', value: 2400000, change: 10.5, isCurrency: true }
+          ];
+          break;
+        case 'SAVINGS':
+          filteredData = [
+            { rank: 1, branchName: 'Lagos Main Branch', branchId: 'ID: LMB001', value: 2500000, change: 15.2, isCurrency: true },
+            { rank: 2, branchName: 'Abuja Central Branch', branchId: 'ID: ACB002', value: 2200000, change: 12.8, isCurrency: true },
+            { rank: 3, branchName: 'Port Harcourt Branch', branchId: 'ID: PHB003', value: 1950000, change: 8.5, isCurrency: true },
+            { rank: 4, branchName: 'Kano Branch', branchId: 'ID: KNB004', value: 1800000, change: 5.2, isCurrency: true },
+            { rank: 5, branchName: 'Ibadan Branch', branchId: 'ID: IBB005', value: 1650000, change: -2.1, isCurrency: true }
+          ];
+          break;
+      }
+      
+      setLeaderboardData(filteredData);
+      success(`Leaderboard updated for ${leaderboardType.replace('_', ' ').toLowerCase()} - ${leaderboardPeriod.toLowerCase()}`);
+      
+    } catch (err) {
+      console.error('Failed to apply leaderboard filters:', err);
+      error('Failed to update leaderboard. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -162,6 +350,18 @@ export default function AMBranchesPage() {
       router.push('/auth/bm/login');
     }
   }, [session, router]);
+
+  // Background refresh for leaderboard data every 5 minutes
+  useEffect(() => {
+    if (activeTab === 'leaderboard' && session) {
+      const refreshInterval = setInterval(() => {
+        console.log('🔄 Background refresh: Updating leaderboard data...');
+        fetchPerformanceStatistics();
+      }, 300000); // 5 minutes
+
+      return () => clearInterval(refreshInterval);
+    }
+  }, [activeTab, session]);
 
   const handleRowClick = (row: any) => {
     // Extract the ID from the row object
@@ -209,10 +409,48 @@ export default function AMBranchesPage() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+    
+    // If on leaderboard tab, trigger search immediately
+    if (activeTab === 'leaderboard') {
+      handleLeaderboardSearch(e.target.value);
+    }
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
+    
+    // If on leaderboard tab, reset search results
+    if (activeTab === 'leaderboard') {
+      handleLeaderboardSearch('');
+    }
+  };
+
+  const handleLeaderboardSearch = async (query: string) => {
+    if (!query.trim()) {
+      // Reset to full leaderboard data
+      await handleApplyLeaderboardFilters();
+      return;
+    }
+
+    try {
+      // In a real implementation, this would call GET /ratings/branch/{name}
+      // For now, we'll filter the existing leaderboard data
+      const filteredData = leaderboardData.filter(entry =>
+        entry.branchName.toLowerCase().includes(query.toLowerCase()) ||
+        entry.branchId.toLowerCase().includes(query.toLowerCase())
+      );
+
+      // If no results found, show message
+      if (filteredData.length === 0) {
+        // You could set a "no results" state here
+        setLeaderboardData([]);
+      } else {
+        setLeaderboardData(filteredData);
+      }
+    } catch (err) {
+      console.error('Failed to search leaderboard:', err);
+      error('Failed to search branches. Please try again.');
+    }
   };
 
   const handleSort = (column: string) => {
@@ -345,12 +583,36 @@ export default function AMBranchesPage() {
 
             {/* Filter Controls */}
             <div style={{ marginBottom: '56px' }}>
-              <FilterControls
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={handlePeriodChange}
-                onDateRangeChange={handleDateRangeChange}
-                onFilter={handleFilterClick}
-              />
+              <div className="flex items-center justify-between">
+                <FilterControls
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={handlePeriodChange}
+                  onDateRangeChange={handleDateRangeChange}
+                  onFilter={handleFilterClick}
+                />
+                
+                {/* Calculate Ratings Button - Only show for leaderboard tab */}
+                {activeTab === 'leaderboard' && (
+                  <button
+                    onClick={handleCalculateRatings}
+                    disabled={isCalculatingRatings}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isCalculatingRatings
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-[#7F56D9] text-white hover:bg-[#6941C6]'
+                    }`}
+                  >
+                    {isCalculatingRatings ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Calculating...
+                      </div>
+                    ) : (
+                      'Calculate Ratings'
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Statistics Card */}
@@ -369,18 +631,52 @@ export default function AMBranchesPage() {
                     </button>
                   </div>
                 </div>
-              ) : (
+              ) : activeTab === 'branches' ? (
                 <StatisticsCard sections={branchStatistics} />
+              ) : (
+                <PerformanceStatisticsCard sections={performanceStatistics} />
               )}
             </div>
 
             {/* Branches Section Title and Search */}
             <div className="pl-4 flex items-center justify-between" style={{ marginBottom: '24px' }}>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
-                Branches
-              </h2>
+              <div className="flex items-center gap-8">
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
+                  Branches
+                </h2>
+                
+                {/* Tab Navigation */}
+                <div className="flex items-center">
+                  <button
+                    onClick={() => {
+                      setActiveTab('branches');
+                      setSearchQuery(''); // Clear search when switching tabs
+                    }}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeTab === 'branches'
+                        ? 'bg-[#7F56D9] text-white'
+                        : 'text-[#475467] hover:text-[#344054] hover:bg-gray-50'
+                    }`}
+                  >
+                    Branches
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('leaderboard');
+                      setSearchQuery(''); // Clear search when switching tabs
+                    }}
+                    className={`ml-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeTab === 'leaderboard'
+                        ? 'bg-[#7F56D9] text-white'
+                        : 'text-[#475467] hover:text-[#344054] hover:bg-gray-50'
+                    }`}
+                  >
+                    Leaderboard
+                  </button>
+                </div>
+              </div>
 
-              {/* Search Input */}
+              {/* Search Input - Show for both tabs but with different functionality */}
               <div className="relative w-[320px]">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -397,13 +693,13 @@ export default function AMBranchesPage() {
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  placeholder="Search by Name or ID..."
+                  placeholder={activeTab === 'branches' ? "Search by Name or ID..." : "Search branches by name..."}
                   className="w-full pl-10 pr-10 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 transition-all"
                   style={{
                     border: '1px solid var(--color-border-gray-300)',
                     '--tw-ring-color': 'var(--color-primary-600)'
                   } as React.CSSProperties}
-                  aria-label="Search branches"
+                  aria-label={activeTab === 'branches' ? "Search branches" : "Search leaderboard"}
                 />
                 {searchQuery && (
                   <button
@@ -425,80 +721,147 @@ export default function AMBranchesPage() {
               </div>
             </div>
 
-            {/* Branches Table */}
-            <div className="max-w-[1041px]">
-              {isLoading ? (
-                <TableSkeleton rows={itemsPerPage} />
-              ) : paginatedBranches.length > 0 ? (
-                <>
-                  <Table
-                    data={paginatedBranches}
-                    tableType="branches"
-                    onSelectionChange={handleSelectionChange}
-                    onRowClick={handleRowClick}
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
+            {/* Tab Content */}
+            {activeTab === 'branches' ? (
+              /* Branches Table */
+              <div className="max-w-[1041px]">
+                {isLoading ? (
+                  <TableSkeleton rows={itemsPerPage} />
+                ) : paginatedBranches.length > 0 ? (
+                  <>
+                    <Table
+                      data={paginatedBranches}
+                      tableType="branches"
+                      onSelectionChange={handleSelectionChange}
+                      onRowClick={handleRowClick}
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    />
 
-                  {/* Pagination Controls */}
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-[#475467]">
-                        Showing {startIndex + 1}-{Math.min(endIndex, sortedBranches.length)} of {sortedBranches.length} results
-                      </span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                        className="px-3 py-1.5 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
-                        aria-label="Items per page"
-                      >
-                        <option value={10}>10 per page</option>
-                        <option value={25}>25 per page</option>
-                        <option value={50}>50 per page</option>
-                      </select>
+                    {/* Pagination Controls */}
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-[#475467]">
+                          Showing {startIndex + 1}-{Math.min(endIndex, sortedBranches.length)} of {sortedBranches.length} results
+                        </span>
+                        <select
+                          value={itemsPerPage}
+                          onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                          className="px-3 py-1.5 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
+                          aria-label="Items per page"
+                        >
+                          <option value={10}>10 per page</option>
+                          <option value={25}>25 per page</option>
+                          <option value={50}>50 per page</option>
+                        </select>
+                      </div>
+
+                      <Pagination
+                        totalPages={totalPages}
+                        page={currentPage}
+                        onPageChange={handlePageChange}
+                      />
                     </div>
-
-                    <Pagination
-                      totalPages={totalPages}
-                      page={currentPage}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="bg-white rounded-lg border border-[#EAECF0] p-12 text-center">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">
-                    No branches found
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {searchQuery ? `No branches match your search "${searchQuery}"` : 'No branches available'}
-                  </p>
-                  {searchQuery && (
-                    <button
-                      onClick={handleClearSearch}
-                      className="px-4 py-2 text-sm font-medium text-[#7F56D9] hover:text-[#6941C6] transition-colors"
+                  </>
+                ) : (
+                  <div className="bg-white rounded-lg border border-[#EAECF0] p-12 text-center">
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
                     >
-                      Clear search
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                      No branches found
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {searchQuery ? `No branches match your search "${searchQuery}"` : 'No branches available'}
+                    </p>
+                    {searchQuery && (
+                      <button
+                        onClick={handleClearSearch}
+                        className="px-4 py-2 text-sm font-medium text-[#7F56D9] hover:text-[#6941C6] transition-colors"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Leaderboard Content */
+              <LeaderboardErrorBoundary>
+                <div className="max-w-[1041px]">
+                  {/* Leaderboard Filters */}
+                  <div className="mb-6 p-4 bg-white rounded-lg border border-[#EAECF0]">
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {/* Type Filter */}
+                        <div className="flex flex-col">
+                          <label className="text-sm font-medium text-[#344054] mb-2">
+                            Performance Type
+                          </label>
+                          <select
+                            value={leaderboardType}
+                            onChange={(e) => setLeaderboardType(e.target.value as LeaderboardType)}
+                            className="px-3 py-2 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] min-w-[180px]"
+                          >
+                            <option value="MONEY_DISBURSED">Money Disbursed</option>
+                            <option value="LOAN_REPAYMENT">Loan Repayment</option>
+                            <option value="SAVINGS">Savings</option>
+                          </select>
+                        </div>
+
+                        {/* Period Filter */}
+                        <div className="flex flex-col">
+                          <label className="text-sm font-medium text-[#344054] mb-2">
+                            Time Period
+                          </label>
+                          <select
+                            value={leaderboardPeriod}
+                            onChange={(e) => setLeaderboardPeriod(e.target.value as LeaderboardPeriod)}
+                            className="px-3 py-2 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] min-w-[120px]"
+                          >
+                            <option value="DAILY">Daily</option>
+                            <option value="WEEKLY">Weekly</option>
+                            <option value="MONTHLY">Monthly</option>
+                            <option value="QUARTERLY">Quarterly</option>
+                            <option value="YEARLY">Yearly</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Apply Filters Button */}
+                      <button
+                        onClick={handleApplyLeaderboardFilters}
+                        disabled={isLoading}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                          isLoading
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-[#7F56D9] text-white hover:bg-[#6941C6]'
+                        }`}
+                      >
+                        {isLoading ? 'Loading...' : 'Apply Filters'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <PerformanceLeaderboard
+                    entries={leaderboardData}
+                    title={`Branch Performance Leaderboard - ${leaderboardType.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())} (${leaderboardPeriod.toLowerCase()})`}
+                    isLoading={isLoading}
+                    onRowClick={handleLeaderboardRowClick}
+                  />
+            )}
           </div>
         </div>
       </main>

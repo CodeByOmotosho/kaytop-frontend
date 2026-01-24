@@ -257,10 +257,22 @@ export const API_ENDPOINTS = {
   REPORTS: {
     LIST: '/reports',
     BY_ID: (id: string) => `/reports/${id}`,
+    BY_BRANCH: (branchName: string) => `/reports/branch/${branchName}`,
     APPROVE: (id: string) => `/reports/${id}/approve`,
     DECLINE: (id: string) => `/reports/${id}/decline`,
+    HQ_REVIEW: (id: string) => `/reports/${id}/hq-review`,
     STATISTICS: '/reports/statistics',
     DASHBOARD_STATS: '/reports/dashboard/stats',
+  },
+
+  // Ratings endpoints for branch performance leaderboard
+  RATINGS: {
+    CALCULATE: '/ratings/calculate',
+    CURRENT: '/ratings/current',
+    LEADERBOARD: '/ratings/leaderboard',
+    BRANCH: (branchName: string) => `/ratings/branch/${branchName}`,
+    HISTORY: '/ratings/history',
+    PERIODS_CURRENT: '/ratings/periods/current',
   },
 
   // Activity Logs endpoints
