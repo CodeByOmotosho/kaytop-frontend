@@ -1,6 +1,6 @@
 import { X, FileText, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ReportStatus, Report } from "@/app/types/report";
+import Button from "@/app/_components/ui/Button";
 
 interface Props {
   isOpen: boolean;
@@ -44,15 +44,15 @@ export default function ViewReportModal({ isOpen, onClose, report, isLoading }: 
           <>
             {/* Header */}
             <div className="mb-6">
-              <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">{report.title}</h2>
+              <div className="flex items-start justify-between gap-4">
                   <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
-                </div>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${status?.color}`}>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${status?.color}`}>
                   <StatusIcon className="w-3 h-3" />
                   {status?.label}
                 </span>
+                </div>        
               </div>
             </div>
 
@@ -109,7 +109,7 @@ export default function ViewReportModal({ isOpen, onClose, report, isLoading }: 
               {report.submittedBy && (
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-3">Submitted By</h3>
-                  <div className="flex items-center gap-3 bg-secondary/30 rounded-lg p-3">
+                  <div className="flex items-center gap-3 bg-[#f4ebff] rounded-lg p-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       {report.submittedBy.profilePicture ? (
                         <img
@@ -181,7 +181,7 @@ export default function ViewReportModal({ isOpen, onClose, report, isLoading }: 
 
             {/* Footer */}
             <div className="mt-6 pt-4 border-t border-border">
-              <Button onClick={onClose} className="w-full">
+              <Button onClick={onClose} className="w-full flex-1 items-center bg-violet-600 text-white">
                 Close
               </Button>
             </div>
@@ -219,7 +219,7 @@ function InfoCard({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-secondary/30 rounded-lg p-3 text-center">
+    <div className="bg-[#f4ebff] rounded-lg p-3 text-center">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-sm font-semibold text-foreground mt-1">{value}</p>
     </div>
