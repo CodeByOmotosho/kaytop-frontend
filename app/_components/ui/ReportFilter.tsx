@@ -11,9 +11,12 @@ export default function ReportFilter({ isLoading }: ReportFilterProps) {
       isLoading={isLoading}
       filterField= "status"
       options={[
-        { value: ReportStatus.PENDING, label: "Pending" },
+        { value: ReportStatus.DEFAULT, label: "All" },
+        { value: ReportStatus.DRAFT, label: "Draft" },
         { value:  ReportStatus.APPROVED, label: "Approved" },
         { value:  ReportStatus.DECLINED, label: "Declined" },
+        { value:  ReportStatus.SUBMITTED, label: "Submitted" },
+        { value:  ReportStatus.FORWARDED, label: "Forwarded" },
         
       ]}
     />
