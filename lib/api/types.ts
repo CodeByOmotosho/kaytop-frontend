@@ -286,7 +286,7 @@ export interface Report {
   dateSent: string;
   timeSent: string;
   reportType: 'daily' | 'weekly' | 'monthly';
-  status: 'submitted' | 'pending' | 'approved' | 'declined';
+  status: 'submitted' | 'pending' | 'approved' | 'declined' | 'draft' | 'forwarded';
   isApproved?: boolean;
   loansDispursed: number;
   loansValueDispursed: string;

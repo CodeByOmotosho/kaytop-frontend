@@ -25,6 +25,69 @@ export default function AMReportsPage() {
   const { session } = useAuth();
   const { toasts, removeToast, success, error } = useToast();
   
+  // Helper function to fetch branch reports with fallback
+  const fetchBranchReports = async (branchIdentifier: string, selectedBranch: BranchReport, context: string) => {
+    console.log(`🔍 Fetching reports for branch (${context}):`, {
+      branchId: selectedBranch.branchId,
+      branchName: selectedBranch.branchName,
+      identifier: branchIdentifier
+    });
+
+    try {
+      // First try with branch filter
+      const branchReportsResponse = await reportsService.getAllReports({
+        branchId: branchIdentifier,
+        limit: 100, // Get all reports for this branch
+      });
+      console.log(`✅ Successfully fetched reports with branch filter for ${context}`);
+      return branchReportsResponse;
+    } catch (error) {
+      console.error(`❌ Failed to fetch reports with branch filter for ${context}, trying alternative approach:`, error);
+      
+      // If branch filtering fails, get all reports and filter client-side
+      try {
+        console.log(`🔄 Attempting to fetch all reports without filters for ${context}...`);
+        const allReportsResponse = await reportsService.getAllReports({
+          limit: 1000, // Get more reports to ensure we capture all branch reports
+        });
+        
+        console.log(`📊 Fetched ${allReportsResponse.data.length} total reports, filtering for branch...`);
+        
+        // Filter reports for the specific branch client-side with more flexible matching
+        const branchReports = allReportsResponse.data.filter(report => {
+          const reportBranch = report.branch || report.branchId || '';
+          const targetBranch = selectedBranch.branchName || '';
+          
+          const matches = reportBranch.toLowerCase().trim() === targetBranch.toLowerCase().trim() ||
+                         reportBranch === branchIdentifier ||
+                         reportBranch.toLowerCase().trim() === branchIdentifier.toLowerCase().trim();
+          
+          if (matches) {
+            console.log(`🎯 Found matching report:`, {
+              reportId: report.id,
+              reportBranch,
+              targetBranch,
+              status: report.status
+            });
+          }
+          
+          return matches;
+        });
+        
+        const result = {
+          data: branchReports,
+          pagination: allReportsResponse.pagination
+        };
+        
+        console.log(`✅ Successfully used fallback approach for ${context}, found branch reports:`, branchReports.length);
+        return result;
+      } catch (fallbackError) {
+        console.error(`❌ Fallback approach also failed for ${context}:`, fallbackError);
+        throw fallbackError;
+      }
+    }
+  };
+  
   // View toggle state - HQ managers can switch between Individual Reports and Branch Aggregates
   const [viewMode, setViewMode] = useState<'individual' | 'branch_aggregates'>('individual');
   const isHQManager = session?.role === 'hq_manager' || session?.role === 'system_admin';
@@ -588,16 +651,100 @@ export default function AMReportsPage() {
       // For branch aggregates, we need to approve all pending reports in the branch
       // Since we don't have individual report IDs in the branch aggregate,
       // we'll fetch the individual reports for this branch and approve them
-      const branchReportsResponse = await reportsService.getAllReports({
+      
+      // Use branchId if available, otherwise use branchName as fallback
+      const branchIdentifier = selectedBranchForReview.branchId || selectedBranchForReview.branchName;
+      
+      if (!branchIdentifier) {
+        error('Unable to identify branch for approval. Missing branch ID and name.');
+        return;
+      }
+
+      console.log('🔍 Fetching reports for branch:', {
         branchId: selectedBranchForReview.branchId,
-        status: 'pending',
-        limit: 100, // Get all pending reports for this branch
+        branchName: selectedBranchForReview.branchName,
+        identifier: branchIdentifier
       });
 
-      const pendingReports = branchReportsResponse.data || [];
+      const branchReportsResponse = await fetchBranchReports(branchIdentifier, selectedBranchForReview, 'approval');
+
+      // Debug: Log all report statuses to understand what we're working with
+      const reportStatuses = branchReportsResponse.data.map(report => ({
+        id: report.id,
+        reportId: report.reportId,
+        status: report.status,
+        creditOfficer: report.creditOfficer
+      }));
+      
+      console.log('🔍 All report statuses:', reportStatuses);
+      
+      // Filter for pending reports client-side
+      const pendingReports = branchReportsResponse.data.filter(report => 
+        report.status === 'pending' || report.status === 'submitted'
+      );
+      
+      // Also check for reports that might need approval (not yet approved/declined)
+      // Based on the actual statuses we see: 'draft', 'forwarded', 'approved', 'declined'
+      // Only 'forwarded' reports should be available for HQ approval
+      const forwardedReports = branchReportsResponse.data.filter(report => 
+        report.status === 'forwarded'
+      );
+      
+      const unapprovedReports = branchReportsResponse.data.filter(report => 
+        report.status !== 'approved' && report.status !== 'declined'
+      );
+      
+      console.log('🔍 Found reports:', {
+        totalBranchReports: branchReportsResponse.data.length,
+        pendingReports: pendingReports.length,
+        forwardedReports: forwardedReports.length,
+        unapprovedReports: unapprovedReports.length,
+        branchIdentifier,
+        statusBreakdown: {
+          submitted: branchReportsResponse.data.filter(r => r.status === 'submitted').length,
+          pending: branchReportsResponse.data.filter(r => r.status === 'pending').length,
+          draft: branchReportsResponse.data.filter(r => r.status === 'draft').length,
+          forwarded: branchReportsResponse.data.filter(r => r.status === 'forwarded').length,
+          approved: branchReportsResponse.data.filter(r => r.status === 'approved').length,
+          declined: branchReportsResponse.data.filter(r => r.status === 'declined').length,
+        }
+      });
       
       if (pendingReports.length === 0) {
-        error('No pending reports found for this branch.');
+        // If no pending reports, check if there are any forwarded reports (ready for HQ approval)
+        if (forwardedReports.length > 0) {
+          console.log('⚠️ No pending reports found, but found forwarded reports ready for approval. Using those instead.');
+          // Use forwarded reports instead
+          const approvalPromises = forwardedReports.map(report =>
+            reportsService.hqReviewReport(report.id, {
+              action: 'APPROVE',
+              remarks: remarks || `Branch reports approved by HQ Manager on ${new Date().toLocaleDateString()}`
+            })
+          );
+
+          await Promise.all(approvalPromises);
+
+          // Optimistic UI update - update branch report status
+          setBranchReports(prevBranchReports =>
+            prevBranchReports.map(br =>
+              br.id === selectedBranchForReview.id
+                ? { ...br, status: 'approved' as const, pendingReports: 0, approvedReports: br.reportCount }
+                : br
+            )
+          );
+
+          success(`Successfully approved ${forwardedReports.length} report${forwardedReports.length > 1 ? 's' : ''} for ${selectedBranchForReview.branchName}`);
+          
+          // Close modal and refresh data
+          setHqReviewModalOpen(false);
+          setSelectedBranchForReview(null);
+          
+          // Refresh statistics to reflect the changes
+          await fetchReportsData();
+          return;
+        }
+        
+        error(`No reports available for approval. Found ${branchReportsResponse.data.length} total reports, but only ${forwardedReports.length} are in 'forwarded' status (ready for HQ approval). Draft reports cannot be approved at HQ level.`);
         return;
       }
 
@@ -631,7 +778,21 @@ export default function AMReportsPage() {
 
     } catch (err) {
       console.error('Failed to approve branch reports:', err);
-      error('Failed to approve branch reports. Please try again.');
+      
+      // Provide more specific error messages based on the error type
+      if (err instanceof Error) {
+        if (err.message.includes('500')) {
+          error('Server error occurred while approving reports. Please check if the branch has valid pending reports and try again.');
+        } else if (err.message.includes('Access denied')) {
+          error('You do not have permission to approve reports for this branch.');
+        } else if (err.message.includes('Network')) {
+          error('Network error. Please check your connection and try again.');
+        } else {
+          error(`Failed to approve branch reports: ${err.message}`);
+        }
+      } else {
+        error('Failed to approve branch reports. Please try again.');
+      }
     } finally {
       setHqReviewLoading(false);
     }
@@ -648,16 +809,100 @@ export default function AMReportsPage() {
       setHqReviewLoading(true);
 
       // For branch aggregates, we need to decline all pending reports in the branch
-      const branchReportsResponse = await reportsService.getAllReports({
+      
+      // Use branchId if available, otherwise use branchName as fallback
+      const branchIdentifier = selectedBranchForReview.branchId || selectedBranchForReview.branchName;
+      
+      if (!branchIdentifier) {
+        error('Unable to identify branch for rejection. Missing branch ID and name.');
+        return;
+      }
+
+      console.log('🔍 Fetching reports for branch rejection:', {
         branchId: selectedBranchForReview.branchId,
-        status: 'pending',
-        limit: 100, // Get all pending reports for this branch
+        branchName: selectedBranchForReview.branchName,
+        identifier: branchIdentifier
       });
 
-      const pendingReports = branchReportsResponse.data || [];
+      const branchReportsResponse = await fetchBranchReports(branchIdentifier, selectedBranchForReview, 'rejection');
+
+      // Debug: Log all report statuses to understand what we're working with
+      const reportStatuses = branchReportsResponse.data.map(report => ({
+        id: report.id,
+        reportId: report.reportId,
+        status: report.status,
+        creditOfficer: report.creditOfficer
+      }));
+      
+      console.log('🔍 All report statuses (rejection):', reportStatuses);
+      
+      // Filter for pending reports client-side
+      const pendingReports = branchReportsResponse.data.filter(report => 
+        report.status === 'pending' || report.status === 'submitted'
+      );
+      
+      // Also check for reports that might need rejection (not yet approved/declined)
+      // Based on the actual statuses we see: 'draft', 'forwarded', 'approved', 'declined'
+      // Only 'forwarded' reports should be available for HQ rejection
+      const forwardedReports = branchReportsResponse.data.filter(report => 
+        report.status === 'forwarded'
+      );
+      
+      const unapprovedReports = branchReportsResponse.data.filter(report => 
+        report.status !== 'approved' && report.status !== 'declined'
+      );
+      
+      console.log('🔍 Found reports for rejection:', {
+        totalBranchReports: branchReportsResponse.data.length,
+        pendingReports: pendingReports.length,
+        forwardedReports: forwardedReports.length,
+        unapprovedReports: unapprovedReports.length,
+        branchIdentifier,
+        statusBreakdown: {
+          submitted: branchReportsResponse.data.filter(r => r.status === 'submitted').length,
+          pending: branchReportsResponse.data.filter(r => r.status === 'pending').length,
+          draft: branchReportsResponse.data.filter(r => r.status === 'draft').length,
+          forwarded: branchReportsResponse.data.filter(r => r.status === 'forwarded').length,
+          approved: branchReportsResponse.data.filter(r => r.status === 'approved').length,
+          declined: branchReportsResponse.data.filter(r => r.status === 'declined').length,
+        }
+      });
       
       if (pendingReports.length === 0) {
-        error('No pending reports found for this branch.');
+        // If no pending reports, check if there are any forwarded reports (ready for HQ rejection)
+        if (forwardedReports.length > 0) {
+          console.log('⚠️ No pending reports found for rejection, but found forwarded reports ready for rejection. Using those instead.');
+          // Use forwarded reports instead
+          const rejectionPromises = forwardedReports.map(report =>
+            reportsService.hqReviewReport(report.id, {
+              action: 'DECLINE',
+              remarks: reason.trim()
+            })
+          );
+
+          await Promise.all(rejectionPromises);
+
+          // Optimistic UI update - update branch report status
+          setBranchReports(prevBranchReports =>
+            prevBranchReports.map(br =>
+              br.id === selectedBranchForReview.id
+                ? { ...br, status: 'declined' as const, pendingReports: 0, declinedReports: br.reportCount }
+                : br
+            )
+          );
+
+          success(`Successfully rejected ${forwardedReports.length} report${forwardedReports.length > 1 ? 's' : ''} for ${selectedBranchForReview.branchName}`);
+          
+          // Close modal and refresh data
+          setHqReviewModalOpen(false);
+          setSelectedBranchForReview(null);
+          
+          // Refresh statistics to reflect the changes
+          await fetchReportsData();
+          return;
+        }
+        
+        error(`No reports available for rejection. Found ${branchReportsResponse.data.length} total reports, but only ${forwardedReports.length} are in 'forwarded' status (ready for HQ rejection). Draft reports cannot be rejected at HQ level.`);
         return;
       }
 
@@ -691,7 +936,21 @@ export default function AMReportsPage() {
 
     } catch (err) {
       console.error('Failed to reject branch reports:', err);
-      error('Failed to reject branch reports. Please try again.');
+      
+      // Provide more specific error messages based on the error type
+      if (err instanceof Error) {
+        if (err.message.includes('500')) {
+          error('Server error occurred while rejecting reports. Please check if the branch has valid pending reports and try again.');
+        } else if (err.message.includes('Access denied')) {
+          error('You do not have permission to reject reports for this branch.');
+        } else if (err.message.includes('Network')) {
+          error('Network error. Please check your connection and try again.');
+        } else {
+          error(`Failed to reject branch reports: ${err.message}`);
+        }
+      } else {
+        error('Failed to reject branch reports. Please try again.');
+      }
     } finally {
       setHqReviewLoading(false);
     }
