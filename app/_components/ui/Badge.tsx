@@ -8,7 +8,11 @@ interface BadgeProps {
 }
 
 export default function Badge({ badge }: BadgeProps): JSX.Element {
-  const { label, icon, className } = badgeConfig[badge];
+  const { label, icon, className } = badgeConfig[badge] ?? {
+    label: "unknown",
+    icon: "/scheduled.svg",
+    className: "bg-[#ffe5cc] text-[#CC7720]",
+  };
 
   return (
     <div
