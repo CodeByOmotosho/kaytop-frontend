@@ -1,16 +1,10 @@
 import apiClient from "@/lib/apiClient";
-import apiServer from "@/lib/apiServer";
 import { apiBaseUrl } from "@/lib/config";
 import { AxiosError } from "axios";
 import {
   UploadAvatarResponse,
 } from "../types/settings";
 import { CustomerDataResponse } from "../types/customer";
-
-interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
 
 export class UserService {
   /* ===================== CUSTOMER / USER ===================== */
@@ -115,6 +109,34 @@ export class UserService {
       const response = await apiClient.put(
         `${apiBaseUrl}/admin/users/${userId}/profile-picture`,
         formData
+      );
+      return response.data;
+    } catch (error) {
+      throw error as AxiosError;
+    }
+  }
+
+   static async updateCustomer(
+    userId: number,
+    payload: { firstName: string; lastName: string }
+  ): Promise<CustomerDataResponse> {
+    try {
+      const response = await apiClient.patch(
+        `${apiBaseUrl}/admin/users/${userId}`,
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw error as AxiosError;
+    }
+  }
+
+  static async deleteCustomer(
+    userId: number
+  ): Promise<{ message: string }> {
+    try {
+      const response = await apiClient.delete(
+        `${apiBaseUrl}/admin/users/${userId}`
       );
       return response.data;
     } catch (error) {
