@@ -2,13 +2,17 @@ import apiClient from "@/lib/apiClient";
 import { apiBaseUrl } from "@/lib/config";
 import {
   ApproveFormData,
+  CreateReportPayload,
+  CreateReportResponse,
   ReportApiResponse,
   ReportById,
   ReportByIdResponse,
   ReportResponse,
   ReportStatus,
   ReportType,
+  SubmitReportPayload,
 } from "../types/report";
+import { AxiosError } from "axios";
 
 //page=1&limit=20&status=pending&branch=Lagos%20Island&type=monthly
 
@@ -31,7 +35,7 @@ export class ReportService {
     limit,
     status,
     branch,
-    type = "custom",
+    type,
   }: QueryParamsProps): Promise<ReportResponse> {
     const response = await apiClient.get<ReportApiResponse>(
       `${apiBaseUrl}/reports`,
@@ -89,4 +93,47 @@ export class ReportService {
     console.log(response);
     return response.data;
   }
+
+   /* ===================== GENERATE (CREATE) REPORT ===================== */
+  // static async createReport(
+  //   payload: CreateReportPayload
+  // ): Promise<Report> {
+  //   try {
+  //     const response = await apiClient.post<Report>(
+  //       `${apiBaseUrl}/reports`,
+  //       payload
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     throw error as AxiosError;
+  //   }
+  // }
+  static async createReport(
+  payload: CreateReportPayload
+): Promise<CreateReportResponse> {
+  const res = await apiClient.post<CreateReportResponse>(
+    `${apiBaseUrl}/reports`,
+    payload
+  );
+  return res.data;
+}
+
+
+  /* ===================== SUBMIT REPORT ===================== */
+  static async submitReport(
+    reportId: number,
+    payload: SubmitReportPayload
+  ): Promise<Report> {
+    try {
+      const response = await apiClient.post<Report>(
+        `${apiBaseUrl}/reports/${reportId}/submit`,
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw error as AxiosError;
+    }
+  }
+
+
 }
