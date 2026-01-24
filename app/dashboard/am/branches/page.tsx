@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import FilterControls from '@/app/_components/ui/FilterControls';
 import { StatisticsCard, StatSection } from '@/app/_components/ui/StatisticsCard';
@@ -24,6 +24,7 @@ type TimePeriod = 'last_24_hours' | 'last_7_days' | 'last_30_days' | 'custom' | 
 type TabType = 'branches' | 'leaderboard';
 type LeaderboardType = 'MONEY_DISBURSED' | 'LOAN_REPAYMENT' | 'SAVINGS';
 type LeaderboardPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+type RatingPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
 export default function AMBranchesPage() {
   const router = useRouter();
@@ -171,84 +172,114 @@ export default function AMBranchesPage() {
   // Fetch performance statistics for leaderboard
   const fetchPerformanceStatistics = async () => {
     try {
-      // Mock performance data - in real implementation, this would come from ratings API
-      const mockPerformanceStats: PerformanceStatSection[] = [
-        {
-          label: 'Top by Savings',
-          branchName: 'Lagos Main Branch',
-          value: 2500000,
-          change: 15.2,
-          isCurrency: true,
-          rank: 1
-        },
-        {
-          label: 'Top by Loan Disbursement',
-          branchName: 'Abuja Central Branch',
-          value: 4200000,
-          change: 22.8,
-          isCurrency: true,
-          rank: 1
-        },
-        {
-          label: 'Top by Loan Repayment',
-          branchName: 'Port Harcourt Branch',
-          value: 3800000,
-          change: 18.5,
-          isCurrency: true,
-          rank: 1
-        }
-      ];
-      
-      setPerformanceStatistics(mockPerformanceStats);
+      // Fetch real performance data using ratings API
+      const leaderboardData = await ratingsService.getLeaderboard({
+        type: leaderboardType,
+        period: leaderboardPeriod,
+        limit: 3 // Get top 3 for performance cards
+      });
 
-      // Mock leaderboard data
-      const mockLeaderboardData: LeaderboardEntry[] = [
-        {
-          rank: 1,
-          branchName: 'Lagos Main Branch',
-          branchId: 'ID: LMB001',
-          value: 2500000,
-          change: 15.2,
-          isCurrency: true
-        },
-        {
-          rank: 2,
-          branchName: 'Abuja Central Branch',
-          branchId: 'ID: ACB002',
-          value: 2200000,
-          change: 12.8,
-          isCurrency: true
-        },
-        {
-          rank: 3,
-          branchName: 'Port Harcourt Branch',
-          branchId: 'ID: PHB003',
-          value: 1950000,
-          change: 8.5,
-          isCurrency: true
-        },
-        {
-          rank: 4,
-          branchName: 'Kano Branch',
-          branchId: 'ID: KNB004',
-          value: 1800000,
-          change: 5.2,
-          isCurrency: true
-        },
-        {
-          rank: 5,
-          branchName: 'Ibadan Branch',
-          branchId: 'ID: IBB005',
-          value: 1650000,
-          change: -2.1,
-          isCurrency: true
-        }
-      ];
+      // Transform leaderboard data to performance statistics format
+      const performanceStats: PerformanceStatSection[] = [];
+
+      // Get top performers for each metric type
+      const savingsLeader = await ratingsService.getLeaderboard({
+        type: 'SAVINGS',
+        period: leaderboardPeriod,
+        limit: 1
+      });
+
+      const disbursementLeader = await ratingsService.getLeaderboard({
+        type: 'MONEY_DISBURSED',
+        period: leaderboardPeriod,
+        limit: 1
+      });
+
+      const repaymentLeader = await ratingsService.getLeaderboard({
+        type: 'LOAN_REPAYMENT',
+        period: leaderboardPeriod,
+        limit: 1
+      });
+
+      // Create performance statistics from real data
+      if (savingsLeader.length > 0) {
+        performanceStats.push({
+          label: 'Top by Savings',
+          branchName: savingsLeader[0].branchName,
+          value: savingsLeader[0].savingsScore || 0,
+          change: 0, // Change percentage not available in current API
+          isCurrency: true,
+          rank: 1
+        });
+      }
+
+      if (disbursementLeader.length > 0) {
+        performanceStats.push({
+          label: 'Top by Loan Disbursement',
+          branchName: disbursementLeader[0].branchName,
+          value: disbursementLeader[0].disbursementScore || 0,
+          change: 0, // Change percentage not available in current API
+          isCurrency: true,
+          rank: 1
+        });
+      }
+
+      if (repaymentLeader.length > 0) {
+        performanceStats.push({
+          label: 'Top by Loan Repayment',
+          branchName: repaymentLeader[0].branchName,
+          value: repaymentLeader[0].repaymentScore || 0,
+          change: 0, // Change percentage not available in current API
+          isCurrency: true,
+          rank: 1
+        });
+      }
       
-      setLeaderboardData(mockLeaderboardData);
+      setPerformanceStatistics(performanceStats);
+
+      // Fetch full leaderboard data
+      const fullLeaderboard = await ratingsService.getLeaderboard({
+        type: leaderboardType,
+        period: leaderboardPeriod,
+        limit: 10
+      });
+
+      // Transform to LeaderboardEntry format
+      const transformedLeaderboard: LeaderboardEntry[] = fullLeaderboard.map((rating, index) => ({
+        rank: index + 1,
+        branchName: rating.branchName,
+        branchId: `ID: ${rating.branchId || rating.branchName.substring(0, 3).toUpperCase()}`,
+        value: getValueForType(rating, leaderboardType),
+        change: 0, // Change percentage not available in current API
+        isCurrency: true
+      }));
+      
+      setLeaderboardData(transformedLeaderboard);
     } catch (err) {
       console.error('Failed to fetch performance statistics:', err);
-      // Don't show error for performance stats as it's supplementary data
+      // Graceful degradation - show empty data but keep UI functional
+      setPerformanceStatistics([]);
+      setLeaderboardData([]);
+      
+      // Only show error toast if it's a critical failure
+      if (err instanceof Error && err.message.includes('Access denied')) {
+        error('Access denied: You need HQ manager permissions to view performance data.');
+      }
+      // For other errors, fail silently to avoid disrupting the user experience
+    }
+  };
+
+  // Helper function to get the appropriate value based on leaderboard type
+  const getValueForType = (rating: any, type: LeaderboardType): number => {
+    switch (type) {
+      case 'SAVINGS':
+        return rating.savingsScore || rating.totalSavings || 0;
+      case 'MONEY_DISBURSED':
+        return rating.disbursementScore || rating.totalDisbursed || 0;
+      case 'LOAN_REPAYMENT':
+        return rating.repaymentScore || rating.totalRepaid || 0;
+      default:
+        return rating.overallScore || 0;
     }
   };
 
@@ -260,7 +291,8 @@ export default function AMBranchesPage() {
       // Determine the period and date for calculation
       const period = selectedPeriod === 'last_24_hours' ? 'DAILY' : 
                     selectedPeriod === 'last_7_days' ? 'WEEKLY' :
-                    selectedPeriod === 'last_30_days' ? 'MONTHLY' : 'DAILY';
+                    selectedPeriod === 'last_30_days' ? 'MONTHLY' : 
+                    leaderboardPeriod; // Use current leaderboard period
       
       const periodDate = dateRange?.from ? 
         dateRange.from.toISOString().split('T')[0] : 
@@ -268,14 +300,18 @@ export default function AMBranchesPage() {
       
       // Call ratings calculation API
       const result = await ratingsService.calculateRatings({
-        period: period as any,
+        period: period as RatingPeriod,
         periodDate: periodDate
       });
       
-      success('Ratings calculated successfully!');
-      
-      // Refresh performance statistics after calculation
-      await fetchPerformanceStatistics();
+      if (result.success) {
+        success('Ratings calculated successfully!');
+        
+        // Refresh performance statistics after calculation
+        await fetchPerformanceStatistics();
+      } else {
+        error(result.error || 'Failed to calculate ratings. Please try again.');
+      }
       
     } catch (err) {
       console.error('Failed to calculate ratings:', err);
@@ -295,46 +331,37 @@ export default function AMBranchesPage() {
     try {
       setIsLoading(true);
       
-      // In a real implementation, this would call the ratings API with filters
-      // For now, we'll simulate different data based on the selected type
-      let filteredData: LeaderboardEntry[] = [];
+      // Fetch real leaderboard data using ratings API
+      const leaderboardData = await ratingsService.getLeaderboard({
+        type: leaderboardType,
+        period: leaderboardPeriod,
+        limit: 10
+      });
+
+      // Transform to LeaderboardEntry format
+      const transformedData: LeaderboardEntry[] = leaderboardData.map((rating, index) => ({
+        rank: index + 1,
+        branchName: rating.branchName,
+        branchId: `ID: ${rating.branchId || rating.branchName.substring(0, 3).toUpperCase()}`,
+        value: getValueForType(rating, leaderboardType),
+        change: 0, // Change percentage not available in current API
+        isCurrency: true
+      }));
       
-      switch (leaderboardType) {
-        case 'MONEY_DISBURSED':
-          filteredData = [
-            { rank: 1, branchName: 'Abuja Central Branch', branchId: 'ID: ACB002', value: 4200000, change: 22.8, isCurrency: true },
-            { rank: 2, branchName: 'Lagos Main Branch', branchId: 'ID: LMB001', value: 3800000, change: 18.5, isCurrency: true },
-            { rank: 3, branchName: 'Port Harcourt Branch', branchId: 'ID: PHB003', value: 3200000, change: 15.2, isCurrency: true },
-            { rank: 4, branchName: 'Kano Branch', branchId: 'ID: KNB004', value: 2900000, change: 12.1, isCurrency: true },
-            { rank: 5, branchName: 'Ibadan Branch', branchId: 'ID: IBB005', value: 2600000, change: 8.7, isCurrency: true }
-          ];
-          break;
-        case 'LOAN_REPAYMENT':
-          filteredData = [
-            { rank: 1, branchName: 'Port Harcourt Branch', branchId: 'ID: PHB003', value: 3800000, change: 25.3, isCurrency: true },
-            { rank: 2, branchName: 'Lagos Main Branch', branchId: 'ID: LMB001', value: 3500000, change: 20.1, isCurrency: true },
-            { rank: 3, branchName: 'Kano Branch', branchId: 'ID: KNB004', value: 3100000, change: 16.8, isCurrency: true },
-            { rank: 4, branchName: 'Abuja Central Branch', branchId: 'ID: ACB002', value: 2800000, change: 14.2, isCurrency: true },
-            { rank: 5, branchName: 'Ibadan Branch', branchId: 'ID: IBB005', value: 2400000, change: 10.5, isCurrency: true }
-          ];
-          break;
-        case 'SAVINGS':
-          filteredData = [
-            { rank: 1, branchName: 'Lagos Main Branch', branchId: 'ID: LMB001', value: 2500000, change: 15.2, isCurrency: true },
-            { rank: 2, branchName: 'Abuja Central Branch', branchId: 'ID: ACB002', value: 2200000, change: 12.8, isCurrency: true },
-            { rank: 3, branchName: 'Port Harcourt Branch', branchId: 'ID: PHB003', value: 1950000, change: 8.5, isCurrency: true },
-            { rank: 4, branchName: 'Kano Branch', branchId: 'ID: KNB004', value: 1800000, change: 5.2, isCurrency: true },
-            { rank: 5, branchName: 'Ibadan Branch', branchId: 'ID: IBB005', value: 1650000, change: -2.1, isCurrency: true }
-          ];
-          break;
-      }
-      
-      setLeaderboardData(filteredData);
+      setLeaderboardData(transformedData);
       success(`Leaderboard updated for ${leaderboardType.replace('_', ' ').toLowerCase()} - ${leaderboardPeriod.toLowerCase()}`);
       
     } catch (err) {
       console.error('Failed to apply leaderboard filters:', err);
-      error('Failed to update leaderboard. Please try again.');
+      
+      // Graceful degradation - keep existing data if available
+      if (leaderboardData.length === 0) {
+        // Only show error if we have no data to fall back to
+        error('Failed to update leaderboard. Please try again.');
+      } else {
+        // Silently fail but log the error
+        console.warn('Leaderboard update failed, keeping existing data');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -361,7 +388,7 @@ export default function AMBranchesPage() {
 
       return () => clearInterval(refreshInterval);
     }
-  }, [activeTab, session]);
+  }, [activeTab, session, leaderboardType, leaderboardPeriod]); // Add dependencies to refresh when filters change
 
   const handleRowClick = (row: any) => {
     // Extract the ID from the row object
@@ -408,13 +435,34 @@ export default function AMBranchesPage() {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    const newQuery = e.target.value;
+    setSearchQuery(newQuery);
     
-    // If on leaderboard tab, trigger search immediately
+    // If on leaderboard tab, debounce search to avoid excessive API calls
     if (activeTab === 'leaderboard') {
-      handleLeaderboardSearch(e.target.value);
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      
+      // Set new timeout for debounced search
+      searchTimeoutRef.current = setTimeout(() => {
+        handleLeaderboardSearch(newQuery);
+      }, 500); // 500ms debounce
     }
   };
+
+  // Add ref for search timeout
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -433,23 +481,47 @@ export default function AMBranchesPage() {
     }
 
     try {
-      // In a real implementation, this would call GET /ratings/branch/{name}
-      // For now, we'll filter the existing leaderboard data
-      const filteredData = leaderboardData.filter(entry =>
-        entry.branchName.toLowerCase().includes(query.toLowerCase()) ||
-        entry.branchId.toLowerCase().includes(query.toLowerCase())
-      );
+      // Search for specific branch using ratings API
+      const searchResults: LeaderboardEntry[] = [];
+      
+      try {
+        // Try to get specific branch rating
+        const branchRating = await ratingsService.getBranchRating(query.trim(), leaderboardPeriod, leaderboardType);
+        
+        if (branchRating) {
+          searchResults.push({
+            rank: branchRating.rank || 1,
+            branchName: branchRating.branchName,
+            branchId: `ID: ${branchRating.branchId || branchRating.branchName.substring(0, 3).toUpperCase()}`,
+            value: getValueForType(branchRating, leaderboardType),
+            change: 0, // Change percentage not available in current API
+            isCurrency: true
+          });
+        }
+      } catch (branchError) {
+        // If specific branch search fails, filter existing leaderboard data
+        const filteredData = leaderboardData.filter(entry =>
+          entry.branchName.toLowerCase().includes(query.toLowerCase()) ||
+          entry.branchId.toLowerCase().includes(query.toLowerCase())
+        );
+        searchResults.push(...filteredData);
+      }
 
       // If no results found, show message
-      if (filteredData.length === 0) {
-        // You could set a "no results" state here
+      if (searchResults.length === 0) {
         setLeaderboardData([]);
       } else {
-        setLeaderboardData(filteredData);
+        setLeaderboardData(searchResults);
       }
     } catch (err) {
       console.error('Failed to search leaderboard:', err);
-      error('Failed to search branches. Please try again.');
+      
+      // Graceful degradation - keep existing data if search fails
+      if (leaderboardData.length > 0) {
+        console.warn('Search failed, keeping existing leaderboard data');
+      } else {
+        error('Failed to search branches. Please try again.');
+      }
     }
   };
 
