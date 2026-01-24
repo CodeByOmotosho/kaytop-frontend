@@ -861,6 +861,8 @@ export default function AMBranchesPage() {
                     isLoading={isLoading}
                     onRowClick={handleLeaderboardRowClick}
                   />
+                </div>
+              </LeaderboardErrorBoundary>
             )}
           </div>
         </div>
