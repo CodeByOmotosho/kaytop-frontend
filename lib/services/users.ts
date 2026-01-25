@@ -1,6 +1,7 @@
 /**
- * User Management Service
+ * User Management Service - CACHE BUSTER VERSION 3.0 - FORCE RELOAD
  * Handles user CRUD operations, filtering, and staff management
+ * MODIFIED: 2026-01-25-16:30 - Force browser cache invalidation
  */
 
 import apiClient from '@/lib/apiClient';
@@ -284,12 +285,16 @@ class UserAPIService implements UserService {
     }
   }
 
+  // FORCE CACHE INVALIDATION - VERSION 3.0
   async updateUserRole(id: string, role: string): Promise<User> {
-    // Cache buster - force new version loading
-    console.log('🔄 [VERSION 2.0 - CACHE BUSTER] Starting user role update process - ' + Date.now());
+    const timestamp = Date.now();
+    const version = "3.0-FORCE-RELOAD";
+    console.log(`🚀 [${version}] CACHE BUSTER ACTIVE - ${timestamp}`);
+    console.log(`🔄 [${version}] Starting user role update process`);
+    
     try {
       // Try the general user update endpoint first (more likely to work)
-      console.log(`🎯 [VERSION 2.0] Updating user ${id} role to ${role} using general endpoint PATCH /admin/users/${id}`);
+      console.log(`🎯 [${version}] Updating user ${id} role to ${role} using general endpoint PATCH /admin/users/${id}`);
       const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
 
       // Handle different response formats from backend
@@ -325,7 +330,7 @@ class UserAPIService implements UserService {
       
       // If the general endpoint fails, try the dedicated role endpoint as fallback
       if (generalEndpointError?.response?.status === 404 || generalEndpointError?.status === 404) {
-        console.warn('🚨 [VERSION 2.0] General user update endpoint not found, trying dedicated role update endpoint');
+        console.warn(`🚨 [${version}] General user update endpoint not found, trying dedicated role update endpoint`);
         
         try {
           const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
