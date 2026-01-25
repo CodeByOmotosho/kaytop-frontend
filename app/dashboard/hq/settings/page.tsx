@@ -5,7 +5,7 @@ import { ToastContainer } from '@/app/_components/ui/ToastContainer';
 import { useToast } from '@/app/hooks/useToast';
 import { Checkbox } from '@/app/_components/ui/Checkbox';
 import EditRoleModal from '@/app/_components/ui/EditRoleModal';
-import CreateAdminModal from '@/app/_components/ui/CreateAdminModal';
+
 import GlobalSettingsModal from '@/app/_components/ui/GlobalSettingsModal';
 import AlertRulesModal from '@/app/_components/ui/AlertRulesModal';
 import ReportTemplateModal from '@/app/_components/ui/ReportTemplateModal';
@@ -20,8 +20,7 @@ import {
   useActivityLogs,
   useUsers,
   useUpdateUser,
-  useUpdateUserRole,
-  useCreateStaff
+  useUpdateUserRole
 } from '@/app/dashboard/hq/queries/useSettingsQueries';
 import {
   ActivityLog,
@@ -108,7 +107,7 @@ export default function SettingsPage() {
   const updateSystemSettingsMutation = useUpdateSystemSettings();
   const updateUserMutation = useUpdateUser();
   const updateUserRoleMutation = useUpdateUserRole();
-  const createStaffMutation = useCreateStaff();
+
 
   // Users query for real backend data
   const {
@@ -177,7 +176,7 @@ export default function SettingsPage() {
   const [selectedUser, setSelectedUser] = useState<RoleUserData | null>(null);
 
   // Create Admin Modal state
-  const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
+
 
   // Global Settings Modal state
   const [showGlobalSettingsModal, setShowGlobalSettingsModal] = useState(false);
@@ -388,32 +387,9 @@ export default function SettingsPage() {
     });
   };
 
-  const handleCreateAdmin = () => setShowCreateAdminModal(true);
-  const handleCloseCreateAdminModal = () => setShowCreateAdminModal(false);
 
-  const handleSaveNewAdmin = async (adminData: any) => {
-    try {
-      const backendRole = mapFrontendToBackendRole(adminData.role);
-      const [firstName, ...lastNameParts] = adminData.name.split(' ');
-      const lastName = lastNameParts.join(' ') || '.';
-      const staffData = {
-        firstName,
-        lastName,
-        email: adminData.email,
-        mobileNumber: adminData.phoneNumber,
-        role: backendRole as any,
-        branch: adminData.branch || 'Head Office',
-        state: adminData.state || 'Lagos', // Use state from modal or default
-        password: 'TempPassword123!', // Default temporary password for new staff
-      };
-      await createStaffMutation.mutateAsync(staffData);
-      success('New admin created successfully!');
-      setShowCreateAdminModal(false);
-    } catch (err: any) {
-      console.error('Error creating admin:', err);
-      error(err?.message || 'Failed to create new admin');
-    }
-  };
+
+
 
   const handleOpenGlobalSettings = useCallback(() => setShowGlobalSettingsModal(true), []);
   const handleCloseGlobalSettings = useCallback(() => setShowGlobalSettingsModal(false), []);
@@ -548,8 +524,7 @@ export default function SettingsPage() {
   const isLoading = profileLoading || settingsLoading || usersLoading || activityLogsLoading ||
     updateProfileMutation.isPending || changePasswordMutation.isPending ||
     updateProfilePictureMutation.isPending || updateSystemSettingsMutation.isPending ||
-    updateUserMutation.isPending || updateUserRoleMutation.isPending ||
-    createStaffMutation.isPending;
+    updateUserMutation.isPending || updateUserRoleMutation.isPending;
 
   if (!isMounted) {
     return (
@@ -1393,27 +1368,7 @@ export default function SettingsPage() {
                           These are the accounts with access to Kaytop admin and their roles
                         </p>
                       </div>
-                      <button
-                        onClick={handleCreateAdmin}
-                        className="hover:bg-[#6941C6] transition-colors focus:outline-none focus:ring-2 focus:ring-[#7A62EB] focus:ring-offset-2"
-                        style={{
-                          width: '120.45px',
-                          height: '34px',
-                          background: '#7A62EB',
-                          border: '0.5px solid #7A62EB',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          lineHeight: '16px',
-                          fontFamily: 'Open Sauce Sans, sans-serif',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        Create Admin
-                      </button>
+
                     </div>
 
                     {/* Users List */}
@@ -2125,12 +2080,7 @@ export default function SettingsPage() {
         />
       )}
 
-      {/* Create Admin Modal */}
-      <CreateAdminModal
-        isOpen={showCreateAdminModal}
-        onClose={handleCloseCreateAdminModal}
-        onSave={handleSaveNewAdmin}
-      />
+
 
       {/* Global Settings Modal */}
       <GlobalSettingsModal

@@ -151,19 +151,7 @@ export function useUpdateUserRole() {
     });
 }
 
-/**
- * Hook for creating a staff user
- */
-export function useCreateStaff() {
-    const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: (data: Record<string, unknown>) => userService.createStaffUser(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["users"] });
-        },
-    });
-}
 
 /**
  * Hook for updating system settings

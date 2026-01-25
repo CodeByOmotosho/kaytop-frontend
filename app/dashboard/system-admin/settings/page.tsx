@@ -5,7 +5,7 @@ import { ToastContainer } from '@/app/_components/ui/ToastContainer';
 import { useToast } from '@/app/hooks/useToast';
 import { Checkbox } from '@/app/_components/ui/Checkbox';
 import EditRoleModal from '@/app/_components/ui/EditRoleModal';
-import CreateAdminModal from '@/app/_components/ui/CreateAdminModal';
+import CreateAdminModal, { type NewAdminData } from '@/app/_components/ui/CreateAdminModal';
 import GlobalSettingsModal from '@/app/_components/ui/GlobalSettingsModal';
 import AlertRulesModal from '@/app/_components/ui/AlertRulesModal';
 import ReportTemplateModal from '@/app/_components/ui/ReportTemplateModal';
@@ -415,23 +415,20 @@ export default function SettingsPage() {
     setShowCreateAdminModal(false);
   };
 
-  const handleSaveNewAdmin = async (adminData: any) => {
+  const handleSaveNewAdmin = async (adminData: NewAdminData) => {
     try {
       const backendRole = mapFrontendToBackendRole(adminData.role);
 
-      const [firstName, ...lastNameParts] = adminData.name.split(' ');
-      const lastName = lastNameParts.join(' ') || '.';
-
       const staffData = {
-        firstName,
-        lastName,
+        firstName: adminData.firstName,
+        lastName: adminData.lastName,
         email: adminData.email,
-        mobileNumber: adminData.phoneNumber,
+        mobileNumber: adminData.mobileNumber,
         role: backendRole as any,
         // Branch is often required for staff, default to a sensible value or empty
         branch: adminData.branch || 'Head Office',
         state: adminData.state || 'Lagos', // Use state from modal or default
-        password: 'TempPassword123!', // Default temporary password for new staff
+        password: adminData.password, // Use password from modal
       };
 
       await createStaffMutation.mutateAsync(staffData);

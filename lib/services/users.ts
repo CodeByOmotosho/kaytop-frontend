@@ -155,13 +155,16 @@ class UserAPIService implements UserService {
         console.warn('Attempting to create system_admin via staff endpoint - this may not be supported by backend');
       }
       
-      // Try different field name variations to handle backend inconsistencies
-      const requestData = {
-        ...data,
-        // Try multiple field name variations
-        phone: data.mobileNumber, // Some backends expect 'phone'
-        mobileNumber: data.mobileNumber, // Keep original
-        mobile_number: data.mobileNumber, // Snake case variation
+      // Send data in the exact format backend expects
+      const requestData: CreateStaffData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        mobileNumber: data.mobileNumber,
+        password: data.password,
+        role: data.role,
+        branch: data.branch,
+        state: data.state
       };
       
       console.log('Sending request data:', { ...requestData, password: '[REDACTED]' });
