@@ -238,23 +238,48 @@ class UserAPIService implements UserService {
 
   async updateUser(id: string, data: UpdateUserData): Promise<User> {
     try {
+      console.log(`🔄 Updating user ${id} with data:`, data);
       const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), data);
+      
+      console.log('📥 Raw response received:', response);
+      console.log('📊 Response data type:', typeof response);
 
-      // Backend returns direct data format, not wrapped in success/data
+      // Handle different response formats from backend
+      let userData: any = null;
+
       if (response && typeof response === 'object') {
-        // Check if it's wrapped in success/data format
-        if ((response as any).success && (response as any).data) {
-          return (response as any).data;
+        if ((response as any).data) {
+          const responseData = (response as any).data;
+          console.log('📦 Found response.data:', responseData);
+          
+          if (responseData.success && responseData.data) {
+            userData = responseData.data;
+            console.log('✅ Using nested success.data format:', userData);
+          }
+          else if (responseData.id || responseData.email || responseData.firstName) {
+            userData = responseData;
+            console.log('✅ Using direct response.data format:', userData);
+          }
+          else if (Array.isArray(responseData) && responseData.length > 0) {
+            userData = responseData[0];
+            console.log('✅ Using first item from array:', userData);
+          }
         }
-        // Check if it's direct data format (has user fields)
         else if ((response as any).id || (response as any).email || (response as any).firstName) {
-          return response as unknown as User;
+          userData = response;
+          console.log('✅ Using direct response format:', userData);
         }
       }
 
+      if (userData) {
+        console.log('✅ Successfully parsed user data:', userData);
+        return userData as User;
+      }
+
+      console.error('❌ Invalid response format - no valid user data found');
       throw new Error('Failed to update user - invalid response format');
     } catch (error) {
-      console.error('User update error:', error);
+      console.error('❌ User update error:', error);
       throw error;
     }
   }
@@ -293,11 +318,11 @@ class UserAPIService implements UserService {
     console.log(`🔄 [${version}] Starting user role update process`);
     
     try {
-      // Use the dedicated role update endpoint as shown in HTTP tests
-      console.log(`🎯 [${version}] Updating user ${id} role to ${role} using dedicated role endpoint PATCH /admin/users/${id}/update-role`);
+      // Try the general user update endpoint first (seems to be working better)
+      console.log(`🎯 [${version}] Updating user ${id} role to ${role} using general endpoint PATCH /admin/users/${id}`);
       console.log(`📤 [${version}] Sending request body:`, { role });
       
-      const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
+      const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
 
       // Handle different response formats from backend
       let userData: any = null;
@@ -327,16 +352,16 @@ class UserAPIService implements UserService {
       }
 
       throw new Error('Failed to update user role - invalid response format');
-    } catch (roleEndpointError: any) {
-      console.error(`❌ [${version}] User role update via dedicated endpoint failed:`, roleEndpointError);
+    } catch (generalEndpointError: any) {
+      console.error(`❌ [${version}] User role update via general endpoint failed:`, generalEndpointError);
       
-      // If the dedicated role endpoint fails, try the general user update endpoint as fallback
-      if (roleEndpointError?.response?.status === 404 || roleEndpointError?.status === 404) {
-        console.warn(`🚨 [${version}] Dedicated role endpoint not found, trying general user update endpoint`);
-        console.log(`🎯 [${version}] Fallback: Using general endpoint PATCH /admin/users/${id} with role in body`);
+      // If the general endpoint fails, try the dedicated role endpoint as fallback
+      if (generalEndpointError?.response?.status === 404 || generalEndpointError?.status === 404) {
+        console.warn(`🚨 [${version}] General user update endpoint not found, trying dedicated role update endpoint`);
+        console.log(`🎯 [${version}] Fallback: Using dedicated endpoint PATCH /admin/users/${id}/update-role`);
         
         try {
-          const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
+          const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
 
           // Handle different response formats from backend
           let userData: any = null;
@@ -365,15 +390,15 @@ class UserAPIService implements UserService {
             return userData as User;
           }
 
-          throw new Error('Failed to update user role via general endpoint - invalid response format');
-        } catch (fallbackError: any) {
-          console.error(`❌ [${version}] User role update via general endpoint also failed:`, fallbackError);
-          throw fallbackError;
+          throw new Error('Failed to update user role via dedicated endpoint - invalid response format');
+        } catch (roleEndpointError: any) {
+          console.error(`❌ [${version}] User role update via dedicated endpoint also failed:`, roleEndpointError);
+          throw roleEndpointError;
         }
       }
 
       // If it's not a 404, throw the original error
-      throw roleEndpointError;
+      throw generalEndpointError;
     }
   }
 
