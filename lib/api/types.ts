@@ -4,7 +4,7 @@
  */
 
 // Base API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;
@@ -110,8 +110,9 @@ export interface CreateStaffData {
   email: string;
   mobileNumber: string;
   password: string;
-  role: 'credit_officer' | 'branch_manager' | 'account_manager' | 'hq_manager';
+  role: 'credit_officer' | 'branch_manager' | 'account_manager' | 'hq_manager' | 'system_admin';
   branch: string;
+  state: string;
 }
 
 export interface UpdateUserData {
@@ -259,7 +260,7 @@ export interface DashboardKPIs {
 export interface ApiError extends Error {
   status?: number;
   code?: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export interface NetworkError extends ApiError {
@@ -286,7 +287,7 @@ export interface Report {
   dateSent: string;
   timeSent: string;
   reportType: 'daily' | 'weekly' | 'monthly';
-  status: 'submitted' | 'pending' | 'approved' | 'declined';
+  status: 'submitted' | 'pending' | 'approved' | 'declined' | 'draft' | 'forwarded';
   isApproved?: boolean;
   loansDispursed: number;
   loansValueDispursed: string;
@@ -304,6 +305,80 @@ export interface Report {
     actionAt: string;
     comments?: string;
   }>;
+}
+
+// Enhanced types for HQ Dashboard functionality
+export interface BranchReport {
+  id: string;
+  branchName: string;
+  branchId: string;
+  totalSavings: number;
+  totalDisbursed: number;
+  totalRepaid: number;
+  status: 'pending' | 'approved' | 'declined' | 'mixed';
+  reportCount: number;
+  pendingReports: number;
+  approvedReports: number;
+  declinedReports: number;
+  lastSubmissionDate: string;
+  oldestPendingDate?: string;
+  creditOfficerCount: number;
+  activeCreditOfficers: string[];
+}
+
+export interface HQReviewData {
+  action: 'APPROVE' | 'DECLINE';
+  remarks: string;
+}
+
+// Branch Performance and Ratings Types
+export type RatingPeriod = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+export type RatingType = 'SAVINGS' | 'MONEY_DISBURSED' | 'LOAN_REPAYMENT';
+
+export interface BranchRating {
+  branchName: string;
+  branchId?: string;
+  rank: number;
+  totalScore: number;
+  savingsScore: number;
+  disbursementScore: number;
+  repaymentScore: number;
+  period: RatingPeriod;
+  calculatedAt: string;
+  // Raw performance data
+  savingsCollected?: number;
+  loansDispursed?: number;
+  repaymentsReceived?: number;
+}
+
+export interface RatingCalculationParams {
+  period: RatingPeriod;
+  periodDate?: string;
+}
+
+export interface RatingCalculationResult {
+  success: boolean;
+  message?: string;
+  calculatedAt?: string;
+  period?: RatingPeriod;
+  periodDate?: string;
+  error?: string;
+}
+
+export interface LeaderboardFilters {
+  type?: RatingType;
+  period?: RatingPeriod;
+  limit?: number;
+}
+
+export interface BranchReportFilters {
+  branchId?: string;
+  status?: string;
+  reportType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface ReportStatistics {
@@ -342,7 +417,7 @@ export interface ActivityLog {
   actionType: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve' | 'decline';
   entityType: 'user' | 'loan' | 'report' | 'savings' | 'system';
   entityId?: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   ipAddress: string;
   userAgent: string;
   timestamp: string;

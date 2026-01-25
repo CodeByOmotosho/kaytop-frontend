@@ -1,15 +1,17 @@
 import { CreditOfficerProfile, Summary } from "@/app/types/creditOfficer";
 import { CustomerData } from "@/app/types/customer";
-import { MetricProps, SummaryProps } from "@/app/types/dashboard";
+import { DashboardKpi, MetricProps, SummaryProps } from "@/app/types/dashboard";
 import {
   ActiveLoanData,
   LoanDetailsApiResponse,
   SavingsProgressResponse,
 } from "@/app/types/loan";
+import { ReportStatus } from "@/app/types/report";
 import { MenuItem, Routes } from "@/app/types/routes";
 import { clsx, type ClassValue } from "clsx";
 import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
+import { User } from "./api/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -95,6 +97,11 @@ interface BranchLoanMetricsInput {
   data?: BranchLoanMetrics;
 }
 
+
+interface DashboardReportMetrics {
+  data?: DashboardKpi;
+}
+
 export function getDashboardMetrics({ data }: DashboardMetricsInput): {
   primary: MetricProps[];
   secondary: MetricProps[];
@@ -159,10 +166,14 @@ export function getDashboardMetrics({ data }: DashboardMetricsInput): {
 export function getCreditOfficerMetrics({
   data,
 }: DashboardMetricsInput): MetricProps[] {
+  // Based on Postman investigation: Both System Admin and HQ Manager 
+  // get totalCreditOfficers as a number from /dashboard/kpi endpoint
+  const creditOfficerCount = data?.totalCreditOfficers || 0;
+  
   return [
     {
       title: "Total Credit Officers",
-      value: data?.totalCreditOfficers.toString(),
+      value: creditOfficerCount.toString(),
       border: false,
     },
   ];
@@ -271,6 +282,30 @@ export function getCustomerMetrics({
     {
       title: "Active Loans",
       value: data?.activeLoans.toString(),
+      border: true,
+    },
+  ];
+}
+
+
+
+export function getBmReportMetrics({
+  data,
+}: DashboardReportMetrics): MetricProps[] {
+  return [
+    {
+      title: "Total Reports",
+      value: data?.reportStats?.totalReports?.toString(),
+      border: false,
+    },
+    {
+      title: "Total Approved",
+      value: data?.reportStats?.totalApproved?.toString(),
+      border: true,
+    },
+    {
+      title: "Total Declined",
+      value: data?.reportStats?.totalDeclined?.toString(),
       border: true,
     },
   ];
@@ -465,11 +500,44 @@ export function isReportType(value: string | null): value is "daily" | "weekly" 
   return value !== null && ["daily", "weekly", "monthly", "quarterly", "annual", "custom"].includes(value);
 }
 
-export function isReportStatus(value: string | null): value is "pending" | "approved" | "declined" {
-  return value !== null && ["pending", "approved", "declined"].includes(value);
+export function isReportStatus(value: string | null): value is ReportStatus {
+  return value !== null && ["pending", "approved", "declined", "draft", "submitted", "forwarded"].includes(value);
 }
 // Report mapping functions
-export function mapReportDetails(data: any): SummaryProps[] {
+interface ReportData {
+  id?: string | number;
+  title?: string;
+  description?: string;
+  branch?: string;
+  state?: string;
+  type?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  startDate?: string;
+  endDate?: string;
+  reportDate?: string;
+  submittedAt?: string;
+  submittedBy?: User;
+  [key: string]: unknown;
+}
+
+interface LoanReportData {
+  totalLoans?: number;
+  totalAmount?: string | number;
+  activeLoans?: number;
+  completedLoans?: number;
+  overdueLoans?: number;
+  averageAmount?: string | number;
+  remarks?: string;
+  declineReason?: string;
+  totalSavingsProcessed?: number;
+  totalRecollections?: number;
+  totalLoansDisbursed?: number;
+  [key: string]: unknown;
+}
+
+export function mapReportDetails(data: ReportData): SummaryProps[] {
   if (!data) return [];
   return [
     { label: "Report ID", value: data.id?.toString() || "N/A" },
@@ -487,7 +555,7 @@ export function mapReportDetails(data: any): SummaryProps[] {
   ];
 }
 
-export function mapReportLoanDetails(data: any): SummaryProps[] {
+export function mapReportLoanDetails(data: LoanReportData): SummaryProps[] {
   if (!data) return [];
   return [
     { label: "Total Loans Processed", value: data.totalLoansProcessed?.toString() || "0" },

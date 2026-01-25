@@ -55,7 +55,7 @@ export default function LoginForm() {
       auth(accessToken, role);
       setCookie(accessToken, role);
       toast.success("You have logged in successfully");
-      
+
       // Redirect based on user role
       switch (role) {
         case 'system_admin':
@@ -63,6 +63,9 @@ export default function LoginForm() {
           break;
         case 'account_manager':
           router.push('/dashboard/am');
+          break;
+        case 'hq_manager':
+          router.push('/dashboard/hq');
           break;
         case 'branch_manager':
           router.push(ROUTES.Bm.DASHBOARD);

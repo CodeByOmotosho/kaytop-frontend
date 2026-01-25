@@ -215,8 +215,9 @@ export default function SettingsPage() {
   const usersData = useMemo(() => {
     if (!allUsersData?.data) return [];
 
-    return allUsersData.data.map((user: User) => {
-      const displayRole = mapBackendToFrontendRole(user.role);
+    return allUsersData.data.map((user: User, index: number) => {
+
+      const displayRole = mapBackendToFrontendRole(user.role, user.email, `${user.firstName} ${user.lastName}`);
       const permissions = getPermissionsForRole(user.role);
 
       return {
@@ -429,7 +430,8 @@ export default function SettingsPage() {
         role: backendRole as any,
         // Branch is often required for staff, default to a sensible value or empty
         branch: adminData.branch || 'Head Office',
-        password: process.env.DEFAULT_ADMIN_PASSWORD || 'TempPassword123!', // Backend usually requires a temporary password
+        state: adminData.state || 'Lagos', // Use state from modal or default
+        password: 'TempPassword123!', // Default temporary password for new staff
       };
 
       await createStaffMutation.mutateAsync(staffData);
@@ -1559,9 +1561,10 @@ export default function SettingsPage() {
                                       padding: '3px 6px',
                                       background:
                                         user.role === 'HQ' ? '#FBEFF8' :
-                                          user.role === 'AM' ? '#ECF0D9' :
+                                          user.role === 'BM' ? '#E0F2FE' :
                                             user.role === 'CO' ? '#DEDAF3' :
-                                              '#FBEFF8',
+                                              user.role === 'ADMIN' ? '#FEF2F2' :
+                                                '#FBEFF8', // Default fallback
                                       borderRadius: '3px',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -1576,9 +1579,10 @@ export default function SettingsPage() {
                                         fontFamily: 'Open Sauce Sans, sans-serif',
                                         color:
                                           user.role === 'HQ' ? '#AB659C' :
-                                            user.role === 'AM' ? '#4C5F00' :
+                                            user.role === 'BM' ? '#0369A1' :
                                               user.role === 'CO' ? '#462ACD' :
-                                                '#AB659C',
+                                                user.role === 'ADMIN' ? '#DC2626' :
+                                                  '#AB659C', // Default fallback
                                       }}
                                     >
                                       {user.role}
