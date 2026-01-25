@@ -293,9 +293,11 @@ class UserAPIService implements UserService {
     console.log(`🔄 [${version}] Starting user role update process`);
     
     try {
-      // Try the general user update endpoint first (more likely to work)
-      console.log(`🎯 [${version}] Updating user ${id} role to ${role} using general endpoint PATCH /admin/users/${id}`);
-      const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
+      // Use the dedicated role update endpoint as shown in HTTP tests
+      console.log(`🎯 [${version}] Updating user ${id} role to ${role} using dedicated role endpoint PATCH /admin/users/${id}/update-role`);
+      console.log(`📤 [${version}] Sending request body:`, { role });
+      
+      const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
 
       // Handle different response formats from backend
       let userData: any = null;
@@ -325,15 +327,16 @@ class UserAPIService implements UserService {
       }
 
       throw new Error('Failed to update user role - invalid response format');
-    } catch (generalEndpointError: any) {
-      console.error('User role update via general endpoint failed:', generalEndpointError);
+    } catch (roleEndpointError: any) {
+      console.error(`❌ [${version}] User role update via dedicated endpoint failed:`, roleEndpointError);
       
-      // If the general endpoint fails, try the dedicated role endpoint as fallback
-      if (generalEndpointError?.response?.status === 404 || generalEndpointError?.status === 404) {
-        console.warn(`🚨 [${version}] General user update endpoint not found, trying dedicated role update endpoint`);
+      // If the dedicated role endpoint fails, try the general user update endpoint as fallback
+      if (roleEndpointError?.response?.status === 404 || roleEndpointError?.status === 404) {
+        console.warn(`🚨 [${version}] Dedicated role endpoint not found, trying general user update endpoint`);
+        console.log(`🎯 [${version}] Fallback: Using general endpoint PATCH /admin/users/${id} with role in body`);
         
         try {
-          const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
+          const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
 
           // Handle different response formats from backend
           let userData: any = null;
@@ -362,15 +365,15 @@ class UserAPIService implements UserService {
             return userData as User;
           }
 
-          throw new Error('Failed to update user role via dedicated endpoint - invalid response format');
-        } catch (roleEndpointError: any) {
-          console.error('User role update via dedicated endpoint also failed:', roleEndpointError);
-          throw roleEndpointError;
+          throw new Error('Failed to update user role via general endpoint - invalid response format');
+        } catch (fallbackError: any) {
+          console.error(`❌ [${version}] User role update via general endpoint also failed:`, fallbackError);
+          throw fallbackError;
         }
       }
 
       // If it's not a 404, throw the original error
-      throw generalEndpointError;
+      throw roleEndpointError;
     }
   }
 
