@@ -285,9 +285,10 @@ class UserAPIService implements UserService {
   }
 
   async updateUserRole(id: string, role: string): Promise<User> {
+    console.log('🔄 [NEW VERSION] Starting user role update process');
     try {
       // Try the general user update endpoint first (more likely to work)
-      console.log(`Updating user ${id} role to ${role} using general endpoint`);
+      console.log(`🎯 [NEW VERSION] Updating user ${id} role to ${role} using general endpoint PATCH /admin/users/${id}`);
       const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
 
       // Handle different response formats from backend
@@ -323,7 +324,7 @@ class UserAPIService implements UserService {
       
       // If the general endpoint fails, try the dedicated role endpoint as fallback
       if (generalEndpointError?.response?.status === 404 || generalEndpointError?.status === 404) {
-        console.warn('General user update endpoint not found, trying dedicated role update endpoint');
+        console.warn('🚨 [NEW VERSION] General user update endpoint not found, trying dedicated role update endpoint');
         
         try {
           const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
