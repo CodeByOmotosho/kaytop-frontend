@@ -149,8 +149,6 @@ class UserAPIService implements UserService {
 
   async createStaffUser(data: CreateStaffData): Promise<User> {
     try {
-      console.log('Creating staff user with data:', { ...data, password: '[REDACTED]' });
-      
       // Check if trying to create system_admin via staff endpoint
       if (data.role === 'system_admin') {
         console.warn('Attempting to create system_admin via staff endpoint - this may not be supported by backend');
@@ -168,13 +166,7 @@ class UserAPIService implements UserService {
         state: data.state
       };
       
-      console.log('Sending request data:', { ...requestData, password: '[REDACTED]' });
-      
       const response = await apiClient.post<User>(API_ENDPOINTS.ADMIN.CREATE_STAFF, requestData);
-      
-      console.log('Raw response received:', response);
-      console.log('Response data type:', typeof response);
-      console.log('Response data:', response);
 
       // Handle different response formats from backend
       let userData: any = null;
@@ -184,22 +176,18 @@ class UserAPIService implements UserService {
         // First check if it's an Axios response with .data property
         if ((response as any).data) {
           const responseData = (response as any).data;
-          console.log('Found response.data:', responseData);
           
           // Check if it's wrapped in success/data format
           if (responseData.success && responseData.data) {
             userData = responseData.data;
-            console.log('Using success.data format:', userData);
           }
           // Check if response.data is the user object directly
           else if (responseData.id || responseData.email || responseData.firstName) {
             userData = responseData;
-            console.log('Using direct response.data format:', userData);
           }
           // Check if response.data is an array (some backends return array)
           else if (Array.isArray(responseData) && responseData.length > 0) {
             userData = responseData[0];
-            console.log('Using first item from array format:', userData);
           }
         }
         // Check if response itself is the user object (direct format)
@@ -210,7 +198,6 @@ class UserAPIService implements UserService {
       }
 
       if (userData) {
-        console.log('Successfully parsed user data:', userData);
         return userData as User;
       }
 
@@ -238,11 +225,7 @@ class UserAPIService implements UserService {
 
   async updateUser(id: string, data: UpdateUserData): Promise<User> {
     try {
-      console.log(`🔄 Updating user ${id} with data:`, data);
       const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), data);
-      
-      console.log('📥 Raw response received:', response);
-      console.log('📊 Response data type:', typeof response);
 
       // Handle different response formats from backend
       let userData: any = null;
@@ -250,29 +233,23 @@ class UserAPIService implements UserService {
       if (response && typeof response === 'object') {
         if ((response as any).data) {
           const responseData = (response as any).data;
-          console.log('📦 Found response.data:', responseData);
           
           if (responseData.success && responseData.data) {
             userData = responseData.data;
-            console.log('✅ Using nested success.data format:', userData);
           }
           else if (responseData.id || responseData.email || responseData.firstName) {
             userData = responseData;
-            console.log('✅ Using direct response.data format:', userData);
           }
           else if (Array.isArray(responseData) && responseData.length > 0) {
             userData = responseData[0];
-            console.log('✅ Using first item from array:', userData);
           }
         }
         else if ((response as any).id || (response as any).email || (response as any).firstName) {
           userData = response;
-          console.log('✅ Using direct response format:', userData);
         }
       }
 
       if (userData) {
-        console.log('✅ Successfully parsed user data:', userData);
         return userData as User;
       }
 
@@ -310,95 +287,54 @@ class UserAPIService implements UserService {
     }
   }
 
-  // FORCE CACHE INVALIDATION - VERSION 3.0
   async updateUserRole(id: string, role: string): Promise<User> {
-    const timestamp = Date.now();
-    const version = "3.0-FORCE-RELOAD";
-    console.log(`🚀 [${version}] CACHE BUSTER ACTIVE - ${timestamp}`);
-    console.log(`🔄 [${version}] Starting user role update process`);
-    
     try {
-      // Try the general user update endpoint first (seems to be working better)
-      console.log(`🎯 [${version}] Updating user ${id} role to ${role} using general endpoint PATCH /admin/users/${id}`);
-      console.log(`📤 [${version}] Sending request body:`, { role });
-      
       const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
 
       // Handle different response formats from backend
       let userData: any = null;
 
       if (response && typeof response === 'object') {
+        // Check if it's an Axios response with .data property
         if ((response as any).data) {
           const responseData = (response as any).data;
           
+          // Check if it's wrapped in success/data format
           if (responseData.success && responseData.data) {
             userData = responseData.data;
           }
+          // Check if response.data is the user object directly (EXPECTED FORMAT)
           else if (responseData.id || responseData.email || responseData.firstName) {
             userData = responseData;
           }
+          // Check if response.data is an array (fallback)
           else if (Array.isArray(responseData) && responseData.length > 0) {
             userData = responseData[0];
           }
         }
+        // Check if response itself is the user object (direct format)
         else if ((response as any).id || (response as any).email || (response as any).firstName) {
           userData = response;
         }
       }
 
       if (userData) {
-        console.log('User role updated successfully via general endpoint:', userData);
         return userData as User;
       }
 
       throw new Error('Failed to update user role - invalid response format');
-    } catch (generalEndpointError: any) {
-      console.error(`❌ [${version}] User role update via general endpoint failed:`, generalEndpointError);
-      
-      // If the general endpoint fails, try the dedicated role endpoint as fallback
-      if (generalEndpointError?.response?.status === 404 || generalEndpointError?.status === 404) {
-        console.warn(`🚨 [${version}] General user update endpoint not found, trying dedicated role update endpoint`);
-        console.log(`🎯 [${version}] Fallback: Using dedicated endpoint PATCH /admin/users/${id}/update-role`);
-        
-        try {
-          const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
-
-          // Handle different response formats from backend
-          let userData: any = null;
-
-          if (response && typeof response === 'object') {
-            if ((response as any).data) {
-              const responseData = (response as any).data;
-              
-              if (responseData.success && responseData.data) {
-                userData = responseData.data;
-              }
-              else if (responseData.id || responseData.email || responseData.firstName) {
-                userData = responseData;
-              }
-              else if (Array.isArray(responseData) && responseData.length > 0) {
-                userData = responseData[0];
-              }
-            }
-            else if ((response as any).id || (response as any).email || (response as any).firstName) {
-              userData = response;
-            }
-          }
-
-          if (userData) {
-            console.log('User role updated successfully via dedicated endpoint:', userData);
-            return userData as User;
-          }
-
-          throw new Error('Failed to update user role via dedicated endpoint - invalid response format');
-        } catch (roleEndpointError: any) {
-          console.error(`❌ [${version}] User role update via dedicated endpoint also failed:`, roleEndpointError);
-          throw roleEndpointError;
-        }
+    } catch (error: any) {
+      // Provide helpful error messages
+      if (error?.response?.status === 404) {
+        throw new Error(`User with ID ${id} not found or endpoint not available`);
+      } else if (error?.response?.status === 400) {
+        const errorMessage = error?.response?.data?.message || 'Invalid role or request data';
+        throw new Error(`Bad request: ${errorMessage}`);
+      } else if (error?.response?.status === 403) {
+        throw new Error('Insufficient permissions to update user role');
       }
-
-      // If it's not a 404, throw the original error
-      throw generalEndpointError;
+      
+      throw error;
     }
   }
 

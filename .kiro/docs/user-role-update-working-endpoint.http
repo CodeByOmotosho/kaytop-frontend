@@ -1,0 +1,158 @@
+@baseUrl = https://kaytop-production.up.railway.app
+@systemAdminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGtheXRvcC5jb20iLCJzdWIiOjEsInJvbGUiOiJzeXN0ZW1fYWRtaW4iLCJpYXQiOjE3Mzc2MzE4NzV9.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8
+
+### =================================================================
+### USER ROLE UPDATE - WORKING ENDPOINT DOCUMENTATION
+### =================================================================
+### 
+### ✅ TESTED AND WORKING: PATCH /admin/users/{id}
+### ❌ NOT WORKING: PATCH /admin/users/{id}/update-role (Returns 404)
+### 
+### Use the general user update endpoint with role in request body
+### =================================================================
+
+### 1. LOGIN AS ADMIN (to get fresh token)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@kaytop.com",
+  "password": "Admin123"
+}
+
+###
+
+### 2. GET USER DETAILS (to verify current role)
+GET {{baseUrl}}/admin/users/7
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 3. UPDATE USER ROLE - WORKING ENDPOINT ✅
+PATCH {{baseUrl}}/admin/users/7
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "role": "branch_manager"
+}
+
+###
+
+### 4. VERIFY ROLE UPDATE
+GET {{baseUrl}}/admin/users/7
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 5. TEST LOGIN WITH UPDATED USER (to verify role works)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "lagos_branch@mailsac.com",
+  "password": "BMAdmin123"
+}
+
+###
+
+### =================================================================
+### DEPRECATED ENDPOINT (DO NOT USE) ❌
+### =================================================================
+
+### 6. DEPRECATED - UPDATE USER ROLE (Returns 404)
+# PATCH {{baseUrl}}/admin/users/7/update-role
+# Authorization: Bearer {{systemAdminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "role": "branch_manager"
+# }
+
+###
+
+### =================================================================
+### EXPECTED RESPONSE STRUCTURE
+### =================================================================
+### 
+### Successful role update returns complete user object:
+### 
+### {
+###   "id": 7,
+###   "firstName": "Branch",
+###   "lastName": "Manager",
+###   "email": "lagos_branch@mailsac.com",
+###   "mobileNumber": "09131365115",
+###   "role": "branch_manager",  ← Updated role
+###   "branch": "Lagos Island",
+###   "state": "Lagos",
+###   "accountStatus": "fully_verified",
+###   "isVerified": true,
+###   "verificationStatus": "verified",
+###   "profilePicture": "https://res.cloudinary.com/...",
+###   "address": null,
+###   "dob": null,
+###   "idNumber": null,
+###   "idPicture": null,
+###   "idType": null,
+###   "guarantorName": null,
+###   "guarantorEmail": null,
+###   "guarantorPhone": null,
+###   "guarantorAddress": null,
+###   "guarantorPicture": null,
+###   "createdAt": "2025-11-29T11:42:51.682Z",
+###   "createdAtBy": "2025-11-29T12:42:09.495Z",
+###   "updatedAt": null,
+###   "verifiedAt": null
+### }
+### 
+### =================================================================
+
+### 7. UPDATE OTHER USER ROLES (Examples)
+
+### Update to HQ Manager
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "role": "hq_manager"
+}
+
+###
+
+### Update to Credit Officer
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "role": "credit_officer"
+}
+
+###
+
+### Update to System Admin
+PATCH {{baseUrl}}/admin/users/USER_ID_HERE
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "role": "system_admin"
+}
+
+###
+
+### =================================================================
+### FRONTEND IMPLEMENTATION NOTES
+### =================================================================
+### 
+### 1. Use PATCH /admin/users/{id} endpoint (NOT /admin/users/{id}/update-role)
+### 2. Send { "role": "new_role" } in request body
+### 3. Response returns complete user object with updated role
+### 4. Update frontend state with returned user object
+### 5. Handle errors: 404 (user not found), 400 (invalid role), 403 (no permission)
+### 
+### =================================================================

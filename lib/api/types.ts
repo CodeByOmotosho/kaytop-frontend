@@ -87,8 +87,22 @@ export interface User {
   branch?: string;
   state?: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  accountStatus?: 'fully_verified' | 'pending' | 'suspended';
+  isVerified?: boolean;
+  address?: string | null;
+  dob?: string | null;
+  idNumber?: string | null;
+  idPicture?: string | null;
+  idType?: string | null;
+  guarantorName?: string | null;
+  guarantorEmail?: string | null;
+  guarantorPhone?: string | null;
+  guarantorAddress?: string | null;
+  guarantorPicture?: string | null;
+  verifiedAt?: string | null;
   createdAt: string;
-  updatedAt: string;
+  createdAtBy?: string;
+  updatedAt: string | null;
 }
 
 export interface UserFilterParams {

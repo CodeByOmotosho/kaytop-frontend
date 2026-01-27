@@ -78,7 +78,11 @@ export default function BranchesPage() {
             const branchUsers = await userService.getUsersByBranch(record.name, { page: 1, limit: 1000 });
             const usersData = branchUsers?.data || [];
             const creditOfficers = usersData.filter(user => user.role === 'credit_officer');
-            const customers = usersData.filter(user => user.role === 'customer');
+            const customers = usersData.filter(user => 
+              user.role === 'user' || 
+              user.role === 'customer' ||
+              user.role === 'client'
+            );
 
             return {
               ...record,

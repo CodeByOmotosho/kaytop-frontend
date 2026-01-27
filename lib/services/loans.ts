@@ -200,15 +200,22 @@ class LoanAPIService implements LoanService {
         API_ENDPOINTS.LOANS.CUSTOMER_LOANS(customerId)
       );
 
+      // Handle axios response - data is in response.data
+      const responseData = response.data;
+      
       // Backend returns direct data format, not wrapped in success/data
-      if (response && typeof response === 'object') {
+      if (responseData && typeof responseData === 'object') {
         // Check if it's wrapped in success/data format
-        if (isSuccessResponse(response)) {
-          return response.data;
+        if (isSuccessResponse(responseData)) {
+          return responseData.data;
         }
         // Check if it's direct array format (loans list)
-        else if (Array.isArray(response)) {
-          return response;
+        else if (Array.isArray(responseData)) {
+          return responseData;
+        }
+        // Handle empty response or no loans
+        else if (responseData === null || Object.keys(responseData).length === 0) {
+          return [];
         }
       }
 

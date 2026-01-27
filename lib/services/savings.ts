@@ -160,21 +160,46 @@ class SavingsAPIService implements SavingsService {
         API_ENDPOINTS.SAVINGS.CUSTOMER_SAVINGS(customerId)
       );
 
+      // Handle axios response - data is in response.data
+      const responseData = response.data;
+      
       // Backend returns direct data format, not wrapped in success/data
-      if (response && typeof response === 'object') {
-        const transactionResponse = response as TransactionResponse;
+      if (responseData && typeof responseData === 'object') {
+        const transactionResponse = responseData as TransactionResponse;
         // Check if it's wrapped in success/data format
         if (transactionResponse.success && transactionResponse.data) {
           return transactionResponse.data as SavingsAccount;
         }
         // Check if it's direct data format (has savings fields)
-        else if (this.isSavingsAccountLike(response)) {
-          return response as unknown as SavingsAccount;
+        else if (this.isSavingsAccountLike(responseData)) {
+          return responseData as unknown as SavingsAccount;
         }
       }
 
       throw new Error('Failed to fetch customer savings - invalid response format');
     } catch (error) {
+      // Handle 404 errors more gracefully - customer may not have savings account
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
+          console.info(`No savings account found for customer ${customerId}`);
+          // Return empty savings account instead of throwing error
+          return {
+            id: '',
+            customerId: customerId,
+            customerName: 'Unknown Customer',
+            accountNumber: '',
+            balance: 0,
+            status: 'inactive' as const,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            branch: '',
+            interestRate: 0,
+            transactions: []
+          };
+        }
+      }
+      
       console.error('Customer savings fetch error:', error);
       throw error;
     }

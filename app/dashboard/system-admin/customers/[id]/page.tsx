@@ -12,9 +12,6 @@ import CustomerInfoCard from '@/app/_components/ui/CustomerInfoCard';
 import ActiveLoanCard from '@/app/_components/ui/ActiveLoanCard';
 import TransactionHistoryTable from '@/app/_components/ui/TransactionHistoryTable';
 import SavingsTransactionsTable from '@/app/_components/ui/SavingsTransactionsTable';
-import SavingsDepositModal from '@/app/_components/ui/SavingsDepositModal';
-import SavingsWithdrawalModal from '@/app/_components/ui/SavingsWithdrawalModal';
-import LoanCoverageModal from '@/app/_components/ui/LoanCoverageModal';
 import TransactionApprovalModal from '@/app/_components/ui/TransactionApprovalModal';
 import { userService } from '@/lib/services/users';
 import { loanService } from '@/lib/services/loans';
@@ -83,13 +80,11 @@ export default function CustomerDetailsPage({ params }: PageProps) {
   // API data state
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
   const [savingsAccount, setSavingsAccount] = useState<SavingsAccount | null>(null);
+  const [savingsAccountStatus, setSavingsAccountStatus] = useState<'no-account' | 'empty-account' | 'has-balance'>('no-account');
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Modal states
-  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
-  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
-  const [isLoanCoverageModalOpen, setIsLoanCoverageModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
@@ -147,19 +142,25 @@ export default function CustomerDetailsPage({ params }: PageProps) {
         endDate: '',
         paymentSchedule: []
       },
-      transactions: savings?.transactions?.map(transaction => ({
-        id: String(transaction.id), // Ensure ID is string
-        transactionId: String(transaction.id).slice(-8).toUpperCase(),
-        type: transaction.type === 'deposit' ? 'Savings' : 'Repayment',
-        amount: transaction.amount,
-        status: transaction.status === 'approved' ? 'Successful' : 
-                transaction.status === 'rejected' ? 'Pending' : 'In Progress',
-        date: new Date(transaction.createdAt).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric' 
-        })
-      })) || []
+      transactions: [
+        // Add savings transactions if available
+        ...(savings?.transactions?.map(transaction => ({
+          id: String(transaction.id), // Ensure ID is string
+          transactionId: String(transaction.id).slice(-8).toUpperCase(),
+          type: transaction.type === 'deposit' ? 'Savings' : 'Repayment',
+          amount: transaction.amount || 0,
+          status: transaction.status === 'approved' ? 'Successful' : 
+                  transaction.status === 'rejected' ? 'Pending' : 
+                  transaction.status === 'pending' ? 'In Progress' : 'Unknown',
+          date: new Date(transaction.createdAt).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          })
+        })) || []),
+        // TODO: Add loan repayment transactions when available from API
+        // This would require a separate API call to get loan repayment history
+      ]
     };
   };
 
@@ -171,27 +172,78 @@ export default function CustomerDetailsPage({ params }: PageProps) {
 
       // Fetch user details
       const user = await userService.getUserById(id);
-      if (user.role !== 'customer') {
-        throw new Error(`User is not a customer. Found role: "${user.role}". Expected role: "customer". This user appears to be a ${user.role.replace('_', ' ')}.`);
+      
+      // Check if user is a customer (based on actual backend roles)
+      const isCustomer = user.role === 'user' || 
+                        user.role === 'customer' ||
+                        user.role === 'client';
+      
+      if (!isCustomer) {
+        throw new Error(`User is not a customer. Found role: "${user.role}". Expected role: "user", "customer", or "client". This user appears to be a ${user.role.replace('_', ' ')}.`);
       }
 
-      // Fetch customer loans
+      // Fetch customer loans using unified approach
       let loans: Loan[] = [];
       try {
-        loans = await loanService.getCustomerLoans(id);
+        // Try the unified loan service first (more reliable)
+        const { unifiedLoanService } = await import('@/lib/services/unifiedLoan');
+        const loansResponse = await unifiedLoanService.getCustomerLoans(id);
+        
+        if (loansResponse.data && Array.isArray(loansResponse.data)) {
+          loans = loansResponse.data;
+        }
       } catch (err) {
-        console.warn('Failed to fetch customer loans:', err);
-        // Continue without loan data
+        console.warn('Unified loan service failed, trying direct endpoint:', err);
+        
+        // Fallback to direct endpoint
+        try {
+          loans = await loanService.getCustomerLoans(id);
+        } catch (directErr) {
+          console.warn('Direct loan endpoint also failed:', directErr);
+          // Continue without loan data - this is normal for customers without loans
+        }
       }
 
-      // Fetch customer savings
+      // Fetch customer savings using unified approach
       let savings: SavingsAccount | null = null;
+      let accountStatus: 'no-account' | 'empty-account' | 'has-balance' = 'no-account';
+      
       try {
-        savings = await savingsService.getCustomerSavings(id);
+        // Try the unified savings service first (more reliable)
+        const { unifiedSavingsService } = await import('@/lib/services/unifiedSavings');
+        const savingsResponse = await unifiedSavingsService.getSavingsAccounts({ 
+          customerId: id, 
+          limit: 1 
+        });
+        
+        if (savingsResponse.data && savingsResponse.data.length > 0) {
+          savings = savingsResponse.data[0];
+          // Customer has a savings account
+          accountStatus = savings.balance > 0 ? 'has-balance' : 'empty-account';
+        }
       } catch (err) {
-        console.warn('Failed to fetch customer savings:', err);
-        // Continue without savings data
+        console.warn(`Unified savings service failed for customer ${id}:`, err);
+        
+        // Fallback to direct endpoint
+        try {
+          savings = await savingsService.getCustomerSavings(id);
+          // If we get here, customer has an account (even if balance is 0)
+          accountStatus = savings.balance > 0 ? 'has-balance' : 'empty-account';
+        } catch (directErr) {
+          console.warn(`Direct savings endpoint also failed for customer ${id}:`, directErr);
+          // Check if it's a 404 (no account) vs other error
+          if (directErr && typeof directErr === 'object' && 'response' in directErr) {
+            const axiosError = directErr as { response?: { status?: number } };
+            if (axiosError.response?.status === 404) {
+              accountStatus = 'no-account';
+              console.info(`Customer ${id} does not have a savings account (404)`);
+            }
+          }
+          // Continue without savings data - this is normal for customers without savings accounts
+        }
       }
+      
+      setSavingsAccountStatus(accountStatus);
 
       const details = transformApiDataToCustomerDetails(user, loans, savings);
       setCustomerDetails(details);
@@ -220,6 +272,12 @@ export default function CustomerDetailsPage({ params }: PageProps) {
 
   // Load initial data
   useEffect(() => {
+    // Reset state when customer ID changes
+    setCustomerDetails(null);
+    setSavingsAccount(null);
+    setSavingsAccountStatus('no-account');
+    setApiError(null);
+    
     fetchCustomerDetails();
   }, [id]);
 
@@ -250,13 +308,16 @@ export default function CustomerDetailsPage({ params }: PageProps) {
   const loanAmount = customerDetails.activeLoan.amount;
   const loanOutstanding = customerDetails.activeLoan.outstanding;
   const loanPaid = loanAmount - loanOutstanding;
-  const loanPercentage = (loanPaid / loanAmount) * 100;
   
-  // Prepare chart data (kept for backwards compatibility)
-  const loanChartData = [
+  // Handle cases where customer has no loans or invalid loan data
+  const hasValidLoan = loanAmount > 0;
+  const loanPercentage = hasValidLoan ? (loanPaid / loanAmount) * 100 : 0;
+  
+  // Prepare chart data - show empty chart for customers without loans
+  const loanChartData = hasValidLoan ? [
     { value: loanPaid, color: '#7F56D9' },
     { value: loanOutstanding, color: '#F4EBFF' }
-  ];
+  ] : [];
 
   // Prepare pie chart data for savings account
   const savingsChartData = customerDetails.savingsAccount.chartData.map((value, index) => {
@@ -272,8 +333,46 @@ export default function CustomerDetailsPage({ params }: PageProps) {
     return `₦${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  // Get savings account subtitle based on status
+  const getSavingsSubtitle = () => {
+    switch (savingsAccountStatus) {
+      case 'no-account':
+        return 'No savings account opened';
+      case 'empty-account':
+        return 'Account opened - Zero balance';
+      case 'has-balance':
+        return 'Current balance';
+      default:
+        return 'Current balance';
+    }
+  };
+
+  // Get savings account amount display
+  const getSavingsAmount = () => {
+    if (savingsAccountStatus === 'no-account') {
+      return 'No Account';
+    }
+    return formatCurrency(customerDetails.savingsAccount.balance);
+  };
+
+  // Get loan repayment subtitle based on loan status
+  const getLoanSubtitle = () => {
+    if (!hasValidLoan) {
+      return 'No active loans';
+    }
+    return `Next Payment - ${customerDetails.loanRepayment.nextPayment}`;
+  };
+
+  // Get loan repayment amount display
+  const getLoanAmount = () => {
+    if (!hasValidLoan) {
+      return 'No Loan';
+    }
+    return formatCurrency(customerDetails.loanRepayment.amount);
+  };
+
   return (
-    <div className="drawer-content flex flex-col min-h-screen">
+    <div className="drawer-content flex flex-col min-h-screen" key={id}>
       <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
         {/* Container with proper max width */}
         <div className="w-full" style={{ maxWidth: '1200px' }}>
@@ -307,57 +406,21 @@ export default function CustomerDetailsPage({ params }: PageProps) {
           <div className="flex gap-6 mb-6">
             <AccountCard
               title="Loan Repayment"
-              subtitle={`Next Payment - ${customerDetails.loanRepayment.nextPayment}`}
-              amount={formatCurrency(customerDetails.loanRepayment.amount)}
-              growth={customerDetails.loanRepayment.growth}
+              subtitle={getLoanSubtitle()}
+              amount={getLoanAmount()}
+              growth={hasValidLoan ? customerDetails.loanRepayment.growth : 0}
               chartData={loanChartData}
               chartType="loan"
               percentage={loanPercentage}
             />
             <AccountCard
               title="Savings Account"
-              subtitle="Current balance"
-              amount={formatCurrency(customerDetails.savingsAccount.balance)}
-              growth={customerDetails.savingsAccount.growth}
-              chartData={savingsChartData}
+              subtitle={getSavingsSubtitle()}
+              amount={getSavingsAmount()}
+              growth={savingsAccountStatus === 'no-account' ? 0 : customerDetails.savingsAccount.growth}
+              chartData={savingsAccountStatus === 'no-account' ? [] : savingsChartData}
               chartType="savings"
             />
-          </div>
-
-          {/* Savings Actions */}
-          <div className="mb-6">
-            <div className="bg-white border border-[#EAECF0] rounded-lg p-6">
-              <h3 className="text-[18px] font-semibold text-[#101828] mb-4">
-                Savings Operations
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => setIsDepositModalOpen(true)}
-                  className="px-4 py-2 text-[14px] font-semibold text-white bg-[#039855] border border-[#039855] rounded-lg hover:bg-[#027A48] transition-colors focus:outline-none focus:ring-2 focus:ring-[#039855] focus:ring-offset-2"
-                >
-                  Record Deposit
-                </button>
-                <button
-                  onClick={() => setIsWithdrawalModalOpen(true)}
-                  className="px-4 py-2 text-[14px] font-semibold text-[#344054] bg-white border border-[#D0D5DD] rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:ring-offset-2"
-                  disabled={!savingsAccount || savingsAccount.balance <= 0}
-                >
-                  Record Withdrawal
-                </button>
-                <button
-                  onClick={() => setIsLoanCoverageModalOpen(true)}
-                  className="px-4 py-2 text-[14px] font-semibold text-white bg-[#7F56D9] border border-[#7F56D9] rounded-lg hover:bg-[#6941C6] transition-colors focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:ring-offset-2"
-                  disabled={!savingsAccount || savingsAccount.balance <= 0}
-                >
-                  Use for Loan Coverage
-                </button>
-              </div>
-              {savingsAccount && savingsAccount.balance <= 0 && (
-                <p className="text-[12px] text-[#667085] mt-2">
-                  Withdrawal and loan coverage options are disabled when balance is zero.
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Customer Information Card */}
@@ -408,32 +471,6 @@ export default function CustomerDetailsPage({ params }: PageProps) {
       </main>
       
       {/* Savings Modals */}
-      <SavingsDepositModal
-        isOpen={isDepositModalOpen}
-        onClose={() => setIsDepositModalOpen(false)}
-        customerId={id}
-        customerName={customerDetails.name}
-        onSuccess={handleSavingsOperationSuccess}
-      />
-      
-      <SavingsWithdrawalModal
-        isOpen={isWithdrawalModalOpen}
-        onClose={() => setIsWithdrawalModalOpen(false)}
-        customerId={id}
-        customerName={customerDetails.name}
-        currentBalance={savingsAccount?.balance || 0}
-        onSuccess={handleSavingsOperationSuccess}
-      />
-      
-      <LoanCoverageModal
-        isOpen={isLoanCoverageModalOpen}
-        onClose={() => setIsLoanCoverageModalOpen(false)}
-        customerId={id}
-        customerName={customerDetails.name}
-        currentBalance={savingsAccount?.balance || 0}
-        onSuccess={handleSavingsOperationSuccess}
-      />
-      
       <TransactionApprovalModal
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}

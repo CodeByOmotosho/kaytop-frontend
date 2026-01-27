@@ -1,10 +1,15 @@
 /**
  * AccountCard Component
- * Display account information with chart visualization
+ * Display account information with chart visualization matching Figma design
  */
 
-import PieChart from './PieChart';
-import DonutChart from './DonutChart';
+import { useState } from 'react';
+import {
+  Cell,
+  Pie,
+  PieChart as RechartsPieChart,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface AccountCardProps {
   title: string;
@@ -25,8 +30,16 @@ export default function AccountCard({
   chartType,
   percentage
 }: AccountCardProps) {
-  // Determine background color based on chart type
-  const backgroundColor = chartType === 'loan' ? '#F4EBFF' : '#F2F4F7';
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+
+  // Prepare data for Recharts - handle empty data
+  const rechartData = chartData && chartData.length > 0 ? chartData.map((item, index) => ({
+    name: index === 0 ? 'Filled' : 'Remaining',
+    value: item.value || 0,
+    color: item.color
+  })) : [
+    { name: 'No Data', value: 100, color: '#F2F4F7' }
+  ];
 
   return (
     <div
@@ -41,46 +54,80 @@ export default function AccountCard({
         boxShadow: '0px 1px 3px rgba(16, 24, 40, 0.1), 0px 1px 2px rgba(16, 24, 40, 0.06)'
       }}
     >
-      {/* Chart - Donut for loan, Pie for savings */}
-      {chartType === 'loan' && percentage !== undefined ? (
-        <DonutChart
-          percentage={percentage}
-          size={120}
-          strokeWidth={20}
-          filledColor="#7F56D9"
-          unfilledColor="#F4EBFF"
-          backgroundColor="#F4EBFF"
-        />
-      ) : (
-        <PieChart
-          data={chartData}
-          size={120}
-          backgroundColor={backgroundColor}
-        />
-      )}
+      {/* Chart Container */}
+      <div 
+        style={{ 
+          width: '120px', 
+          height: '120px',
+          position: 'relative',
+          minWidth: '120px',
+          minHeight: '120px',
+          flexShrink: 0
+        }}
+      >
+        <ResponsiveContainer width={120} height={120}>
+          <RechartsPieChart width={120} height={120}>
+            <Pie
+              data={rechartData}
+              cx={60}
+              cy={60}
+              innerRadius={30}
+              outerRadius={55}
+              dataKey="value"
+              nameKey="name"
+              paddingAngle={0}
+              onMouseEnter={(_, index) => setActiveIndex(index)}
+              startAngle={90}
+              endAngle={450}
+            >
+              {rechartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                />
+              ))}
+            </Pie>
+          </RechartsPieChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* Content */}
       <div className="flex flex-col justify-center flex-1">
         {/* Title */}
         <h3
           className="text-base font-semibold mb-1"
-          style={{ color: '#101828' }}
+          style={{ 
+            color: '#101828',
+            fontSize: '16px',
+            fontWeight: 600,
+            lineHeight: '24px'
+          }}
         >
           {title}
         </h3>
 
         {/* Subtitle */}
         <p
-          className="text-sm font-medium mb-2"
-          style={{ color: '#475467' }}
+          className="text-sm font-medium mb-3"
+          style={{ 
+            color: '#475467',
+            fontSize: '14px',
+            fontWeight: 400,
+            lineHeight: '20px'
+          }}
         >
           {subtitle}
         </p>
 
         {/* Amount */}
         <p
-          className="text-3xl font-semibold mb-2"
-          style={{ color: '#101828', fontSize: '30px' }}
+          className="text-3xl font-semibold mb-3"
+          style={{ 
+            color: '#101828', 
+            fontSize: '30px',
+            fontWeight: 600,
+            lineHeight: '38px'
+          }}
         >
           {amount}
         </p>
@@ -89,7 +136,8 @@ export default function AccountCard({
         <div
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full w-fit"
           style={{
-            backgroundColor: '#ECFDF3'
+            backgroundColor: '#ECFDF3',
+            padding: '2px 8px'
           }}
         >
           {/* Up Arrow Icon */}
@@ -112,7 +160,12 @@ export default function AccountCard({
           {/* Growth Text */}
           <span
             className="text-xs font-medium"
-            style={{ color: '#027A48' }}
+            style={{ 
+              color: '#027A48',
+              fontSize: '12px',
+              fontWeight: 500,
+              lineHeight: '18px'
+            }}
           >
             +{growth.toFixed(1)}
           </span>

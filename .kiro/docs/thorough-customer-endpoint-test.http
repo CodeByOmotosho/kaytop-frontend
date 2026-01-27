@@ -1,0 +1,386 @@
+### ========================================
+### THOROUGH CUSTOMER ENDPOINT TESTING
+### Complete Investigation of All Customer Data Access Methods
+### ========================================
+
+@baseUrl = https://kaytop-production.up.railway.app
+
+### ========================================
+### STEP 1: AUTHENTICATION SETUP
+### ========================================
+
+### Login as System Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@kaytop.com",
+  "password": "Admin123"
+}
+
+### Login as HQ Manager
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "adminhq@mailsac.com",
+  "password": "12345678"
+}
+
+### Login as Customer (if we can find credentials)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "johnomotosho2001@gmail.com",
+  "password": "password123"
+}
+
+### Variables - UPDATE THESE WITH ACTUAL TOKENS FROM ABOVE
+@systemAdminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGtheXRvcC5jb20iLCJzdWIiOjEsInJvbGUiOiJzeXN0ZW1fYWRtaW4iLCJpYXQiOjE3Mzc2MzE4NzV9.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8
+@hqManagerToken = REPLACE_WITH_HQ_MANAGER_TOKEN
+@customerToken = REPLACE_WITH_CUSTOMER_TOKEN
+
+### ========================================
+### STEP 2: BASELINE TESTING - CONFIRM CURRENT BEHAVIOR
+### ========================================
+
+### Test current /admin/users endpoint (known to have no role field)
+GET {{baseUrl}}/admin/users?limit=5
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 3: ROLE FILTERING TESTS (CRITICAL)
+### ========================================
+
+### Test 1: Customer role filtering (MOST IMPORTANT)
+GET {{baseUrl}}/admin/users?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 2: Credit officer role filtering (Postman docs suggest this works)
+GET {{baseUrl}}/admin/users?role=credit_officer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 3: System admin role filtering
+GET {{baseUrl}}/admin/users?role=system_admin
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 4: Branch manager role filtering
+GET {{baseUrl}}/admin/users?role=branch_manager
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 5: Account manager role filtering
+GET {{baseUrl}}/admin/users?role=account_manager
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 6: HQ manager role filtering
+GET {{baseUrl}}/admin/users?role=hq_manager
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 7: Invalid role filtering (should return empty or error)
+GET {{baseUrl}}/admin/users?role=invalid_role
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 4: DEDICATED CUSTOMER ENDPOINTS
+### ========================================
+
+### Test 8: Dedicated customers endpoint
+GET {{baseUrl}}/admin/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 9: Customers with pagination
+GET {{baseUrl}}/admin/customers?page=1&limit=10
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 10: Alternative customer endpoints
+GET {{baseUrl}}/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 11: Users/customers endpoint
+GET {{baseUrl}}/users/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 12: Customer management endpoint
+GET {{baseUrl}}/customer-management
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 5: ALTERNATIVE FILTERING METHODS
+### ========================================
+
+### Test 13: UserType parameter
+GET {{baseUrl}}/admin/users?userType=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 14: Type parameter
+GET {{baseUrl}}/admin/users?type=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 15: Filter endpoint
+GET {{baseUrl}}/users/filter?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 16: Search endpoint with role
+GET {{baseUrl}}/admin/users/search?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 17: Search endpoint with query
+GET {{baseUrl}}/admin/users/search?q=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 6: STAFF VS CUSTOMER SEPARATION
+### ========================================
+
+### Test 18: Staff endpoint (should exclude customers)
+GET {{baseUrl}}/admin/staff
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 19: My staff endpoint
+GET {{baseUrl}}/admin/staff/my-staff
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 20: Staff with role filtering
+GET {{baseUrl}}/admin/staff?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 7: BRANCH AND STATE FILTERING
+### ========================================
+
+### Test 21: Users by branch
+GET {{baseUrl}}/admin/users/branch/Lagos Island
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 22: Users by branch with role filtering
+GET {{baseUrl}}/admin/users/branch/Lagos Island?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 23: Users by state
+GET {{baseUrl}}/admin/users/state/Lagos
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 24: Users by state with role filtering
+GET {{baseUrl}}/admin/users/state/Lagos?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 8: EXPORT AND BULK OPERATIONS
+### ========================================
+
+### Test 25: Export all users
+GET {{baseUrl}}/admin/users/export
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 26: Export customers only
+GET {{baseUrl}}/admin/users/export?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 27: Bulk user operations
+GET {{baseUrl}}/admin/users/bulk
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 9: CUSTOMER-SPECIFIC DATA ENDPOINTS
+### ========================================
+
+### Test 28: Customer loans (using known customer ID)
+GET {{baseUrl}}/loans/customer/8
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 29: Customer savings
+GET {{baseUrl}}/savings/customer/8
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 30: Customer loan summary
+GET {{baseUrl}}/loans/customer/8/loan-summary
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 31: Customer disbursement summary
+GET {{baseUrl}}/loans/customer/8/disbursement-summary
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 10: PERMISSION TESTING WITH DIFFERENT ROLES
+### ========================================
+
+### Test 32: HQ Manager access to customers
+GET {{baseUrl}}/admin/users?role=customer
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### Test 33: HQ Manager access to staff
+GET {{baseUrl}}/admin/staff/my-staff
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### Test 34: Customer self-access (if we have customer token)
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 11: PAGINATION AND LIMITS TESTING
+### ========================================
+
+### Test 35: Large limit to get all customers
+GET {{baseUrl}}/admin/users?role=customer&limit=1000
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 36: Pagination with customers
+GET {{baseUrl}}/admin/users?role=customer&page=1&limit=10
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 37: Second page of customers
+GET {{baseUrl}}/admin/users?role=customer&page=2&limit=10
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 12: ALTERNATIVE USER ENDPOINTS
+### ========================================
+
+### Test 38: Public users endpoint
+GET {{baseUrl}}/users
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 39: Users with role filtering
+GET {{baseUrl}}/users?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 40: Public users endpoint (no auth)
+GET {{baseUrl}}/public/users
+Content-Type: application/json
+
+### ========================================
+### STEP 13: SPECIFIC USER TESTING
+### ========================================
+
+### Test 41: Get specific user by ID (known customer)
+GET {{baseUrl}}/admin/users/8
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 42: Get user profile (customer endpoint)
+GET {{baseUrl}}/users/8/profile
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 43: Get customer details
+GET {{baseUrl}}/admin/customers/8
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 14: ADVANCED FILTERING COMBINATIONS
+### ========================================
+
+### Test 44: Role + Branch filtering
+GET {{baseUrl}}/admin/users?role=customer&branch=Lagos Island
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 45: Role + State filtering
+GET {{baseUrl}}/admin/users?role=customer&state=Lagos
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 46: Role + Verification status
+GET {{baseUrl}}/admin/users?role=customer&verificationStatus=verified
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 47: Multiple role filtering
+GET {{baseUrl}}/admin/users?role=customer,credit_officer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### STEP 15: EDGE CASES AND ERROR HANDLING
+### ========================================
+
+### Test 48: Empty role parameter
+GET {{baseUrl}}/admin/users?role=
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 49: Null role parameter
+GET {{baseUrl}}/admin/users?role=null
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 50: Case sensitivity test
+GET {{baseUrl}}/admin/users?role=CUSTOMER
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Test 51: Role with spaces
+GET {{baseUrl}}/admin/users?role=customer user
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### ANALYSIS FRAMEWORK
+### ========================================
+
+### FOR EACH TEST, RECORD:
+### 1. HTTP Status Code (200, 404, 400, 401, 403, 500)
+### 2. Response Structure (array, object, wrapped in success/data)
+### 3. Presence of 'role' field in user objects
+### 4. Number of users returned
+### 5. User types in response (customer, staff, mixed)
+### 6. Error messages (if any)
+
+### CRITICAL SUCCESS INDICATORS:
+### ✅ Test 1 (role=customer) returns users with role='customer'
+### ✅ Test 2 (role=credit_officer) returns users (confirms role filtering works)
+### ✅ Test 8 (/admin/customers) returns customer-specific data
+### ✅ Any test returns users with role field populated
+
+### FAILURE INDICATORS:
+### ❌ All role filtering tests return 400/404 errors
+### ❌ No test returns users with role field
+### ❌ All customer-specific endpoints return 404
+
+### NEXT STEPS BASED ON RESULTS:
+### If role filtering works: Update frontend to use ?role=customer
+### If dedicated endpoints exist: Use /admin/customers
+### If neither works: Implement alternative identification logic
+### If some work: Document which endpoints to use for which scenarios

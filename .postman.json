@@ -87,6 +87,63 @@
       "customer": "Access to customer dashboard only"
     }
   },
+
+  "api_endpoints": {
+    "user_management": {
+      "update_user_role": {
+        "method": "PATCH",
+        "endpoint": "/admin/users/{id}",
+        "status": "✅ TESTED AND WORKING",
+        "tested_date": "2026-01-26",
+        "request_body": {
+          "role": "branch_manager"
+        },
+        "response_structure": {
+          "id": 7,
+          "firstName": "Branch",
+          "lastName": "Manager", 
+          "email": "lagos_branch@mailsac.com",
+          "mobileNumber": "09131365115",
+          "role": "branch_manager",
+          "branch": "Lagos Island",
+          "state": "Lagos",
+          "accountStatus": "fully_verified",
+          "isVerified": true,
+          "verificationStatus": "verified",
+          "profilePicture": "https://res.cloudinary.com/dykhextof/image/upload/v1767504989/qnqdu5xdubllgh8iqyox.png",
+          "address": null,
+          "dob": null,
+          "idNumber": null,
+          "idPicture": null,
+          "idType": null,
+          "guarantorName": null,
+          "guarantorEmail": null,
+          "guarantorPhone": null,
+          "guarantorAddress": null,
+          "guarantorPicture": null,
+          "createdAt": "2025-11-29T11:42:51.682Z",
+          "createdAtBy": "2025-11-29T12:42:09.495Z",
+          "updatedAt": null,
+          "verifiedAt": null
+        },
+        "notes": [
+          "Use general user update endpoint PATCH /admin/users/{id} with { role: 'new_role' }",
+          "The dedicated role endpoint /admin/users/{id}/update-role returns 404",
+          "Response returns complete user object with updated role",
+          "Frontend should use this endpoint for all role updates"
+        ]
+      },
+      "deprecated_endpoints": {
+        "update_user_role_dedicated": {
+          "method": "PATCH",
+          "endpoint": "/admin/users/{id}/update-role",
+          "status": "❌ DEPRECATED - Returns 404",
+          "error": "Cannot PATCH /admin/users/{id}/update-role - Not Found",
+          "replacement": "Use /admin/users/{id} with role in request body"
+        }
+      }
+    }
+  },
   
   "test_results": {
     "last_run": "2026-01-13T22:43:00Z",

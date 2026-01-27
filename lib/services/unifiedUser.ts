@@ -144,7 +144,9 @@ class UnifiedUserAPIService implements UnifiedUserService {
         if (params?.limit) {
           queryParams.append('limit', params.limit.toString());
         }
-        // Note: role filtering will be done client-side as /admin/users doesn't support it
+        if (params?.role) {
+          queryParams.append('role', params.role);
+        }
         if (params?.branch) {
           queryParams.append('branch', params.branch);
         }
@@ -206,64 +208,6 @@ class UnifiedUserAPIService implements UnifiedUserService {
         });
         console.log(`🎭 [UnifiedUserService] Role distribution:`, roleDistribution);
         
-        // Apply role filtering client-side since /admin/users doesn't support role query parameter
-        let filteredUsers = users;
-        if (params?.role) {
-          const requestedRole = params.role.toLowerCase();
-          
-          filteredUsers = users.filter(user => {
-            const userRole = (user.role as string)?.toLowerCase() || '';
-            
-            // Exact match first
-            if (userRole === requestedRole) return true;
-            
-            // For credit officer roles, try multiple variations
-            if (requestedRole.includes('credit') && requestedRole.includes('officer')) {
-              return userRole === 'credit_officer' || 
-                     userRole === 'creditofficer' || 
-                     userRole === 'credit officer' ||
-                     userRole === 'co';
-            }
-            
-            // For branch manager roles
-            if (requestedRole.includes('branch') && requestedRole.includes('manager')) {
-              return userRole === 'branch_manager' || 
-                     userRole === 'branchmanager' || 
-                     userRole === 'branch manager' ||
-                     userRole === 'bm';
-            }
-            
-            // For hq manager roles
-            if (requestedRole.includes('hq') && requestedRole.includes('manager')) {
-              return userRole === 'hq_manager' || 
-                     userRole === 'hqmanager' || 
-                     userRole === 'hq manager' ||
-                     userRole === 'hm';
-            }
-            
-            // For system admin roles
-            if (requestedRole.includes('system') && requestedRole.includes('admin')) {
-              return userRole === 'system_admin' || 
-                     userRole === 'systemadmin' || 
-                     userRole === 'system admin' ||
-                     userRole === 'sa';
-            }
-            
-            // For customer role
-            if (requestedRole === 'customer') {
-              return userRole === 'customer';
-            }
-            
-            return false;
-          });
-          
-          console.log(`🔍 [UnifiedUserService] Client-side filtered for "${params.role}": ${filteredUsers.length} users found`);
-          
-          if (filteredUsers.length === 0) {
-            console.warn(`⚠️ [UnifiedUserService] No users found with role "${params.role}". Available roles:`, Object.keys(roleDistribution));
-          }
-        }
-        
         // Show sample users with their roles
         if (users.length > 0) {
           console.log(`👥 [UnifiedUserService] Sample users:`, 
@@ -277,26 +221,16 @@ class UnifiedUserAPIService implements UnifiedUserService {
           );
         }
 
+        // No client-side role filtering needed - server handles it with role parameter
+        let filteredUsers = users;
+
         // Transform users through DataTransformers
         const transformedUsers = filteredUsers.map((user: Record<string, unknown>) => DataTransformers.transformUser(user));
 
-        // Recalculate pagination based on filtered results
-        const filteredTotal = transformedUsers.length;
-        const recalculatedPagination = {
-          page: pagination.page,
-          limit: pagination.limit,
-          total: filteredTotal,
-          totalPages: Math.ceil(filteredTotal / pagination.limit)
-        };
-
-        // Apply client-side pagination to filtered results
-        const startIndex = (pagination.page - 1) * pagination.limit;
-        const endIndex = startIndex + pagination.limit;
-        const paginatedUsers = transformedUsers.slice(startIndex, endIndex);
-
+        // Use server-side pagination from response
         return {
-          data: paginatedUsers,
-          pagination: recalculatedPagination
+          data: transformedUsers,
+          pagination: pagination
         };
         
       } catch (error) {
@@ -327,6 +261,26 @@ class UnifiedUserAPIService implements UnifiedUserService {
         console.log(`🔍 [UnifiedUserService] RAW API RESPONSE:`, JSON.stringify(staffResponse.data, null, 2));
         
         const staffData = staffResponse.data || staffResponse;
+        
+        // Enhanced logging for phone number debugging
+        if (Array.isArray(staffData) && staffData.length > 0) {
+          console.log(`📱 [UnifiedUserService] Phone number field analysis:`, 
+            staffData.slice(0, 3).map((user: Record<string, unknown>) => ({
+              id: user.id,
+              name: `${user.firstName} ${user.lastName}`,
+              mobileNumber: user.mobileNumber,
+              phone: user.phone,
+              mobile_number: user.mobile_number,
+              phoneNumber: user.phoneNumber,
+              contactNumber: user.contactNumber,
+              allPhoneFields: Object.keys(user).filter(key => 
+                key.toLowerCase().includes('phone') || 
+                key.toLowerCase().includes('mobile') ||
+                key.toLowerCase().includes('contact')
+              )
+            }))
+          );
+        }
         
         console.log(`� [UnifiedUserService] Staff response:`, { 
           totalStaff: Array.isArray(staffData) ? staffData.length : 0,

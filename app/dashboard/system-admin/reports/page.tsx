@@ -80,8 +80,6 @@ export default function ReportsPage() {
       setLoading(true);
       setApiError(null);
 
-      console.log('🔍 SA Reports - Fetching data with filters:', filters);
-
       // Build API filters from current state
       const apiFilters: APIReportFilters = {
         page: currentPage,

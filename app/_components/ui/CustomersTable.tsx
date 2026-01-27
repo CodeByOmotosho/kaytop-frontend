@@ -19,13 +19,15 @@ interface CustomersTableProps {
   selectedCustomers: string[];
   onSelectionChange: (selectedIds: string[]) => void;
   onEdit: (customerId: string) => void;
+  basePath?: string; // Add basePath prop for dynamic routing
 }
 
 export default function CustomersTable({
   customers,
   selectedCustomers,
   onSelectionChange,
-  onEdit
+  onEdit,
+  basePath = '/dashboard/system-admin/customers' // Default to system-admin for backward compatibility
 }: CustomersTableProps) {
   const router = useRouter();
   const [sortColumn, setSortColumn] = useState<string | null>('status');
@@ -246,7 +248,7 @@ export default function CustomersTable({
                         }}
                       />
                       <button
-                        onClick={() => router.push(`/dashboard/system-admin/customers/${customer.id}`)}
+                        onClick={() => router.push(`${basePath}/${customer.id}`)}
                         className="flex flex-col text-left hover:opacity-80 transition-opacity"
                       >
                         <span

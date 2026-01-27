@@ -149,7 +149,6 @@ export default function SystemAdminDashboard() {
     setActiveTab(tab);
     setCurrentPage(1); // Reset to first page when changing tabs
     setSearchQuery(''); // Clear search when changing tabs
-    console.log('Active tab changed to:', tab);
   };
 
   // Handler for page changes
@@ -167,7 +166,6 @@ export default function SystemAdminDashboard() {
   const handleBulkDelete = () => {
     if (selectedRows.length === 0) return;
 
-    console.log('Bulk deleting:', selectedRows);
     // TODO: Implement bulk delete API call
 
     success(`${selectedRows.length} item${selectedRows.length > 1 ? 's' : ''} deleted successfully!`);
@@ -177,7 +175,6 @@ export default function SystemAdminDashboard() {
   const handleBulkExport = () => {
     if (selectedRows.length === 0) return;
 
-    console.log('Bulk exporting:', selectedRows);
     // TODO: Implement bulk export functionality
 
     success(`Exporting ${selectedRows.length} item${selectedRows.length > 1 ? 's' : ''}...`);
@@ -186,9 +183,6 @@ export default function SystemAdminDashboard() {
   // Transform dashboard data for UI components
   const getTopCardSections = () => {
     if (!dashboardData) return [];
-
-    // Debug: Log the dashboard data structure
-    console.log('🔍 Dashboard data structure:', JSON.stringify(dashboardData, null, 2));
 
     // Helper function to safely extract values from the data structure
     const extractValue = (data: any) => {

@@ -1,0 +1,280 @@
+@baseUrl = https://kaytop-production.up.railway.app
+
+### ========================================
+### CUSTOMER ENDPOINTS INVESTIGATION
+### ========================================
+### 
+### PURPOSE: Investigate customer page data issues where credit officers 
+###          appear in customer tables instead of actual customers
+### 
+### PROBLEM: Both System Admin and HQ Manager customer pages show credit 
+###          officers in the customer table, suggesting either:
+###          1. Role field is not properly set in backend
+###          2. Client-side filtering logic is incorrect
+###          3. Wrong endpoint is being used for customers
+### 
+### INVESTIGATION PLAN:
+### 1. Test authentication with both admin roles
+### 2. Investigate /admin/users endpoint response structure
+### 3. Check role field values and distribution
+### 4. Test potential customer-specific endpoints
+### 5. Compare with /admin/staff/my-staff endpoint
+### 6. Analyze user data structure for proper customer identification
+### ========================================
+
+### Step 1: Login as System Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@kaytop.com",
+  "password": "Admin123"
+}
+
+### Step 2: Login as HQ Manager
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "adminhq@mailsac.com",
+  "password": "12345678"
+}
+
+### Variables (Update these with tokens from login responses above)
+@systemAdminToken = REPLACE_WITH_SYSTEM_ADMIN_TOKEN_FROM_STEP_1
+@hqManagerToken = REPLACE_WITH_HQ_MANAGER_TOKEN_FROM_STEP_2
+
+### ========================================
+### SECTION A: INVESTIGATE /admin/users ENDPOINT
+### ========================================
+
+### Step 3: Test /admin/users with System Admin (current customer page endpoint)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 4: Test /admin/users with HQ Manager (current customer page endpoint)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### Step 5: Test /admin/users with pagination (as used in customer pages)
+GET {{baseUrl}}/admin/users?page=1&limit=100
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 6: Test /admin/users with larger limit (to get more data for analysis)
+GET {{baseUrl}}/admin/users?page=1&limit=500
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION B: INVESTIGATE POTENTIAL CUSTOMER-SPECIFIC ENDPOINTS
+### ========================================
+
+### Step 7: Test if there's a dedicated customers endpoint
+GET {{baseUrl}}/admin/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 8: Test customers endpoint with HQ Manager
+GET {{baseUrl}}/admin/customers
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### Step 9: Test if there's a users endpoint with role filtering
+GET {{baseUrl}}/admin/users?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 10: Test role filtering with different role values
+GET {{baseUrl}}/admin/users?role=credit_officer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 11: Test with user type parameter
+GET {{baseUrl}}/admin/users?userType=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 12: Test with type parameter
+GET {{baseUrl}}/admin/users?type=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION C: INVESTIGATE USER REGISTRATION ENDPOINTS
+### ========================================
+
+### Step 13: Test if there's a separate user registration endpoint for customers
+GET {{baseUrl}}/users
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 14: Test customer-specific user endpoint
+GET {{baseUrl}}/users/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 15: Test if there's a public users endpoint (customers who registered)
+GET {{baseUrl}}/public/users
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION D: COMPARE WITH STAFF ENDPOINT
+### ========================================
+
+### Step 16: Test /admin/staff/my-staff (known to have proper roles)
+GET {{baseUrl}}/admin/staff/my-staff
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 17: Test /admin/staff/my-staff with HQ Manager
+GET {{baseUrl}}/admin/staff/my-staff
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### Step 18: Test if there's a general staff endpoint
+GET {{baseUrl}}/admin/staff
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION E: INVESTIGATE SPECIFIC USER RECORDS
+### ========================================
+
+### Step 19: Get specific user by ID to analyze structure (use ID from Step 3/4)
+GET {{baseUrl}}/admin/users/1
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 20: Get another user by ID
+GET {{baseUrl}}/admin/users/2
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 21: Get user ID 40 (HQ Manager from previous tests)
+GET {{baseUrl}}/admin/users/40
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 22: Get user ID 8 (mentioned in previous tests)
+GET {{baseUrl}}/admin/users/8
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION F: TEST ALTERNATIVE ENDPOINTS
+### ========================================
+
+### Step 23: Test dashboard customers endpoint
+GET {{baseUrl}}/dashboard/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 24: Test if there's a customer management endpoint
+GET {{baseUrl}}/customer-management
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 25: Test loans endpoint to see customer data structure
+GET {{baseUrl}}/loans/all
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 26: Test savings endpoint to see customer data structure
+GET {{baseUrl}}/savings/all
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION G: TEST SEARCH AND FILTERING
+### ========================================
+
+### Step 27: Test search endpoint with customer filter
+GET {{baseUrl}}/admin/users/search?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 28: Test search endpoint with query
+GET {{baseUrl}}/admin/users/search?q=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 29: Test if there's a filter endpoint
+GET {{baseUrl}}/admin/users/filter?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### ANALYSIS CHECKLIST
+### ========================================
+### 
+### After running these tests, analyze the following:
+### 
+### 1. ROLE FIELD ANALYSIS:
+###    - What values appear in the 'role' field?
+###    - Are there users with role='customer'?
+###    - What's the distribution of roles?
+###    - Are role values consistent (customer vs Customer vs CUSTOMER)?
+### 
+### 2. USER TYPE IDENTIFICATION:
+###    - How can we distinguish customers from staff?
+###    - Is there a userType, type, or category field?
+###    - Are there different user creation flows?
+### 
+### 3. ENDPOINT COMPARISON:
+###    - Does /admin/users return different data than /admin/staff/my-staff?
+###    - Are there dedicated customer endpoints?
+###    - Do any endpoints support role-based filtering?
+### 
+### 4. DATA STRUCTURE:
+###    - What fields are available for customer identification?
+###    - Are there customer-specific fields (like loan history, savings)?
+###    - How do we identify actual customers vs staff members?
+### 
+### 5. FILTERING LOGIC:
+###    - Should we filter by role='customer'?
+###    - Should we exclude staff roles instead?
+###    - Is there a better way to identify customers?
+### 
+### 6. BACKEND CAPABILITIES:
+###    - Does the backend support role-based filtering?
+###    - Are there pagination issues with large datasets?
+###    - What's the most efficient way to get customer data?
+### 
+### ========================================
+### EXPECTED OUTCOMES
+### ========================================
+### 
+### SUCCESS INDICATORS:
+### ✅ Find users with role='customer' in /admin/users
+### ✅ Discover dedicated customer endpoints
+### ✅ Identify proper customer filtering logic
+### ✅ Understand role field values and distribution
+### 
+### PROBLEM INDICATORS:
+### ❌ No users with role='customer' found
+### ❌ All users have staff roles (credit_officer, etc.)
+### ❌ No dedicated customer endpoints exist
+### ❌ Role field is inconsistent or missing
+### 
+### NEXT STEPS BASED ON RESULTS:
+### 
+### If customers exist with proper roles:
+### - Update frontend filtering logic
+### - Improve role matching (case sensitivity, variations)
+### - Implement proper customer identification
+### 
+### If no customers exist:
+### - Investigate customer registration flow
+### - Check if customers are stored elsewhere
+### - Verify if test data includes actual customers
+### 
+### If dedicated customer endpoints exist:
+### - Update customer pages to use correct endpoints
+### - Implement proper pagination and filtering
+### - Optimize data fetching logic
+### 
+### ========================================

@@ -188,31 +188,31 @@ export default function CreditOfficerDetailsPage({ params }: { params: Promise<{
       // Use statistics from the service
       const stats: StatSection[] = [
         {
-          label: 'Branch Customers',
+          label: 'All Customers',
           value: creditOfficerData.statistics.totalCustomers,
           change: 0,
-          changeLabel: creditOfficerData.officer.branch ? `Customers in ${creditOfficerData.officer.branch} branch` : 'Total customers',
+          changeLabel: 'Customers managed by this credit officer',
           isCurrency: false,
         },
         {
           label: 'Active Loans',
           value: creditOfficerData.statistics.activeLoans,
           change: 0,
-          changeLabel: 'Currently active loans',
+          changeLabel: 'Currently active loans managed',
           isCurrency: false,
         },
         {
           label: 'Loans Processed',
           value: creditOfficerData.statistics.totalLoansProcessed,
           change: 0,
-          changeLabel: 'Total loans processed',
+          changeLabel: 'Total loans processed by this officer',
           isCurrency: false,
         },
         {
-          label: 'Total Loan Amount',
+          label: 'Loan Amount',
           value: creditOfficerData.statistics.totalLoanAmount,
           change: 0,
-          changeLabel: 'Total amount disbursed',
+          changeLabel: 'Total amount of loans managed',
           isCurrency: true
         },
       ];

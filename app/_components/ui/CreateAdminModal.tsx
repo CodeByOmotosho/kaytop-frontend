@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useToast } from '@/app/hooks/useToast';
 import { ROLE_CONFIG, PERMISSION_CATEGORIES, UserRoleType } from '@/lib/roleConfig';
+import { UserService } from '@/app/services/userService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/_components/ui/Select';
 
 // Types and Interfaces
 interface CreateAdminModalProps {
@@ -66,6 +68,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
   const { success, error } = useToast();
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // State and branch data
+  const [states, setStates] = useState<string[]>([]);
+  const [branches, setBranches] = useState<string[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -247,6 +253,26 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
       }, 100);
     }
   }, [isOpen]);
+
+  // Load states and branches when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const loadData = async () => {
+        try {
+          const [statesData, branchesData] = await Promise.all([
+            UserService.getStates(),
+            UserService.getBranches()
+          ]);
+          setStates(statesData);
+          setBranches(branchesData);
+        } catch (err) {
+          console.error('Failed to load states and branches:', err);
+          error('Failed to load states and branches. Please try again.');
+        }
+      };
+      loadData();
+    }
+  }, [isOpen, error]);
 
   // Escape key handler
   useEffect(() => {
@@ -804,26 +830,35 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                 >
                   Branch
                 </label>
-                <input
-                  type="text"
+                <Select
                   value={formData.branch}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, branch: e.target.value }));
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, branch: value }));
                     checkForChanges();
                   }}
-                  className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
-                  style={{
-                    height: '44px',
-                    padding: '10px 14px',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    lineHeight: '24px',
-                    fontFamily: 'Open Sauce Sans, sans-serif',
-                    backgroundColor: '#FFFFFF'
-                  }}
-                  placeholder="Enter branch name"
-                  required
-                />
+                >
+                  <SelectTrigger
+                    className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
+                    style={{
+                      height: '44px',
+                      padding: '10px 14px',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      lineHeight: '24px',
+                      fontFamily: 'Open Sauce Sans, sans-serif',
+                      backgroundColor: '#FFFFFF'
+                    }}
+                  >
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -841,26 +876,35 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
               >
                 State
               </label>
-              <input
-                type="text"
+              <Select
                 value={formData.state}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, state: e.target.value }));
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, state: value }));
                   checkForChanges();
                 }}
-                className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
-                style={{
-                  height: '44px',
-                  padding: '10px 14px',
-                  fontSize: '16px',
-                  fontWeight: 400,
-                  lineHeight: '24px',
-                  fontFamily: 'Open Sauce Sans, sans-serif',
-                  backgroundColor: '#FFFFFF'
-                }}
-                placeholder="Enter state/region"
-                required
-              />
+              >
+                <SelectTrigger
+                  className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
+                  style={{
+                    height: '44px',
+                    padding: '10px 14px',
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    lineHeight: '24px',
+                    fontFamily: 'Open Sauce Sans, sans-serif',
+                    backgroundColor: '#FFFFFF'
+                  }}
+                >
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

@@ -23,6 +23,7 @@ const hqMenuItems: MenuItem[] = [
     label: "Dashboard",
     icon: "/dashboard.svg",
     link: "/dashboard/hq",
+    exact: true,
   },
   {
     label: "Branches",

@@ -29,6 +29,7 @@ export class DataTransformers {
   /**
    * Transform backend user data to frontend User interface
    * Updated to handle actual backend response structure from /admin/users and /admin/staff/my-staff endpoints
+   * CRITICAL: No longer assigns default customer roles to prevent false positives
    */
   static transformUser(backendUser: UserApiData): User {
     console.log('🔄 Transforming user data:', {
@@ -42,8 +43,12 @@ export class DataTransformers {
       allFields: Object.keys(backendUser || {})
     });
 
-    // If user has a valid role from backend (likely from /admin/staff/my-staff), use it directly
-    const hasValidRole = backendUser.role && backendUser.role !== 'undefined' && backendUser.role !== null;
+    // CRITICAL: Only use backend role if it exists and is valid
+    // Do NOT assign default roles to prevent false customer assignments
+    const hasValidRole = backendUser.role && 
+                        backendUser.role !== 'undefined' && 
+                        backendUser.role !== null && 
+                        backendUser.role.trim() !== '';
     
     const transformedUser = {
       id: backendUser.id?.toString() || backendUser.userId?.toString() || '',
@@ -51,11 +56,17 @@ export class DataTransformers {
       lastName: backendUser.lastName || backendUser.last_name || '',
       profilePicture: backendUser.profilePicture || backendUser.profile_picture || undefined,
       email: backendUser.email || '',
-      mobileNumber: backendUser.mobileNumber || backendUser.mobile_number || backendUser.phone || '',
-      // Use backend role if valid, otherwise use intelligent detection
+      mobileNumber: backendUser.mobileNumber || 
+                   backendUser.mobile_number || 
+                   backendUser.phone || 
+                   backendUser.phoneNumber ||
+                   backendUser.contactNumber ||
+                   '',
+      // CRITICAL: Only use backend role if valid, otherwise keep as undefined
+      // This prevents false customer role assignments
       role: hasValidRole ? 
         DataTransformers.normalizeBackendRole(backendUser.role) : 
-        DataTransformers.normalizeRole(backendUser.role, backendUser),
+        undefined as any, // Keep undefined to prevent false role assignments
       branch: backendUser.branch || backendUser.branchName || '',
       state: backendUser.state || '',
       // Handle both verificationStatus and accountStatus fields
@@ -73,7 +84,7 @@ export class DataTransformers {
       email: transformedUser.email,
       mobileNumber: transformedUser.mobileNumber,
       detectedRole: transformedUser.role,
-      roleSource: hasValidRole ? 'backend' : 'detected'
+      roleSource: hasValidRole ? 'backend' : 'undefined-no-assignment'
     });
 
     return transformedUser;

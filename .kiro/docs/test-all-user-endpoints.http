@@ -1,0 +1,194 @@
+@baseUrl = https://kaytop-production.up.railway.app
+@systemAdminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGtheXRvcC5jb20iLCJzdWIiOjEsInJvbGUiOiJzeXN0ZW1fYWRtaW4iLCJpYXQiOjE3Mzc2MzE4NzV9.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8
+
+### =================================================================
+### COMPREHENSIVE USER ENDPOINT TESTING
+### =================================================================
+
+### 1. GET USER BY ID - Test to see current user structure
+GET {{baseUrl}}/admin/users/57
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 2. TEST DEDICATED ROLE UPDATE ENDPOINT
+PATCH {{baseUrl}}/admin/users/57/update-role
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "role": "hq_manager"
+}
+
+###
+
+### 3. TEST GENERAL USER UPDATE ENDPOINT WITH ROLE
+PATCH {{baseUrl}}/admin/users/57
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "role": "credit_officer"
+}
+
+###
+
+### 4. TEST GENERAL USER UPDATE ENDPOINT WITH PROFILE DATA
+PATCH {{baseUrl}}/admin/users/57
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "lastName": "User Updated",
+  "email": "testuser.updated@example.com"
+}
+
+###
+
+### 5. TEST GENERAL USER UPDATE ENDPOINT WITH MIXED DATA
+PATCH {{baseUrl}}/admin/users/57
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Mixed",
+  "lastName": "Update Test",
+  "email": "mixed.update@example.com",
+  "role": "branch_manager"
+}
+
+###
+
+### 6. TEST SELF UPDATE ENDPOINT
+PATCH {{baseUrl}}/users/me
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "System",
+  "lastName": "Admin Updated"
+}
+
+###
+
+### 7. TEST CREATE STAFF ENDPOINT (to see response structure)
+POST {{baseUrl}}/admin/staff/create
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "lastName": "Staff",
+  "email": "test.staff.endpoint@example.com",
+  "mobileNumber": "1234567890",
+  "password": "TestPassword123!",
+  "role": "credit_officer",
+  "branch": "Test Branch",
+  "state": "Lagos"
+}
+
+###
+
+### 8. TEST GET ALL USERS (to see list response structure)
+GET {{baseUrl}}/admin/users?page=1&limit=5
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 9. TEST DELETE USER (if we have a test user)
+# DELETE {{baseUrl}}/admin/users/TEST_USER_ID
+# Authorization: Bearer {{systemAdminToken}}
+# Content-Type: application/json
+
+###
+
+### =================================================================
+### BRANCH MANAGEMENT ENDPOINTS
+### =================================================================
+
+### 10. TEST GET BRANCHES
+GET {{baseUrl}}/admin/branches
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 11. TEST UPDATE BRANCH (if we have a branch ID)
+# PATCH {{baseUrl}}/admin/branches/1
+# Authorization: Bearer {{systemAdminToken}}
+# Content-Type: application/json
+# 
+# {
+#   "name": "Updated Branch Name",
+#   "location": "Updated Location"
+# }
+
+###
+
+### =================================================================
+### SYSTEM SETTINGS ENDPOINTS
+### =================================================================
+
+### 12. TEST GET SYSTEM SETTINGS
+GET {{baseUrl}}/admin/system-settings
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 13. TEST UPDATE SYSTEM SETTINGS
+PUT {{baseUrl}}/admin/system-settings
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+{
+  "interestRate": 15,
+  "sessionTimeout": 3600
+}
+
+###
+
+### =================================================================
+### ACTIVITY LOGS ENDPOINTS
+### =================================================================
+
+### 14. TEST GET ACTIVITY LOGS
+GET {{baseUrl}}/admin/activity-logs?page=1&limit=5
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### =================================================================
+### PROFILE ENDPOINTS
+### =================================================================
+
+### 15. TEST GET ADMIN PROFILE
+GET {{baseUrl}}/admin/profile
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### 16. TEST GET USER PROFILE (ME)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+###
+
+### =================================================================
+### NOTES FOR TESTING:
+### =================================================================
+# 1. Run each endpoint individually and capture the response
+# 2. Note the exact response structure for each endpoint
+# 3. Pay attention to:
+#    - Response wrapper format (success/data vs direct)
+#    - Field names (firstName vs name, mobileNumber vs phone)
+#    - Data types (string vs number for IDs)
+#    - Error response formats
+# 4. Document which endpoints return 404 vs which work
+# 5. Test with different user IDs to see consistency

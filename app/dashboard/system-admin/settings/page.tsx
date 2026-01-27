@@ -560,21 +560,9 @@ export default function SettingsPage() {
         updatedUserData.name !== originalUser.name ||
         updatedUserData.email !== originalUser.email;
 
-      console.log('🔄 Processing user updates:', {
-        userId: updatedUserData.id,
-        roleChanged,
-        profileChanged,
-        newRole: updatedUserData.role,
-        originalRole: originalUser.role
-      });
-
       // Handle role change using dedicated endpoint
       if (roleChanged) {
         const backendRole = mapFrontendToBackendRole(updatedUserData.role);
-        console.log('🎯 Updating user role via dedicated endpoint:', {
-          userId: updatedUserData.id,
-          role: backendRole
-        });
         
         await updateUserRoleMutation.mutateAsync({ 
           id: updatedUserData.id, 
@@ -594,11 +582,6 @@ export default function SettingsPage() {
           lastName,
           email: updatedUserData.email
         };
-
-        console.log('🎯 Updating user profile via general endpoint:', {
-          userId: updatedUserData.id,
-          data: profileUpdateData
-        });
 
         await updateUserMutation.mutateAsync({
           id: updatedUserData.id,
