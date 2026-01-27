@@ -5,6 +5,7 @@ import { systemSettingsService } from "@/lib/services/systemSettings";
 import { userProfileService } from "@/lib/services/userProfile";
 import { activityLogsService } from "@/lib/services/activityLogs";
 import { userService } from "@/lib/services/users";
+import { unifiedUserService } from "@/lib/services/unifiedUser";
 import type {
   SystemSettings,
   ActivityLog,
@@ -112,12 +113,95 @@ export function useSystemSettings() {
 }
 
 /**
- * Hook for fetching all users with filters
+ * Hook for fetching all users with filters - uses unifiedUserService to get proper role information
  */
 export function useUsers(filters?: Record<string, unknown>) {
   return useQuery({
     queryKey: ["users", filters],
-    queryFn: () => userService.getAllUsers(filters),
+    queryFn: async () => {
+      console.log('🔄 [useUsers] Query executing with filters:', filters);
+      
+      try {
+        // Use unifiedUserService.getUsers() which fetches from /admin/staff/my-staff 
+        // This endpoint returns proper role information unlike /admin/users
+        const result = await unifiedUserService.getUsers(filters);
+        console.log('✅ [useUsers] Query successful:', {
+          dataLength: result.data?.length || 0,
+          pagination: result.pagination,
+          firstUser: result.data?.[0]
+        });
+        return result;
+      } catch (error: any) {
+        console.error('❌ [useUsers] Query failed:', error);
+        console.error('❌ [useUsers] Error details:', {
+          message: error?.message,
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          data: error?.response?.data
+        });
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        console.log('🚫 [useUsers] Not retrying auth error:', error?.response?.status);
+        return false;
+      }
+      
+      // Don't retry on 404 errors (endpoint doesn't exist)
+      if (error?.response?.status === 404) {
+        console.log('🚫 [useUsers] Not retrying 404 error');
+        return false;
+      }
+
+      // Retry up to 2 times for other errors
+      console.log(`🔄 [useUsers] Retrying (${failureCount}/2):`, error?.message);
+      return failureCount < 2;
+    },
+  });
+}
+
+/**
+ * Hook for fetching admin/staff users only (for Permissions and Users tab)
+ * Uses the /admin/staff/my-staff endpoint which should return only admin users
+ */
+export function useAdminStaff() {
+  return useQuery({
+    queryKey: ["admin-staff"],
+    queryFn: async () => {
+      try {
+        // Use the staff endpoint which should return only admin users
+        const staffUsers = await userService.getMyStaff();
+        
+        // Transform to match the expected format
+        if (Array.isArray(staffUsers)) {
+          return {
+            data: staffUsers,
+            pagination: {
+              page: 1,
+              limit: staffUsers.length,
+              total: staffUsers.length,
+              totalPages: 1
+            }
+          };
+        }
+        
+        return {
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 0,
+            total: 0,
+            totalPages: 0
+          }
+        };
+      } catch (error) {
+        console.error('Failed to fetch admin staff:', error);
+        throw error;
+      }
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });
@@ -133,6 +217,7 @@ export function useUpdateUser() {
     mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => userService.updateUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-staff"] });
     },
   });
 }
@@ -147,6 +232,7 @@ export function useUpdateUserRole() {
     mutationFn: ({ id, role }: { id: string; role: string }) => userService.updateUserRole(id, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-staff"] });
     },
   });
 }
@@ -161,6 +247,7 @@ export function useCreateStaff() {
     mutationFn: (data: Record<string, unknown>) => userService.createStaffUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-staff"] });
     },
   });
 }

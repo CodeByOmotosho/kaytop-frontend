@@ -52,40 +52,55 @@ export const PERMISSION_CATEGORIES = {
  * when backend doesn't provide role field
  */
 export const mapBackendToFrontendRole = (backendRole: string, email?: string, name?: string): UserRoleType => {
+    console.log('🔍 Role mapping input:', { backendRole, email, name }); // Debug log
+    
     // If backend provides a valid role, use it
-    if (backendRole && backendRole !== 'undefined') {
-        if (backendRole === 'branch_manager') return 'BM';
-        if (backendRole === 'account_manager') return 'HQ'; // Legacy map to HQ
-        if (backendRole === 'credit_officer') return 'CO';
-        if (backendRole === 'hq_manager') return 'HQ';
-        if (backendRole === 'system_admin') return 'ADMIN';
+    if (backendRole && backendRole !== 'undefined' && backendRole !== 'null') {
+        const normalizedRole = backendRole.toLowerCase().trim();
+        
+        if (normalizedRole === 'branch_manager' || normalizedRole === 'bm') return 'BM';
+        if (normalizedRole === 'account_manager' || normalizedRole === 'am') return 'HQ'; // Legacy map to HQ
+        if (normalizedRole === 'credit_officer' || normalizedRole === 'co') return 'CO';
+        if (normalizedRole === 'hq_manager' || normalizedRole === 'hq') return 'HQ';
+        if (normalizedRole === 'system_admin' || normalizedRole === 'admin') return 'ADMIN';
+        
+        // Log unrecognized roles
+        console.warn('⚠️ Unrecognized backend role:', backendRole);
     }
     
     // Fallback: Infer role from email patterns when backend role is missing
     if (email) {
+        const emailLower = email.toLowerCase();
+        const nameLower = name?.toLowerCase() || '';
+        
         // System Admin patterns
-        if (email.includes('admin@kaytop.com') || email.includes('system') || name?.toLowerCase().includes('system administrator')) {
+        if (emailLower.includes('admin@kaytop.com') || emailLower.includes('system') || nameLower.includes('system administrator')) {
+            console.log('🔍 Mapped to ADMIN via email pattern');
             return 'ADMIN';
         }
         
         // Branch Manager patterns
-        if (email.includes('bm@') || email.includes('branch') || email.includes('bmadmin') || 
-            email.includes('_branch@') || name?.toLowerCase().includes('branch manager')) {
+        if (emailLower.includes('bm@') || emailLower.includes('branch') || emailLower.includes('bmadmin') || 
+            emailLower.includes('_branch@') || nameLower.includes('branch manager')) {
+            console.log('🔍 Mapped to BM via email pattern');
             return 'BM';
         }
         
         // HQ Manager patterns
-        if (email.includes('hq') || email.includes('adminhq') || name?.toLowerCase().includes('hq manager')) {
+        if (emailLower.includes('hq') || emailLower.includes('adminhq') || nameLower.includes('hq manager')) {
+            console.log('🔍 Mapped to HQ via email pattern');
             return 'HQ';
         }
         
         // Credit Officer patterns (less specific, so check last)
-        if (email.includes('credit') || email.includes('officer') || name?.toLowerCase().includes('credit officer')) {
+        if (emailLower.includes('credit') || emailLower.includes('officer') || nameLower.includes('credit officer')) {
+            console.log('🔍 Mapped to CO via email pattern');
             return 'CO';
         }
     }
     
-    // Default fallback
+    // Default fallback - but log this as it might indicate a problem
+    console.warn('⚠️ Role mapping fell back to default HQ for:', { backendRole, email, name });
     return 'HQ';
 };
 

@@ -259,15 +259,40 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
     if (isOpen) {
       const loadData = async () => {
         try {
-          const [statesData, branchesData] = await Promise.all([
-            UserService.getStates(),
+          // Get complete Nigerian states list (fallback to comprehensive list if API is limited)
+          const completeNigerianStates = [
+            'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+            'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+            'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+            'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+            'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+          ];
+
+          const [apiStatesData, branchesData] = await Promise.all([
+            UserService.getStates().catch(() => []), // Don't fail if API is down
             UserService.getBranches()
           ]);
-          setStates(statesData);
+
+          // Use API states if available and comprehensive, otherwise use complete list
+          const finalStates = apiStatesData.length >= 30 ? apiStatesData : completeNigerianStates;
+          
+          console.log(`📊 States loaded: ${finalStates.length} (API returned: ${apiStatesData.length})`);
+          
+          setStates(finalStates);
           setBranches(branchesData);
         } catch (err) {
           console.error('Failed to load states and branches:', err);
-          error('Failed to load states and branches. Please try again.');
+          // Fallback to complete Nigerian states list
+          const fallbackStates = [
+            'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+            'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+            'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+            'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+            'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+          ];
+          setStates(fallbackStates);
+          setBranches([]);
+          error('Failed to load data from server. Using default Nigerian states list.');
         }
       };
       loadData();
@@ -385,9 +410,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
       {/* Modal Container */}
       <div
         ref={modalRef}
-        className="bg-white rounded-[12px] shadow-2xl max-h-[80vh] overflow-y-auto mx-4 w-full max-w-[688px] sm:mx-0 sm:w-[688px]"
+        className="bg-white rounded-[12px] shadow-2xl max-h-[80vh] overflow-y-auto mx-4 w-full max-w-[688px] sm:mx-0 sm:w-[688px] relative"
         style={{
-          boxShadow: '0px 20px 24px -4px rgba(16, 24, 40, 0.08)'
+          boxShadow: '0px 20px 24px -4px rgba(16, 24, 40, 0.08)',
+          zIndex: 1001
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -728,7 +754,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                   backgroundColor: '#FFFFFF'
                 }}
-                placeholder="e.g. Linear"
+                placeholder="e.g. john.doe@company.com"
                 aria-invalid={!validation.email.isValid}
                 aria-describedby={!validation.email.isValid ? 'email-error' : undefined}
               />
@@ -791,7 +817,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                 aria-invalid={!validation.role.isValid}
                 aria-describedby={!validation.role.isValid ? 'role-error' : undefined}
               >
-                <option value="">e.g. Linear</option>
+                <option value="">Select a role</option>
                 {Object.entries(ROLE_CONFIG).map(([key, config]) => (
                   <option key={key} value={key}>
                     {config.label} ({key})
@@ -879,8 +905,12 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
               <Select
                 value={formData.state}
                 onValueChange={(value) => {
+                  console.log('State selected:', value); // Debug log
                   setFormData(prev => ({ ...prev, state: value }));
                   checkForChanges();
+                }}
+                onOpenChange={(open) => {
+                  console.log('State dropdown open:', open); // Debug log
                 }}
               >
                 <SelectTrigger
@@ -897,12 +927,26 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                 >
                   <SelectValue placeholder="Select state" />
                 </SelectTrigger>
-                <SelectContent>
-                  {states.map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state}
+                <SelectContent 
+                  className="z-[1100] bg-white border border-gray-200 shadow-lg"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #D0D5DD',
+                    borderRadius: '8px',
+                    boxShadow: '0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03)'
+                  }}
+                >
+                  {states.length === 0 ? (
+                    <SelectItem value="loading" disabled>
+                      Loading states...
                     </SelectItem>
-                  ))}
+                  ) : (
+                    states.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
