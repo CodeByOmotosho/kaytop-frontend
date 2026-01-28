@@ -294,7 +294,9 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
     });
     
     const customers = usersData.filter(user => {
-      const isCustomer = (user.role as string) === 'customer';
+      const isCustomer = (user.role as string) === 'user' || 
+                        (user.role as string) === 'customer' ||
+                        (user.role as string) === 'client';
       if (isCustomer) {
         console.log('✅ Found customer:', user);
       }

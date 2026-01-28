@@ -33,13 +33,51 @@ export default function ActiveLoanCard({
   // State for modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Calculate progress percentage
-  const progressPercentage = ((amount - outstanding) / amount) * 100;
+  // Check if this is a valid loan (customer has an active loan)
+  const hasValidLoan = amount > 0 && loanId !== 'N/A';
+
+  // Calculate progress percentage - handle division by zero
+  const progressPercentage = hasValidLoan && amount > 0 ? ((amount - outstanding) / amount) * 100 : 0;
 
   // Format currency
   const formatCurrency = (value: number) => {
     return `₦${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+
+  // If customer has no loans, show empty state
+  if (!hasValidLoan) {
+    return (
+      <div
+        className="rounded-xl"
+        style={{
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #EAECF0',
+          borderRadius: '12px',
+          padding: '24px',
+          maxWidth: '1126px'
+        }}
+      >
+        {/* Title */}
+        <h3
+          className="text-lg font-semibold mb-6"
+          style={{ color: '#101828' }}
+        >
+          Active Loan
+        </h3>
+
+        {/* No Loan State */}
+        <div className="text-center py-12">
+          <div className="mb-4">
+            <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+          </div>
+          <h4 className="text-lg font-medium text-[#101828] mb-2">No Active Loans</h4>
+          <p className="text-sm text-[#667085]">This customer currently has no active loans</p>
+        </div>
+      </div>
+    );
+  }
 
   const loanFields = [
     { label: 'Loan ID', value: loanId },

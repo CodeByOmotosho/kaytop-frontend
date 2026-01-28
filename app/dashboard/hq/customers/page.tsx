@@ -11,6 +11,7 @@ import { useToast } from '@/app/hooks/useToast';
 import Pagination from '@/app/_components/ui/Pagination';
 import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
 import { PAGINATION_LIMIT } from '@/lib/config';
+import { enhancedUserService, EnhancedUser } from '@/lib/services/enhancedUserService';
 import { unifiedUserService } from '@/lib/services/unifiedUser';
 import { dashboardService } from '@/lib/services/dashboard';
 import { extractValue } from '@/lib/utils/dataExtraction';
@@ -31,7 +32,7 @@ interface Customer {
 }
 
 // Transform User to Customer format (matching CustomersTable interface)
-const transformUserToCustomer = (user: User): Customer => ({
+const transformUserToCustomer = (user: any): Customer => ({
   id: user.id.toString(),
   customerId: user.id.toString(),
   name: `${user.firstName} ${user.lastName}`,
@@ -71,108 +72,101 @@ export default function CustomersPage() {
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Fetch users using the /admin/users endpoint with client-side role filtering
+  // Fetch customers using the enhanced user service with role information
   const fetchCustomersData = async (page: number = 1, filters?: CustomerAdvancedFilters) => {
     try {
       setIsLoading(true);
       setApiError(null);
 
-      // Since /admin/users doesn't support role filtering, we need to fetch more data
-      // and filter client-side. We'll fetch a larger page size to account for filtering.
-      const fetchLimit = itemsPerPage * 5; // Fetch 5x more to account for role filtering
+      console.log('🎯 HQ Manager - Fetching customers using Enhanced User Service...');
 
-      const usersResponse = await unifiedUserService.getAllUsers({
-        page: 1, // Always fetch from page 1 since we're filtering client-side
-        limit: Math.max(fetchLimit, 100), // Minimum 100 to ensure we get enough customers
+      // Use the enhanced user service to get customers with role information
+      const customersResponse = await enhancedUserService.getCustomers({
+        page,
+        limit: itemsPerPage,
         ...(filters?.branch && { branch: filters.branch }),
         ...(filters?.region && { state: filters.region }),
+        ...(filters?.status && {
+          verificationStatus: filters.status === 'Active' ? 'verified' : 'pending'
+        }),
       });
 
-      console.log('🔍 HQ Manager - Fetched users response from /admin/users:', usersResponse);
-      console.log(`📊 Total users fetched: ${usersResponse.data.length}`);
+      console.log('✅ Enhanced User Service Response:', customersResponse);
+      console.log(`📊 Found ${customersResponse.data.length} customers with role information`);
 
-      // Debug: Log role distribution
+      // Show role distribution for debugging
       const roleDistribution: Record<string, number> = {};
-      usersResponse.data.forEach(user => {
+      customersResponse.data.forEach(user => {
         const role = user.role || 'undefined';
         roleDistribution[role] = (roleDistribution[role] || 0) + 1;
       });
-      console.log('👥 Role distribution:', roleDistribution);
-
-      // Client-side filtering: Only show users with role 'customer'
-      const customerUsers = usersResponse.data.filter(user => {
-        const isCustomer = user.role === 'customer';
-        if (isCustomer) {
-          console.log('✅ Found customer user:', user);
-        }
-        return isCustomer;
-      });
-
-      console.log(`🎯 Filtered customers: ${customerUsers.length}`);
+      console.log('🎭 Customer role distribution:', roleDistribution);
 
       // Apply additional frontend filters if needed
-      let filteredCustomers = customerUsers;
+      let filteredCustomers = customersResponse.data;
 
-      if (filters?.status) {
-        filteredCustomers = filteredCustomers.filter(user => {
-          const status = user.verificationStatus === 'verified' ? 'Active' : 'Scheduled';
-          return status.toLowerCase() === filters.status.toLowerCase();
-        });
-      }
-
-      // Apply time period and date range filters
+      // Apply time period and date range filters (client-side for now)
       if (selectedPeriod || dateRange) {
+        const beforeDateFilter = filteredCustomers.length;
         const { filterByTimePeriod, filterByDateRange } = await import('@/lib/utils/dateFilters');
 
         if (selectedPeriod && selectedPeriod !== 'custom') {
           // Apply preset time period filter
-          filteredCustomers = filterByTimePeriod(filteredCustomers, 'createdAt', selectedPeriod);
+          filteredCustomers = filterByTimePeriod(filteredCustomers as any, 'createdAt', selectedPeriod) as unknown as EnhancedUser[];
         } else if (dateRange) {
           // Apply custom date range filter
-          filteredCustomers = filterByDateRange(filteredCustomers, 'createdAt', dateRange);
+          filteredCustomers = filterByDateRange(filteredCustomers as any, 'createdAt', dateRange) as unknown as EnhancedUser[];
         }
+        console.log(`🔍 After date filter: ${filteredCustomers.length} (was ${beforeDateFilter})`);
       }
 
+      console.log(`🎯 Final filtered customers: ${filteredCustomers.length}`);
+
       // Transform to customer format
-      const transformedCustomers = filteredCustomers.map(transformUserToCustomer);
+      const transformedCustomers = (filteredCustomers as any[]).map(transformUserToCustomer);
 
-      // Client-side pagination
-      const totalCustomers = transformedCustomers.length;
-      const totalPages = Math.ceil(totalCustomers / itemsPerPage);
-      const startIndex = (page - 1) * itemsPerPage;
-      const paginatedCustomers = transformedCustomers.slice(startIndex, startIndex + itemsPerPage);
+      setCustomers(transformedCustomers);
+      setTotalCustomers(customersResponse.pagination.total);
+      setTotalPages(customersResponse.pagination.totalPages);
 
-      setCustomers(paginatedCustomers);
-      setTotalCustomers(totalCustomers);
-      setTotalPages(totalPages);
+      console.log(`🎯 Customers displayed: ${transformedCustomers.length}`);
+      console.log(`📊 Total customers in system: ${customersResponse.pagination.total}`);
 
-      console.log(`🎯 Final customers displayed: ${paginatedCustomers.length}`);
-      console.log(`📊 Total customers in system: ${totalCustomers}`);
+      // Show sample customers for debugging
+      if (transformedCustomers.length > 0) {
+        console.log(`👥 Sample customers:`,
+          transformedCustomers.slice(0, 3).map(customer => ({
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            status: customer.status
+          }))
+        );
+      }
 
-      // Fetch dashboard statistics for active loans (keep this from dashboard)
+      // Fetch dashboard statistics for active loans
       const dashboardData = await dashboardService.getKPIs();
 
-      // Use client-side total customer count
       const stats: StatSection[] = [
         {
           label: 'Total Customers',
-          value: totalCustomers, // Use client-side filtered total
+          value: customersResponse.pagination.total,
           change: 0, // TODO: Calculate actual change when we have historical data
-          changeLabel: 'No change data available',
+          changeLabel: 'Customers with role information',
           isCurrency: false,
         },
         {
           label: 'Active Loans',
-          value: extractValue(dashboardData.activeLoans.value, 0),
-          change: extractValue(dashboardData.activeLoans.change, 0),
-          changeLabel: extractValue(dashboardData.activeLoans.changeLabel, 'No change this month'),
-          isCurrency: extractValue(dashboardData.activeLoans.isCurrency, false),
+          value: extractValue(dashboardData.activeLoans.value, 0) as number,
+          change: extractValue(dashboardData.activeLoans.change, 0) as number,
+          changeLabel: extractValue(dashboardData.activeLoans.changeLabel, 'No change this month') as string,
+          isCurrency: extractValue(dashboardData.activeLoans.isCurrency, false) as boolean,
         },
       ];
       setCustomerStatistics(stats);
 
     } catch (err) {
-      console.error('Failed to fetch customers data:', err);
+      console.error('❌ Failed to fetch customers data:', err);
       setApiError(err instanceof Error ? err.message : 'Failed to load customers data');
       error('Failed to load customers data. Please try again.');
     } finally {
@@ -253,6 +247,10 @@ export default function CustomersPage() {
         mobileNumber: updatedCustomer.phoneNumber,
       };
 
+      // Use enhanced user service to get user with role information
+      const userWithRole = await enhancedUserService.getUserById(updatedCustomer.id);
+
+      // Update using the original unified service (for now, until we add update to enhanced service)
       await unifiedUserService.updateUser(updatedCustomer.id, updateData);
 
       // Refresh the data
@@ -269,7 +267,7 @@ export default function CustomersPage() {
     }
   };
 
-  // Pagination info (client-side pagination)
+  // Pagination info (server-side pagination)
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, totalCustomers);
 
@@ -448,6 +446,7 @@ export default function CustomersPage() {
                     selectedCustomers={selectedCustomers}
                     onSelectionChange={handleSelectionChange}
                     onEdit={handleEdit}
+                    basePath="/dashboard/hq/customers"
                   />
 
                   {/* Pagination Controls */}

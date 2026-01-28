@@ -117,7 +117,11 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
         // Filter credit officers and customers - ensure data exists
         const usersData = branchUsers?.data || [];
         const officers = usersData.filter(user => user.role === 'credit_officer');
-        const customers = usersData.filter(user => user.role === 'customer');
+        const customers = usersData.filter(user => 
+          user.role === 'user' || 
+          user.role === 'customer' ||
+          user.role === 'client'
+        );
 
         setCreditOfficers(officers);
 

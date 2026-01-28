@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useToast } from '@/app/hooks/useToast';
 import { ROLE_CONFIG, PERMISSION_CATEGORIES, UserRoleType } from '@/lib/roleConfig';
+import { UserService } from '@/app/services/userService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/_components/ui/Select';
 
 // Types and Interfaces
 interface CreateAdminModalProps {
@@ -66,6 +68,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
   const { success, error } = useToast();
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // State and branch data
+  const [states, setStates] = useState<string[]>([]);
+  const [branches, setBranches] = useState<string[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -248,6 +254,51 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
     }
   }, [isOpen]);
 
+  // Load states and branches when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const loadData = async () => {
+        try {
+          // Get complete Nigerian states list (fallback to comprehensive list if API is limited)
+          const completeNigerianStates = [
+            'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+            'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+            'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+            'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+            'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+          ];
+
+          const [apiStatesData, branchesData] = await Promise.all([
+            UserService.getStates().catch(() => []), // Don't fail if API is down
+            UserService.getBranches()
+          ]);
+
+          // Use API states if available and comprehensive, otherwise use complete list
+          const finalStates = apiStatesData.length >= 30 ? apiStatesData : completeNigerianStates;
+          
+          console.log(`📊 States loaded: ${finalStates.length} (API returned: ${apiStatesData.length})`);
+          
+          setStates(finalStates);
+          setBranches(branchesData);
+        } catch (err) {
+          console.error('Failed to load states and branches:', err);
+          // Fallback to complete Nigerian states list
+          const fallbackStates = [
+            'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+            'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+            'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+            'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+            'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+          ];
+          setStates(fallbackStates);
+          setBranches([]);
+          error('Failed to load data from server. Using default Nigerian states list.');
+        }
+      };
+      loadData();
+    }
+  }, [isOpen, error]);
+
   // Escape key handler
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -359,9 +410,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
       {/* Modal Container */}
       <div
         ref={modalRef}
-        className="bg-white rounded-[12px] shadow-2xl max-h-[80vh] overflow-y-auto mx-4 w-full max-w-[688px] sm:mx-0 sm:w-[688px]"
+        className="bg-white rounded-[12px] shadow-2xl max-h-[80vh] overflow-y-auto mx-4 w-full max-w-[688px] sm:mx-0 sm:w-[688px] relative"
         style={{
-          boxShadow: '0px 20px 24px -4px rgba(16, 24, 40, 0.08)'
+          boxShadow: '0px 20px 24px -4px rgba(16, 24, 40, 0.08)',
+          zIndex: 1001
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -702,7 +754,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                   backgroundColor: '#FFFFFF'
                 }}
-                placeholder="e.g. Linear"
+                placeholder="e.g. john.doe@company.com"
                 aria-invalid={!validation.email.isValid}
                 aria-describedby={!validation.email.isValid ? 'email-error' : undefined}
               />
@@ -765,7 +817,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                 aria-invalid={!validation.role.isValid}
                 aria-describedby={!validation.role.isValid ? 'role-error' : undefined}
               >
-                <option value="">e.g. Linear</option>
+                <option value="">Select a role</option>
                 {Object.entries(ROLE_CONFIG).map(([key, config]) => (
                   <option key={key} value={key}>
                     {config.label} ({key})
@@ -804,26 +856,35 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                 >
                   Branch
                 </label>
-                <input
-                  type="text"
+                <Select
                   value={formData.branch}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, branch: e.target.value }));
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, branch: value }));
                     checkForChanges();
                   }}
-                  className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
-                  style={{
-                    height: '44px',
-                    padding: '10px 14px',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                    lineHeight: '24px',
-                    fontFamily: 'Open Sauce Sans, sans-serif',
-                    backgroundColor: '#FFFFFF'
-                  }}
-                  placeholder="Enter branch name"
-                  required
-                />
+                >
+                  <SelectTrigger
+                    className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
+                    style={{
+                      height: '44px',
+                      padding: '10px 14px',
+                      fontSize: '16px',
+                      fontWeight: 400,
+                      lineHeight: '24px',
+                      fontFamily: 'Open Sauce Sans, sans-serif',
+                      backgroundColor: '#FFFFFF'
+                    }}
+                  >
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
@@ -841,26 +902,53 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
               >
                 State
               </label>
-              <input
-                type="text"
+              <Select
                 value={formData.state}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, state: e.target.value }));
+                onValueChange={(value) => {
+                  console.log('State selected:', value); // Debug log
+                  setFormData(prev => ({ ...prev, state: value }));
                   checkForChanges();
                 }}
-                className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
-                style={{
-                  height: '44px',
-                  padding: '10px 14px',
-                  fontSize: '16px',
-                  fontWeight: 400,
-                  lineHeight: '24px',
-                  fontFamily: 'Open Sauce Sans, sans-serif',
-                  backgroundColor: '#FFFFFF'
+                onOpenChange={(open) => {
+                  console.log('State dropdown open:', open); // Debug log
                 }}
-                placeholder="Enter state/region"
-                required
-              />
+              >
+                <SelectTrigger
+                  className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
+                  style={{
+                    height: '44px',
+                    padding: '10px 14px',
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    lineHeight: '24px',
+                    fontFamily: 'Open Sauce Sans, sans-serif',
+                    backgroundColor: '#FFFFFF'
+                  }}
+                >
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent 
+                  className="z-[1100] bg-white border border-gray-200 shadow-lg"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #D0D5DD',
+                    borderRadius: '8px',
+                    boxShadow: '0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03)'
+                  }}
+                >
+                  {states.length === 0 ? (
+                    <SelectItem value="loading" disabled>
+                      Loading states...
+                    </SelectItem>
+                  ) : (
+                    states.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

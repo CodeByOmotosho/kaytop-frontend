@@ -21,7 +21,6 @@ import { extractValue } from '@/lib/utils/dataExtraction';
 import { formatDate } from '@/lib/utils';
 import type { User } from '@/lib/api/types';
 import type { TimePeriod } from '@/app/_components/ui/FilterControls';
-import { debugCreditOfficersDiscrepancy } from '@/lib/utils/debugCreditOfficers';
 
 interface CreditOfficer {
   id: string;
@@ -34,15 +33,17 @@ interface CreditOfficer {
 }
 
 // Transform User to CreditOfficer format
-const transformUserToCreditOfficer = (user: User): CreditOfficer => ({
-  id: String(user.id), // Ensure ID is string
-  name: `${user.firstName} ${user.lastName}`,
-  idNumber: String(user.id).slice(-5), // Convert to string before slicing
-  status: user.verificationStatus === 'verified' ? 'Active' : 'Inactive',
-  phone: user.mobileNumber,
-  email: user.email,
-  dateJoined: formatDate(user.createdAt) || 'N/A'
-});
+const transformUserToCreditOfficer = (user: User): CreditOfficer => {
+  return {
+    id: String(user.id), // Ensure ID is string
+    name: `${user.firstName} ${user.lastName}`,
+    idNumber: String(user.id).slice(-5), // Convert to string before slicing
+    status: user.verificationStatus === 'verified' ? 'Active' : 'Inactive',
+    phone: user.mobileNumber || 'N/A', // Use mobileNumber from backend
+    email: user.email,
+    dateJoined: formatDate(user.createdAt) || 'N/A'
+  };
+};
 
 export default function CreditOfficersPage() {
   const router = useRouter();
@@ -85,18 +86,15 @@ export default function CreditOfficersPage() {
       // This prevents race conditions and data loss
 
       // Create new request
-      console.log('Fetching fresh credit officers data...');
       const fetchPromise = (async () => {
         // Fetch staff members (credit officers) with multiple strategies to handle backend limitations
         // NOTE: Backend /admin/users endpoint doesn't support role filtering via query params
-        console.log('Attempting to fetch credit officers with multiple strategies...');
         
         let creditOfficers: CreditOfficer[] = [];
         
         try {
           // Strategy 1: Use the same approach as the dashboard stats - fetch all users and filter client-side
           // This ensures consistency between stats card and table data
-          console.log('Strategy 1: Fetching all users and filtering by role on frontend (same as stats card)');
           const allUsersData = await unifiedUserService.getUsers({ 
             limit: 1000  // Same as dashboard stats - no role filter, we'll filter client-side
           });
@@ -113,12 +111,8 @@ export default function CreditOfficersPage() {
             })
             .map(transformUserToCreditOfficer);
             
-          console.log(`Strategy 1 result: ${creditOfficers.length} credit officers found`);
-          console.log(`🔄 [CreditOfficersPage] Using same data source as stats card (limit=1000, client-side filtering)`);
-          
           // Strategy 2: If no results, try fetching from /admin/staff/my-staff
           if (creditOfficers.length === 0) {
-            console.log('Strategy 2: Fetching from /admin/staff/my-staff endpoint');
             try {
               // Use the user service to get staff members
               const staffData = await userService.getMyStaff();
@@ -135,7 +129,6 @@ export default function CreditOfficersPage() {
                 .map(transformUserToCreditOfficer);
                 
               creditOfficers = [...creditOfficers, ...staffCreditOfficers];
-              console.log(`Strategy 2 result: ${staffCreditOfficers.length} additional credit officers found`);
             } catch (staffError) {
               console.warn('Strategy 2 failed:', staffError);
             }
@@ -372,8 +365,22 @@ export default function CreditOfficersPage() {
   };
 
   const handleSave = async (updatedOfficer: CreditOfficer) => {
+    // Store original data for rollback
+    const originalData = [...creditOfficersData];
+    
     try {
-      setIsLoading(true);
+      // Optimistic update - update UI immediately
+      const updatedData = creditOfficersData.map(officer => 
+        officer.id === updatedOfficer.id ? updatedOfficer : officer
+      );
+      setCreditOfficersData(updatedData);
+      
+      // Close modal immediately for better UX
+      setEditModalOpen(false);
+      setSelectedOfficer(null);
+      
+      // Show optimistic success message
+      success(`Credit Officer "${updatedOfficer.name}" updated successfully!`);
 
       // Transform CreditOfficer back to User format for API
       const nameParts = updatedOfficer.name.trim().split(' ');
@@ -385,45 +392,41 @@ export default function CreditOfficersPage() {
         lastName,
         email: updatedOfficer.email,
         mobileNumber: updatedOfficer.phone, // Map phone to mobileNumber
-        // Note: Status is handled via verificationStatus, but the API might not support updating it
-        // We'll focus on the core fields that are definitely supported
       };
 
       console.log('Updating credit officer with data:', updateData);
 
+      // Make API call in background
       await unifiedUserService.updateUser(updatedOfficer.id, updateData);
+      
+      console.log('✅ Credit officer update confirmed by server');
 
-      // Refresh the data
-      await fetchCreditOfficersData();
-
-      success(`Credit Officer "${updatedOfficer.name}" updated successfully!`);
-      setEditModalOpen(false);
-      setSelectedOfficer(null);
     } catch (err) {
-      console.error('Failed to update credit officer:', err);
+      console.error('❌ Failed to update credit officer:', err);
       
+      // Rollback optimistic update
+      setCreditOfficersData(originalData);
+
       // Provide more helpful error messages based on the error type
-      let errorMessage = 'Failed to update credit officer. Please try again.';
-      
+      let errorMessage = 'Failed to update credit officer. Changes have been reverted.';
+
       if (err instanceof Error) {
         console.error('Error details:', err.message);
-        
+
         if (err.message.includes('500')) {
-          errorMessage = 'Server error: The update failed due to a backend issue. This might be a temporary problem - please try again in a few moments, or contact support if the issue persists.';
+          errorMessage = 'Server error: The update failed due to a backend issue. Changes have been reverted.';
         } else if (err.message.includes('400')) {
-          errorMessage = 'Validation error: Please check that all required fields are filled correctly and try again.';
+          errorMessage = 'Validation error: Please check that all required fields are filled correctly.';
         } else if (err.message.includes('401')) {
           errorMessage = 'Authentication error: Please log out and log back in, then try again.';
         } else if (err.message.includes('403')) {
-          errorMessage = 'Permission error: You may not have permission to update this user. Please contact your administrator.';
+          errorMessage = 'Permission error: You may not have permission to update this user.';
         } else if (err.message.includes('404')) {
-          errorMessage = 'User not found: This credit officer may have been deleted. Please refresh the page and try again.';
+          errorMessage = 'User not found: This credit officer may have been deleted. Please refresh the page.';
         }
       }
-      
+
       error(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -434,22 +437,39 @@ export default function CreditOfficersPage() {
 
   const confirmDelete = async () => {
     if (officerToDelete) {
+      // Store original data for rollback
+      const originalData = [...creditOfficersData];
+      
       try {
-        setIsLoading(true);
-
-        await unifiedUserService.deleteUser(officerToDelete.id);
-
-        // Refresh the data
-        await fetchCreditOfficersData();
-
-        success(`Credit Officer "${officerToDelete.name}" deleted successfully!`);
+        // Optimistic update - remove from UI immediately
+        const updatedData = creditOfficersData.filter(officer => officer.id !== officerToDelete.id);
+        setCreditOfficersData(updatedData);
+        
+        // Update statistics to reflect the change
+        const newCount = updatedData.length;
+        setCreditOfficersStatistics(prev => 
+          prev.map(stat => ({ ...stat, value: newCount }))
+        );
+        
+        // Close modal immediately for better UX
         setDeleteModalOpen(false);
         setOfficerToDelete(null);
+        
+        // Show optimistic success message
+        success(`Credit Officer "${officerToDelete.name}" deleted successfully!`);
+
+        // Make API call in background
+        await unifiedUserService.deleteUser(officerToDelete.id);
+        
+        console.log('✅ Credit officer deletion confirmed by server');
+
       } catch (err) {
-        console.error('Failed to delete credit officer:', err);
-        error('Failed to delete credit officer. Please try again.');
-      } finally {
-        setIsLoading(false);
+        console.error('❌ Failed to delete credit officer:', err);
+        
+        // Rollback optimistic update
+        setCreditOfficersData(originalData);
+        
+        error('Failed to delete credit officer. The officer has been restored.');
       }
     }
   };
@@ -600,20 +620,6 @@ export default function CreditOfficersPage() {
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                           >
                             Refresh Data
-                          </button>
-                          <button
-                            onClick={() => {
-                              debugCreditOfficersDiscrepancy().then(result => {
-                                console.log('Debug completed:', result);
-                                alert(`Debug completed! Check console for details.\nTable: ${result.tableCount}, Card: ${result.cardCount}`);
-                              }).catch(error => {
-                                console.error('Debug failed:', error);
-                                alert('Debug failed - check console for details');
-                              });
-                            }}
-                            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
-                          >
-                            Debug Discrepancy
                           </button>
                         </div>
                       </div>
