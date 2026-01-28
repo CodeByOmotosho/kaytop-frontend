@@ -8,7 +8,6 @@ export default function useRequireAuth() {
   useEffect(() => {
     const token = localStorage.getItem("auth_session.token") || document.cookie.split("; ").find(row => row.startsWith("token="))?.split("=")[1];
 
-
     if(!token){
       router.push("/login");
     }

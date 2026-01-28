@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { profileService } from '@/lib/services/profile';
 import { useToast } from '@/app/hooks/useToast';
+import { UserService } from '@/app/services/userService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/_components/ui/Select';
 import type { AdminProfile, UpdateUserData } from '@/lib/api/types';
 
 interface ProfileManagementModalProps {
@@ -29,6 +31,10 @@ export default function ProfileManagementModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { success, error } = useToast();
 
+  // State and branch data
+  const [states, setStates] = useState<string[]>([]);
+  const [branches, setBranches] = useState<string[]>([]);
+
   // Initialize form data when modal opens or profile changes
   useEffect(() => {
     if (isOpen && currentProfile) {
@@ -42,6 +48,26 @@ export default function ProfileManagementModal({
       });
     }
   }, [isOpen, currentProfile]);
+
+  // Load states and branches when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const loadData = async () => {
+        try {
+          const [statesData, branchesData] = await Promise.all([
+            UserService.getStates(),
+            UserService.getBranches()
+          ]);
+          setStates(statesData);
+          setBranches(branchesData);
+        } catch (err) {
+          console.error('Failed to load states and branches:', err);
+          error('Failed to load states and branches. Please try again.');
+        }
+      };
+      loadData();
+    }
+  }, [isOpen, error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,26 +240,42 @@ export default function ProfileManagementModal({
                 <label className="block text-[14px] font-medium leading-[20px] text-[#344054] mb-2">
                   Branch
                 </label>
-                <input
-                  type="text"
+                <Select
                   value={formData.branch || ''}
-                  onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                  placeholder="Enter branch"
-                  className="w-full px-[14px] py-[10px] text-[16px] leading-[24px] text-[#101828] placeholder:text-[#667085] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_rgba(16,24,40,0.05)] focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] transition-all"
-                />
+                  onValueChange={(value) => setFormData({ ...formData, branch: value })}
+                >
+                  <SelectTrigger className="w-full px-[14px] py-[10px] text-[16px] leading-[24px] text-[#101828] placeholder:text-[#667085] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_rgba(16,24,40,0.05)] focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] transition-all">
+                    <SelectValue placeholder="Select branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="block text-[14px] font-medium leading-[20px] text-[#344054] mb-2">
                   State
                 </label>
-                <input
-                  type="text"
+                <Select
                   value={formData.state || ''}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  placeholder="Enter state"
-                  className="w-full px-[14px] py-[10px] text-[16px] leading-[24px] text-[#101828] placeholder:text-[#667085] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_rgba(16,24,40,0.05)] focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] transition-all"
-                />
+                  onValueChange={(value) => setFormData({ ...formData, state: value })}
+                >
+                  <SelectTrigger className="w-full px-[14px] py-[10px] text-[16px] leading-[24px] text-[#101828] placeholder:text-[#667085] bg-white border border-[#D0D5DD] rounded-lg shadow-[0px_1px_2px_rgba(16,24,40,0.05)] focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9] transition-all">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {states.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

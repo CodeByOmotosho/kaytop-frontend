@@ -203,7 +203,11 @@ class BranchAPIService implements BranchService {
       // Ensure branchUsers.data exists and is an array before filtering
       const usersData = branchUsers?.data || [];
       const creditOfficers = usersData.filter(user => user.role === 'credit_officer');
-      const customers = usersData.filter(user => user.role === 'customer');
+      const customers = usersData.filter(user => 
+        user.role === 'user' || 
+        user.role === 'customer' ||
+        user.role === 'client'
+      );
       
       // Get first user for branch metadata
       const firstUser = usersData[0];
