@@ -325,6 +325,13 @@ const savingsSummary = savingsProgress
       value: Number(i.value ?? 0),
     }))
   : [];
+  // const savingsSummary =
+  // savingsProgress && !savingsProgressError
+  //   ? mapSavingsProgressData(savingsProgress).map((i) => ({
+  //       label: i.label,
+  //       value: Number(i.value ?? 0),
+  //     }))
+  //   : [];
 
 
   /* =======================
@@ -463,6 +470,12 @@ async function handleAddSavings(amount: number, description: string) {
                 gridCols="grid-cols-1 md:grid-cols-6"
                 />
 
+                {!activeLoan && (
+  <div className="bg-white rounded-lg shadow px-5 py-3 my-3 text-center text-slate-500">
+    No active loan found for this customer.
+  </div>
+)}
+
 {activeLoan && (
         <>
           <div className="px-5 py-3 my-3 bg-white rounded-md">
@@ -486,7 +499,7 @@ async function handleAddSavings(amount: number, description: string) {
 
           </div>
         </>
-      )}
+      )} 
             
 
 
