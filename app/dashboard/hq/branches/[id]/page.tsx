@@ -19,7 +19,8 @@ import { ToastContainer } from '@/app/_components/ui/ToastContainer';
 import { useToast } from '@/app/hooks/useToast';
 import { PageSkeleton } from '@/app/_components/ui/Skeleton';
 import AssignUsersModal from '@/app/_components/ui/AssignUsersModal';
-import { userService } from '@/lib/services/users';
+import { EmptyState } from '@/app/_components/ui/EmptyState';
+import { unifiedUserService } from '@/lib/services/unifiedUser';
 import { dashboardService } from '@/lib/services/dashboard';
 import { branchService } from '@/lib/services/branches';
 import { reportsService } from '@/lib/services/reports';
@@ -76,7 +77,12 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
   const [activeTab, setActiveTab] = useState<'credit-officers' | 'reports' | 'missed-reports'>('credit-officers');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Pagination state for each tab
+  const [coPage, setCoPage] = useState(1);
+  const [reportsPage, setReportsPage] = useState(1);
+  const [missedReportsPage, setMissedReportsPage] = useState(1);
+  const itemsPerPage = 10;
 
   // API data state
   const [branchData, setBranchData] = useState<any>(null);
@@ -111,19 +117,79 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
         // Convert branch ID back to branch name for user lookup
         let branchName = branchDetails.name;
 
-        // Fetch users by branch (credit officers and customers)
-        const branchUsers = await userService.getUsersByBranch(branchName, { page: 1, limit: 100 });
+        console.log('🔍 [HQ-BranchDetails] Fetching users for branch:', branchName);
+        
+        // Fetch users by branch using unifiedUserService (uses /admin/staff/my-staff endpoint)
+        // This endpoint properly returns users with correct role fields
+        const branchUsers = await unifiedUserService.getUsers({ 
+          branch: branchName, 
+          page: 1, 
+          limit: 1000 
+        });
+        
+        console.log('📊 [HQ-BranchDetails] Branch users response:', {
+          total: branchUsers.pagination.total,
+          dataLength: branchUsers.data.length
+        });
 
         // Filter credit officers and customers - ensure data exists
         const usersData = branchUsers?.data || [];
-        const officers = usersData.filter(user => user.role === 'credit_officer');
-        const customers = usersData.filter(user => 
-          user.role === 'user' || 
-          user.role === 'customer' ||
-          user.role === 'client'
-        );
+        
+        // Enhanced role filtering with multiple variations
+        const officers = usersData.filter(user => {
+          const role = user.role?.toLowerCase().replace(/[-_\s]/g, '') || '';
+          return role === 'creditofficer' || 
+                 role === 'credit_officer' ||
+                 role === 'co';
+        });
+        
+        const customers = usersData.filter(user => {
+          const role = user.role?.toLowerCase().replace(/[-_\s]/g, '') || '';
+          return role === 'user' || 
+                 role === 'customer' ||
+                 role === 'client';
+        });
+        
+        console.log('👥 [HQ-BranchDetails] Filtered users:', {
+          creditOfficers: officers.length,
+          customers: customers.length,
+          totalUsers: usersData.length
+        });
+        
+        // Log sample credit officers for debugging
+        if (officers.length > 0) {
+          console.log('👔 [HQ-BranchDetails] Sample credit officers:', 
+            officers.slice(0, 3).map(co => ({
+              id: co.id,
+              name: `${co.firstName} ${co.lastName}`,
+              role: co.role,
+              branch: co.branch,
+              phone: co.phone || co.mobileNumber,
+              email: co.email,
+              createdAt: co.createdAt
+            }))
+          );
+        } else {
+          console.warn('⚠️ [HQ-BranchDetails] No credit officers found for branch:', branchName);
+          console.log('🔍 [HQ-BranchDetails] Available roles in response:', 
+            [...new Set(usersData.map(u => u.role))]
+          );
+        }
 
-        setCreditOfficers(officers);
+        // Transform officers data to match CreditOfficersTable interface
+        const transformedOfficers = officers.map(officer => ({
+          id: officer.id,
+          name: `${officer.firstName || ''} ${officer.lastName || ''}`.trim() || 'N/A',
+          idNumber: officer.idNumber || officer.id || 'N/A',
+          status: (officer.status === 'active' || officer.verificationStatus === 'verified' ? 'Active' : 'Inactive') as 'Active' | 'Inactive',
+          phone: officer.phone || officer.mobileNumber || 'N/A',
+          email: officer.email || 'N/A',
+          dateJoined: officer.createdAt ? new Date(officer.createdAt).toLocaleDateString() : 'N/A'
+        }));
+        
+        console.log('✅ [HQ-BranchDetails] Transformed officers for table:', transformedOfficers.length);
+
+        setCreditOfficers(transformedOfficers);
 
         // Fetch real reports data from API - branch statistics endpoint doesn't exist, so we'll calculate from reports data
         try {
@@ -223,16 +289,17 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
         }
 
         // Transform branch statistics to component format, including report statistics
+        // Use actual fetched data for credit officers count instead of backend statistics
         const branchStats = {
           allCOs: {
-            value: branchDetails.statistics.totalCreditOfficers,
-            change: branchDetails.statistics.creditOfficersGrowth,
-            changeLabel: `${branchDetails.statistics.creditOfficersGrowth >= 0 ? '+' : ''}${branchDetails.statistics.creditOfficersGrowth}% this month`
+            value: transformedOfficers.length, // Use actual count from transformed data
+            change: branchDetails.statistics.creditOfficersGrowth || 0,
+            changeLabel: `${branchDetails.statistics.creditOfficersGrowth >= 0 ? '+' : ''}${branchDetails.statistics.creditOfficersGrowth || 0}% this month`
           },
           allCustomers: {
-            value: branchDetails.statistics.totalCustomers,
-            change: branchDetails.statistics.customersGrowth,
-            changeLabel: `${branchDetails.statistics.customersGrowth >= 0 ? '+' : ''}${branchDetails.statistics.customersGrowth}% this month`
+            value: customers.length, // Use actual count from fetched data
+            change: branchDetails.statistics.customersGrowth || 0,
+            changeLabel: `${branchDetails.statistics.customersGrowth >= 0 ? '+' : ''}${branchDetails.statistics.customersGrowth || 0}% this month`
           },
           activeLoans: {
             value: branchDetails.statistics.activeLoans,
@@ -314,14 +381,36 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
 
   const handleTabChange = (tab: 'credit-officers' | 'reports' | 'missed-reports') => {
     setActiveTab(tab);
-    setCurrentPage(1); // Reset to page 1 when switching tabs
+    // Don't reset page - each tab maintains its own page state
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    console.log(`${activeTab} - Page changed to:`, page);
-    // TODO: Fetch data for the new page
+  const handleCoPageChange = (page: number) => {
+    setCoPage(page);
   };
+
+  const handleReportsPageChange = (page: number) => {
+    setReportsPage(page);
+  };
+
+  const handleMissedReportsPageChange = (page: number) => {
+    setMissedReportsPage(page);
+  };
+
+  // Pagination logic
+  const paginateData = <T,>(data: T[], page: number): T[] => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (dataLength: number): number => {
+    return Math.max(1, Math.ceil(dataLength / itemsPerPage));
+  };
+
+  // Paginated data
+  const paginatedCreditOfficers = paginateData(creditOfficers, coPage);
+  const paginatedReports = paginateData(reports, reportsPage);
+  const paginatedMissedReports = paginateData(missedReports, missedReportsPage);
 
   // Delete handlers
   const handleDeleteCO = (coId: string) => {
@@ -723,17 +812,41 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
                 id="credit-officers-panel"
                 aria-labelledby="credit-officers-tab"
               >
-                <CreditOfficersTable
-                  data={creditOfficers}
-                  onEdit={handleEditCO}
-                  onDelete={handleDeleteCO}
-                />
-
-                <Pagination
-                  totalPages={10}
-                  page={currentPage}
-                  onPageChange={handlePageChange}
-                />
+                {creditOfficers.length === 0 ? (
+                  <div className="bg-white rounded-lg border border-[#EAECF0]">
+                    <EmptyState
+                      title="No Credit Officers Found"
+                      message="This branch doesn't have any credit officers assigned yet. Assign users to this branch to get started."
+                      action={{
+                        label: "Assign Users",
+                        onClick: () => setShowAssignUsersModal(true)
+                      }}
+                      icon={
+                        <svg className="w-16 h-16 text-[#D0D5DD] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <CreditOfficersTable 
+                      data={paginatedCreditOfficers}
+                      onEdit={handleEditCO}
+                      onDelete={handleDeleteCO}
+                    />
+                    
+                    {creditOfficers.length > itemsPerPage && (
+                      <div className="mt-4">
+                        <Pagination 
+                          totalPages={getTotalPages(creditOfficers.length)}
+                          page={coPage}
+                          onPageChange={handleCoPageChange}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
             {activeTab === 'reports' && (
@@ -742,20 +855,40 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
                 id="reports-panel"
                 aria-labelledby="reports-tab"
               >
-                <ReportsTable
-                  reports={reports}
-                  selectedReports={[]}
-                  onSelectionChange={() => { }}
-                  onEdit={handleEditReport}
-                  onDelete={handleDeleteReport}
-                  onReportClick={(report) => handleViewLoanDetails(report.id)}
-                />
-
-                <Pagination
-                  totalPages={10}
-                  page={currentPage}
-                  onPageChange={handlePageChange}
-                />
+                {reports.length === 0 ? (
+                  <div className="bg-white rounded-lg border border-[#EAECF0]">
+                    <EmptyState
+                      title="No Reports Found"
+                      message="There are no reports submitted for this branch yet. Reports will appear here once credit officers submit them."
+                      icon={
+                        <svg className="w-16 h-16 text-[#D0D5DD] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <ReportsTable 
+                      reports={paginatedReports}
+                      selectedReports={[]}
+                      onSelectionChange={() => {}}
+                      onEdit={handleEditReport}
+                      onDelete={handleDeleteReport}
+                      onReportClick={(report) => handleViewLoanDetails(report.id)}
+                    />
+                    
+                    {reports.length > itemsPerPage && (
+                      <div className="mt-4">
+                        <Pagination 
+                          totalPages={getTotalPages(reports.length)}
+                          page={reportsPage}
+                          onPageChange={handleReportsPageChange}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
             {activeTab === 'missed-reports' && (
@@ -764,18 +897,38 @@ export default function BranchDetailsPage({ params }: { params: Promise<{ id: st
                 id="missed-reports-panel"
                 aria-labelledby="missed-reports-tab"
               >
-                <MissedReportsTable
-                  data={missedReports}
-                  onEdit={handleEditMissedReport}
-                  onDelete={handleDeleteMissedReport}
-                  onViewDetails={handleViewMissedLoanDetails}
-                />
-
-                <Pagination
-                  totalPages={10}
-                  page={currentPage}
-                  onPageChange={handlePageChange}
-                />
+                {missedReports.length === 0 ? (
+                  <div className="bg-white rounded-lg border border-[#EAECF0]">
+                    <EmptyState
+                      title="No Missed Reports"
+                      message="Great! There are no missed reports for this branch. All credit officers are submitting their reports on time."
+                      icon={
+                        <svg className="w-16 h-16 text-[#10B981] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <MissedReportsTable 
+                      data={paginatedMissedReports}
+                      onEdit={handleEditMissedReport}
+                      onDelete={handleDeleteMissedReport}
+                      onViewDetails={handleViewMissedLoanDetails}
+                    />
+                    
+                    {missedReports.length > itemsPerPage && (
+                      <div className="mt-4">
+                        <Pagination 
+                          totalPages={getTotalPages(missedReports.length)}
+                          page={missedReportsPage}
+                          onPageChange={handleMissedReportsPageChange}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
