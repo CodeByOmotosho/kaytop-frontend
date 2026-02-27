@@ -106,6 +106,7 @@ export function KpiCards({
         </div>
 
         <SavingsChart
+        key={savingsBalance}
             isLoading={isLoadingSavings}
             error={savingsError}
             data={savingsChartData}
