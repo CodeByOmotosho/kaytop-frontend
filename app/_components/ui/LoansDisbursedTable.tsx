@@ -34,15 +34,19 @@ export default function LoansDisbursedTable({
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  const loansWithIds = loans.filter(loan => loan.id);
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      onSelectionChange(loans.map(l => l.id));
+      onSelectionChange(loansWithIds.map(l => l.id));
     } else {
       onSelectionChange([]);
     }
   };
 
   const handleSelectOne = (id: string, checked: boolean) => {
+    if (!id) return; // Don't select loans without IDs
+    
     if (checked) {
       onSelectionChange([...selectedLoans, id]);
     } else {
@@ -97,7 +101,7 @@ export default function LoansDisbursedTable({
     return 0;
   });
 
-  const isAllSelected = loans.length > 0 && selectedLoans.length === loans.length;
+  const isAllSelected = loansWithIds.length > 0 && selectedLoans.length === loansWithIds.length;
 
   return (
     <div
@@ -297,107 +301,139 @@ export default function LoansDisbursedTable({
           </tr>
         </thead>
         <tbody>
-          {sortedLoans.map((loan, index) => (
-            <tr
-              key={loan.id}
-              className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-              style={{
-                borderBottom: index < loans.length - 1 ? '1px solid var(--color-border-gray-200)' : 'none',
-                backgroundColor: selectedLoans.includes(loan.id) ? '#F9F5FF' : undefined
-              }}
-              aria-selected={selectedLoans.includes(loan.id)}
-            >
-              <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                <Checkbox
-                  checked={selectedLoans.includes(loan.id)}
-                  onCheckedChange={(checked) => handleSelectOne(loan.id, checked === true)}
-                  aria-label={`Select loan ${loan.loanId}`}
-                />
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                  {loan.loanId}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                  {loan.name}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                  style={{
-                    backgroundColor: loan.status === 'Active' ? '#ECFDF3' : loan.status === 'Completed' ? '#F0F9FF' : '#FEF3F2',
-                    color: loan.status === 'Active' ? '#027A48' : loan.status === 'Completed' ? '#026AA2' : '#B42318',
-                  }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full mr-1.5"
-                    style={{
-                      backgroundColor: loan.status === 'Active' ? '#12B76A' : loan.status === 'Completed' ? '#0BA5EC' : '#F04438',
-                    }}
-                  />
-                  {loan.status}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                  ₦{loan.amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  {loan.interest}%
-                </div>
-              </td>
-              <td className="px-6 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {loan.nextRepayment}
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-1">
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(loan.id);
-                    }}
-                    aria-label={`Edit loan ${loan.loanId}`}
-                    title="Edit"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          {sortedLoans.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="px-6 py-12 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-gray-400">
                       <path
-                        d="M2.5 17.5H17.5M11.6667 4.16667L14.1667 1.66667C14.3877 1.44565 14.6848 1.32031 14.9948 1.32031C15.3047 1.32031 15.6019 1.44565 15.8229 1.66667L18.3333 4.17708C18.5543 4.39811 18.6797 4.69524 18.6797 5.00521C18.6797 5.31518 18.5543 5.61231 18.3333 5.83333L6.66667 17.5H2.5V13.3333L11.6667 4.16667Z"
-                        stroke="#475467"
-                        strokeWidth="1.66667"
+                        d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93"
+                        stroke="currentColor"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </button>
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(loan.id);
-                    }}
-                    aria-label={`Delete loan ${loan.loanId}`}
-                    title="Delete"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                      <path
-                        d="M7.5 2.5H12.5M2.5 5H17.5M15.8333 5L15.2489 13.7661C15.1612 15.0813 15.1174 15.7389 14.8333 16.2375C14.5833 16.6765 14.206 17.0294 13.7514 17.2497C13.235 17.5 12.5759 17.5 11.2578 17.5H8.74221C7.42409 17.5 6.76503 17.5 6.24861 17.2497C5.79396 17.0294 5.41674 16.6765 5.16665 16.2375C4.88259 15.7389 4.83875 15.0813 4.75107 13.7661L4.16667 5"
-                        stroke="#475467"
-                        strokeWidth="1.66667"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">No loans disbursed yet</h3>
+                  <p className="text-sm text-gray-500">This credit officer hasn't disbursed any loans yet.</p>
                 </div>
               </td>
             </tr>
-          ))}
+          ) : (
+            sortedLoans.map((loan, index) => {
+              // Generate a unique key that handles undefined/null IDs properly
+              const uniqueKey = loan.id && loan.id !== 'undefined' && loan.id !== 'null' 
+                ? loan.id 
+                : `loan-${index}-${loan.loanId || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              
+              return (
+                <tr
+                  key={uniqueKey}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                style={{
+                  borderBottom: index < loans.length - 1 ? '1px solid var(--color-border-gray-200)' : 'none',
+                  backgroundColor: loan.id && selectedLoans.includes(loan.id) ? '#F9F5FF' : undefined
+                }}
+                aria-selected={loan.id ? selectedLoans.includes(loan.id) : false}
+              >
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={loan.id ? selectedLoans.includes(loan.id) : false}
+                    onCheckedChange={(checked) => loan.id && handleSelectOne(loan.id, checked === true)}
+                    aria-label={`Select loan ${loan.loanId}`}
+                    disabled={!loan.id}
+                  />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    {loan.loanId}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    {loan.name}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor: loan.status === 'Active' ? '#ECFDF3' : loan.status === 'Completed' ? '#F0F9FF' : '#FEF3F2',
+                      color: loan.status === 'Active' ? '#027A48' : loan.status === 'Completed' ? '#026AA2' : '#B42318',
+                    }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full mr-1.5"
+                      style={{
+                        backgroundColor: loan.status === 'Active' ? '#12B76A' : loan.status === 'Completed' ? '#0BA5EC' : '#F04438',
+                      }}
+                    />
+                    {loan.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    ₦{loan.amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    {loan.interest}%
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  {loan.nextRepayment}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (loan.id) onEdit(loan.id);
+                      }}
+                      aria-label={`Edit loan ${loan.loanId}`}
+                      title="Edit"
+                      disabled={!loan.id}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="M2.5 17.5H17.5M11.6667 4.16667L14.1667 1.66667C14.3877 1.44565 14.6848 1.32031 14.9948 1.32031C15.3047 1.32031 15.6019 1.44565 15.8229 1.66667L18.3333 4.17708C18.5543 4.39811 18.6797 4.69524 18.6797 5.00521C18.6797 5.31518 18.5543 5.61231 18.3333 5.83333L6.66667 17.5H2.5V13.3333L11.6667 4.16667Z"
+                          stroke="#475467"
+                          strokeWidth="1.66667"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (loan.id) onDelete(loan.id);
+                      }}
+                      aria-label={`Delete loan ${loan.loanId}`}
+                      title="Delete"
+                      disabled={!loan.id}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="M7.5 2.5H12.5M2.5 5H17.5M15.8333 5L15.2489 13.7661C15.1612 15.0813 15.1174 15.7389 14.8333 16.2375C14.5833 16.6765 14.206 17.0294 13.7514 17.2497C13.235 17.5 12.5759 17.5 11.2578 17.5H8.74221C7.42409 17.5 6.76503 17.5 6.24861 17.2497C5.79396 17.0294 5.41674 16.6765 5.16665 16.2375C4.88259 15.7389 4.83875 15.0813 4.75107 13.7661L4.16667 5"
+                          stroke="#475467"
+                          strokeWidth="1.66667"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
     </div>

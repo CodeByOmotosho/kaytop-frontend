@@ -1,0 +1,303 @@
+@baseUrl = https://kaytop-production.up.railway.app
+
+### ========================================
+### COMPREHENSIVE ENDPOINT TESTING
+### Based on Postman Documentation Analysis
+### ========================================
+### 
+### PURPOSE: Test EVERY endpoint mentioned in .postman.json to find customer data
+### EVIDENCE: Postman docs show "/admin/users?role=credit_officer" works
+### HYPOTHESIS: Role filtering IS supported, I was wrong about missing role field
+### 
+### ========================================
+
+### Step 1: Login as System Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@kaytop.com",
+  "password": "Admin123"
+}
+
+### Step 2: Login as HQ Manager  
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "adminhq@mailsac.com",
+  "password": "12345678"
+}
+
+### Variables (Update these with tokens from login responses above)
+@systemAdminToken = REPLACE_WITH_SYSTEM_ADMIN_TOKEN_FROM_STEP_1
+@hqManagerToken = REPLACE_WITH_HQ_MANAGER_TOKEN_FROM_STEP_2
+
+### ========================================
+### SECTION A: TEST ROLE-BASED FILTERING (CRITICAL)
+### ========================================
+
+### Step 3: Test /admin/users?role=customer (MOST IMPORTANT)
+GET {{baseUrl}}/admin/users?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 4: Test /admin/users?role=credit_officer (CONFIRMED WORKING IN POSTMAN DOCS)
+GET {{baseUrl}}/admin/users?role=credit_officer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 5: Test all other roles
+GET {{baseUrl}}/admin/users?role=system_admin
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 6: Test branch_manager role
+GET {{baseUrl}}/admin/users?role=branch_manager
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 7: Test account_manager role
+GET {{baseUrl}}/admin/users?role=account_manager
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 8: Test hq_manager role
+GET {{baseUrl}}/admin/users?role=hq_manager
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION B: TEST CUSTOMER-SPECIFIC ENDPOINTS
+### ========================================
+
+### Step 9: Test dedicated customers endpoint
+GET {{baseUrl}}/admin/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 10: Test customers with pagination
+GET {{baseUrl}}/admin/customers?page=1&limit=10
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 11: Test users/customers endpoint
+GET {{baseUrl}}/users/customers
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 12: Test customer management endpoint
+GET {{baseUrl}}/customer-management
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION C: TEST USER FILTERING VARIATIONS
+### ========================================
+
+### Step 13: Test userType parameter
+GET {{baseUrl}}/admin/users?userType=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 14: Test type parameter
+GET {{baseUrl}}/admin/users?type=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 15: Test filter endpoint (mentioned in Postman docs)
+GET {{baseUrl}}/users/filter?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 16: Test search endpoint
+GET {{baseUrl}}/admin/users/search?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION D: TEST STAFF VS USERS ENDPOINTS
+### ========================================
+
+### Step 17: Test /admin/staff/my-staff (mentioned in Postman docs)
+GET {{baseUrl}}/admin/staff/my-staff
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 18: Test /admin/staff endpoint
+GET {{baseUrl}}/admin/staff
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 19: Test /admin/staff with role filtering
+GET {{baseUrl}}/admin/staff?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION E: TEST CUSTOMER-RELATED ENDPOINTS FROM POSTMAN DOCS
+### ========================================
+
+### Step 20: Test customer loans endpoint (mentioned in Postman docs)
+GET {{baseUrl}}/loans/customer/1
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 21: Test customer savings endpoint (mentioned in Postman docs)
+GET {{baseUrl}}/savings/customer/1
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 22: Test customer loan summary (mentioned in Postman docs)
+GET {{baseUrl}}/loans/customer/1/loan-summary
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 23: Test customer disbursement summary (mentioned in Postman docs)
+GET {{baseUrl}}/loans/customer/1/disbursement-summary
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION F: TEST BRANCH-BASED USER FILTERING
+### ========================================
+
+### Step 24: Test users by branch (mentioned in Postman docs)
+GET {{baseUrl}}/admin/users/branch/Lagos Island
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 25: Test users by branch with role filtering
+GET {{baseUrl}}/admin/users/branch/Lagos Island?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION G: TEST EXPORT AND BULK ENDPOINTS
+### ========================================
+
+### Step 26: Test users export (mentioned in Postman docs)
+GET {{baseUrl}}/admin/users/export
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 27: Test users export with role filtering
+GET {{baseUrl}}/admin/users/export?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION H: TEST WITH HQ MANAGER CREDENTIALS
+### ========================================
+
+### Step 28: Test role filtering with HQ Manager
+GET {{baseUrl}}/admin/users?role=customer
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### Step 29: Test HQ Manager access to staff endpoint
+GET {{baseUrl}}/admin/staff/my-staff
+Authorization: Bearer {{hqManagerToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION I: TEST PAGINATION WITH ROLE FILTERING
+### ========================================
+
+### Step 30: Test customers with pagination
+GET {{baseUrl}}/admin/users?role=customer&page=1&limit=10
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 31: Test customers with larger limit
+GET {{baseUrl}}/admin/users?role=customer&page=1&limit=100
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### SECTION J: TEST ALTERNATIVE USER ENDPOINTS
+### ========================================
+
+### Step 32: Test /users endpoint (might be public users)
+GET {{baseUrl}}/users
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 33: Test /users with role filtering
+GET {{baseUrl}}/users?role=customer
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### Step 34: Test /public/users endpoint
+GET {{baseUrl}}/public/users
+Authorization: Bearer {{systemAdminToken}}
+Content-Type: application/json
+
+### ========================================
+### ANALYSIS CHECKLIST
+### ========================================
+### 
+### CRITICAL QUESTIONS TO ANSWER:
+### 
+### 1. ROLE FILTERING SUPPORT:
+###    ✅ Does /admin/users?role=customer return data?
+###    ✅ Does /admin/users?role=credit_officer work (Postman docs say YES)?
+###    ✅ Are there users with role='customer' in the system?
+### 
+### 2. DEDICATED CUSTOMER ENDPOINTS:
+###    ✅ Does /admin/customers exist?
+###    ✅ Does /users/customers exist?
+###    ✅ Are there customer-specific management endpoints?
+### 
+### 3. ALTERNATIVE FILTERING:
+###    ✅ Does userType parameter work?
+###    ✅ Does /users/filter support role filtering?
+###    ✅ Are there search endpoints with role support?
+### 
+### 4. STAFF VS CUSTOMER SEPARATION:
+###    ✅ Does /admin/staff/my-staff only return staff?
+###    ✅ Does /admin/users include both staff and customers?
+###    ✅ How are customers distinguished from staff?
+### 
+### 5. PERMISSION DIFFERENCES:
+###    ✅ Can HQ Manager access customer data?
+###    ✅ Are there role-specific access restrictions?
+###    ✅ Do different roles see different user subsets?
+### 
+### ========================================
+### EXPECTED OUTCOMES
+### ========================================
+### 
+### IF ROLE FILTERING WORKS:
+### ✅ /admin/users?role=customer returns customer users
+### ✅ /admin/users?role=credit_officer returns credit officers
+### ✅ Frontend filtering logic was correct, just wrong endpoint usage
+### 
+### IF DEDICATED ENDPOINTS EXIST:
+### ✅ /admin/customers returns customer-specific data
+### ✅ Customer pages should use dedicated endpoints
+### ✅ Better performance and cleaner separation
+### 
+### IF ALTERNATIVE FILTERING EXISTS:
+### ✅ userType or type parameters work for filtering
+### ✅ /users/filter provides advanced filtering capabilities
+### ✅ Multiple ways to access customer data
+### 
+### NEXT STEPS BASED ON RESULTS:
+### 
+### If role filtering works:
+### - Update customer pages to use /admin/users?role=customer
+### - Remove client-side filtering logic
+### - Test with proper role parameter
+### 
+### If dedicated endpoints exist:
+### - Update customer pages to use /admin/customers
+### - Implement proper pagination and filtering
+### - Optimize for customer-specific operations
+### 
+### If current approach is correct:
+### - Investigate why Postman docs show role filtering works
+### - Check if there are environment or permission differences
+### - Verify backend configuration
+### 
+### ========================================

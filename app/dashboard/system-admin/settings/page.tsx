@@ -5,7 +5,7 @@ import { ToastContainer } from '@/app/_components/ui/ToastContainer';
 import { useToast } from '@/app/hooks/useToast';
 import { Checkbox } from '@/app/_components/ui/Checkbox';
 import EditRoleModal from '@/app/_components/ui/EditRoleModal';
-import CreateAdminModal from '@/app/_components/ui/CreateAdminModal';
+import CreateAdminModal, { type NewAdminData } from '@/app/_components/ui/CreateAdminModal';
 import GlobalSettingsModal from '@/app/_components/ui/GlobalSettingsModal';
 import AlertRulesModal from '@/app/_components/ui/AlertRulesModal';
 import ReportTemplateModal from '@/app/_components/ui/ReportTemplateModal';
@@ -19,6 +19,7 @@ import {
   useUpdateSystemSettings,
   useActivityLogs,
   useUsers,
+  useAdminStaff,
   useUpdateUser,
   useUpdateUserRole,
   useCreateStaff
@@ -110,10 +111,11 @@ export default function SettingsPage() {
   const updateUserRoleMutation = useUpdateUserRole();
   const createStaffMutation = useCreateStaff();
 
-  // Users query for real backend data
+  // Users query for real backend data - use unifiedUserService to get proper role information
   const {
     data: allUsersData,
     isLoading: usersLoading,
+    error: usersError,
   } = useUsers({ page: 1, limit: 100 });
 
   // Activity logs state and query
@@ -213,10 +215,41 @@ export default function SettingsPage() {
 
   // Transform API users to RoleUserData format (memoized)
   const usersData = useMemo(() => {
-    if (!allUsersData?.data) return [];
+    if (!allUsersData?.data) {
+      console.log('🔍 [usersData] No allUsersData.data available:', allUsersData);
+      return [];
+    }
 
-    return allUsersData.data.map((user: User) => {
-      const displayRole = mapBackendToFrontendRole(user.role);
+    // Debug: Log the raw user data to understand the structure
+    console.log('🔍 [usersData] Raw users data from API:', allUsersData);
+    console.log('🔍 [usersData] Users data structure:', {
+      hasData: !!allUsersData.data,
+      dataType: typeof allUsersData.data,
+      isArray: Array.isArray(allUsersData.data),
+      dataLength: allUsersData.data?.length,
+      firstUser: allUsersData.data?.[0]
+    });
+
+    if (!Array.isArray(allUsersData.data)) {
+      console.error('❌ [usersData] Expected array but got:', typeof allUsersData.data);
+      return [];
+    }
+
+    return allUsersData.data.map((user: User, index: number) => {
+
+      const displayRole = mapBackendToFrontendRole(user.role, user.email, `${user.firstName} ${user.lastName}`);
+      
+      // Debug logging for role mapping issues
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 [usersData] Role mapping for ${user.email}:`, {
+          backendRole: user.role,
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`,
+          mappedRole: displayRole,
+          rawUser: user // Log the entire user object
+        });
+      }
+      
       const permissions = getPermissionsForRole(user.role);
 
       return {
@@ -414,22 +447,20 @@ export default function SettingsPage() {
     setShowCreateAdminModal(false);
   };
 
-  const handleSaveNewAdmin = async (adminData: any) => {
+  const handleSaveNewAdmin = async (adminData: NewAdminData) => {
     try {
       const backendRole = mapFrontendToBackendRole(adminData.role);
 
-      const [firstName, ...lastNameParts] = adminData.name.split(' ');
-      const lastName = lastNameParts.join(' ') || '.';
-
       const staffData = {
-        firstName,
-        lastName,
+        firstName: adminData.firstName,
+        lastName: adminData.lastName,
         email: adminData.email,
-        mobileNumber: adminData.phoneNumber,
+        mobileNumber: adminData.mobileNumber,
         role: backendRole as any,
         // Branch is often required for staff, default to a sensible value or empty
         branch: adminData.branch || 'Head Office',
-        password: process.env.DEFAULT_ADMIN_PASSWORD || 'TempPassword123!', // Backend usually requires a temporary password
+        state: adminData.state || 'Lagos', // Use state from modal or default
+        password: adminData.password, // Use password from modal
       };
 
       await createStaffMutation.mutateAsync(staffData);
@@ -550,17 +581,59 @@ export default function SettingsPage() {
 
   const handleSaveUser = async (updatedUserData: RoleUserData) => {
     try {
-      const backendRole = mapFrontendToBackendRole(updatedUserData.role);
+      const originalUser = selectedUser;
+      if (!originalUser) {
+        throw new Error('No original user data available');
+      }
 
-      // Update role
-      await updateUserRoleMutation.mutateAsync({ id: updatedUserData.id, role: backendRole });
+      // Determine what changed
+      const roleChanged = updatedUserData.role !== originalUser.role;
+      const profileChanged = 
+        updatedUserData.name !== originalUser.name ||
+        updatedUserData.email !== originalUser.email;
 
-      success('User role updated successfully!');
+      // Handle role change using dedicated endpoint
+      if (roleChanged) {
+        const backendRole = mapFrontendToBackendRole(updatedUserData.role);
+        
+        await updateUserRoleMutation.mutateAsync({ 
+          id: updatedUserData.id, 
+          role: backendRole 
+        });
+      }
+
+      // Handle profile changes using general user update endpoint
+      if (profileChanged) {
+        // Parse name into firstName and lastName
+        const nameParts = updatedUserData.name.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const profileUpdateData = {
+          firstName,
+          lastName,
+          email: updatedUserData.email
+        };
+
+        await updateUserMutation.mutateAsync({
+          id: updatedUserData.id,
+          data: profileUpdateData
+        });
+      }
+
+      success(
+        roleChanged && profileChanged 
+          ? 'User role and profile updated successfully!'
+          : roleChanged 
+            ? 'User role updated successfully!'
+            : 'User profile updated successfully!'
+      );
+      
       setShowEditRoleModal(false);
       setSelectedUser(null);
     } catch (err: any) {
-      console.error('Error updating user role:', err);
-      error(err?.message || 'Failed to update user role');
+      console.error('Error updating user:', err);
+      error(err?.message || 'Failed to update user information');
     }
   };
 
@@ -1497,6 +1570,53 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7A62EB]"></div>
                       </div>
+                    ) : usersError ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="text-red-500 mb-4">
+                          <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 600,
+                            color: '#DC2626',
+                            fontFamily: 'Open Sauce Sans, sans-serif',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          Failed to Load Users
+                        </p>
+                        <p
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            color: '#6B7280',
+                            fontFamily: 'Open Sauce Sans, sans-serif',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          {(usersError as any)?.message || 'Unable to fetch user data'}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 400,
+                            color: '#9CA3AF',
+                            fontFamily: 'Open Sauce Sans, sans-serif',
+                          }}
+                        >
+                          {(usersError as any)?.response?.status === 401 
+                            ? 'Please log in again to access user data'
+                            : (usersError as any)?.response?.status === 403
+                            ? 'You do not have permission to view user data'
+                            : (usersError as any)?.response?.status === 404
+                            ? 'User management endpoint is not available'
+                            : 'Check the browser console for more details'
+                          }
+                        </p>
+                      </div>
                     ) : usersData.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 text-center">
                         <p
@@ -1505,9 +1625,20 @@ export default function SettingsPage() {
                             fontWeight: 500,
                             color: '#767D94',
                             fontFamily: 'Open Sauce Sans, sans-serif',
+                            marginBottom: '8px',
                           }}
                         >
                           No users found
+                        </p>
+                        <p
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            color: '#9CA3AF',
+                            fontFamily: 'Open Sauce Sans, sans-serif',
+                          }}
+                        >
+                          Check the browser console for debugging information
                         </p>
                       </div>
                     ) : (
@@ -1559,9 +1690,10 @@ export default function SettingsPage() {
                                       padding: '3px 6px',
                                       background:
                                         user.role === 'HQ' ? '#FBEFF8' :
-                                          user.role === 'AM' ? '#ECF0D9' :
+                                          user.role === 'BM' ? '#E0F2FE' :
                                             user.role === 'CO' ? '#DEDAF3' :
-                                              '#FBEFF8',
+                                              user.role === 'ADMIN' ? '#FEF2F2' :
+                                                '#FBEFF8', // Default fallback
                                       borderRadius: '3px',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -1576,9 +1708,10 @@ export default function SettingsPage() {
                                         fontFamily: 'Open Sauce Sans, sans-serif',
                                         color:
                                           user.role === 'HQ' ? '#AB659C' :
-                                            user.role === 'AM' ? '#4C5F00' :
+                                            user.role === 'BM' ? '#0369A1' :
                                               user.role === 'CO' ? '#462ACD' :
-                                                '#AB659C',
+                                                user.role === 'ADMIN' ? '#DC2626' :
+                                                  '#AB659C', // Default fallback
                                       }}
                                     >
                                       {user.role}

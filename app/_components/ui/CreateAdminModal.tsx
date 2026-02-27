@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useToast } from '@/app/hooks/useToast';
 import { ROLE_CONFIG, PERMISSION_CATEGORIES, UserRoleType } from '@/lib/roleConfig';
+import { UserService } from '@/app/services/userService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/_components/ui/Select';
 
 // Types and Interfaces
 interface CreateAdminModalProps {
@@ -11,21 +13,27 @@ interface CreateAdminModalProps {
   onSave: (adminData: NewAdminData) => Promise<void>;
 }
 
-interface NewAdminData {
-  name: string;
-  phoneNumber: string;
+export interface NewAdminData {
+  firstName: string;
+  lastName: string;
+  mobileNumber: string;
   email: string;
   role: UserRoleType;
-  permissions: string[];
+  password: string;
   branch?: string;
+  state?: string;
 }
 
 interface ValidationState {
-  name: {
+  firstName: {
     isValid: boolean;
     error?: string;
   };
-  phoneNumber: {
+  lastName: {
+    isValid: boolean;
+    error?: string;
+  };
+  mobileNumber: {
     isValid: boolean;
     error?: string;
   };
@@ -37,15 +45,21 @@ interface ValidationState {
     isValid: boolean;
     error?: string;
   };
+  password: {
+    isValid: boolean;
+    error?: string;
+  };
 }
 
 interface FormData {
-  name: string;
-  phoneNumber: string;
+  firstName: string;
+  lastName: string;
+  mobileNumber: string;
   email: string;
   role: UserRoleType | '';
-  permissions: string[];
+  password: string;
   branch: string;
+  state: string;
 }
 
 // Role and permission configurations moved to @/lib/roleConfig.ts
@@ -55,14 +69,20 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
+  // State and branch data
+  const [states, setStates] = useState<string[]>([]);
+  const [branches, setBranches] = useState<string[]>([]);
+
   // Form state
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    phoneNumber: '',
+    firstName: '',
+    lastName: '',
+    mobileNumber: '',
     email: '',
     role: '',
-    permissions: [],
-    branch: ''
+    password: '',
+    branch: '',
+    state: ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -70,40 +90,84 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
 
   // Validation state
   const [validation, setValidation] = useState<ValidationState>({
-    name: { isValid: true },
-    phoneNumber: { isValid: true },
+    firstName: { isValid: true },
+    lastName: { isValid: true },
+    mobileNumber: { isValid: true },
     email: { isValid: true },
-    role: { isValid: true }
+    role: { isValid: true },
+    password: { isValid: true }
   });
 
   // Validation functions
-  const validateName = (name: string): { isValid: boolean; error?: string } => {
+  const validateFirstName = (name: string): { isValid: boolean; error?: string } => {
     if (!name.trim()) {
-      return { isValid: false, error: 'Name is required' };
+      return { isValid: false, error: 'First name is required' };
     }
     if (name.trim().length < 2) {
-      return { isValid: false, error: 'Name must be at least 2 characters long' };
+      return { isValid: false, error: 'First name must be at least 2 characters long' };
     }
     if (name.trim().length > 50) {
-      return { isValid: false, error: 'Name must be less than 50 characters' };
+      return { isValid: false, error: 'First name must be less than 50 characters' };
     }
     if (!/^[a-zA-Z\s'-]+$/.test(name.trim())) {
-      return { isValid: false, error: 'Name can only contain letters, spaces, hyphens, and apostrophes' };
+      return { isValid: false, error: 'First name can only contain letters, spaces, hyphens, and apostrophes' };
     }
     return { isValid: true };
   };
 
-  const validatePhoneNumber = (phone: string): { isValid: boolean; error?: string } => {
+  const validateLastName = (name: string): { isValid: boolean; error?: string } => {
+    if (!name.trim()) {
+      return { isValid: false, error: 'Last name is required' };
+    }
+    if (name.trim().length < 2) {
+      return { isValid: false, error: 'Last name must be at least 2 characters long' };
+    }
+    if (name.trim().length > 50) {
+      return { isValid: false, error: 'Last name must be less than 50 characters' };
+    }
+    if (!/^[a-zA-Z\s'-]+$/.test(name.trim())) {
+      return { isValid: false, error: 'Last name can only contain letters, spaces, hyphens, and apostrophes' };
+    }
+    return { isValid: true };
+  };
+
+  const validateMobileNumber = (phone: string): { isValid: boolean; error?: string } => {
     if (!phone.trim()) {
-      return { isValid: false, error: 'Phone number is required' };
+      return { isValid: false, error: 'Mobile number is required' };
     }
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-    if (!phoneRegex.test(cleanPhone)) {
-      return { isValid: false, error: 'Please enter a valid phone number' };
+
+    // Remove all non-digit characters except + for country code
+    const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+
+    // Allow numbers with or without country code, more flexible validation
+    // Just check that it contains only digits, spaces, hyphens, parentheses, dots, and optional + at start
+    if (!/^[\+]?[\d\s\-\(\)\.]+$/.test(phone.trim())) {
+      return { isValid: false, error: 'Mobile number can only contain digits, spaces, hyphens, parentheses, and dots' };
     }
-    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-      return { isValid: false, error: 'Phone number must be between 10 and 15 digits' };
+
+    // Extract just the digits to check length
+    const digitsOnly = cleanPhone.replace(/[^\d]/g, '');
+
+    if (digitsOnly.length < 7) {
+      return { isValid: false, error: 'Mobile number must have at least 7 digits' };
+    }
+
+    if (digitsOnly.length > 15) {
+      return { isValid: false, error: 'Mobile number cannot exceed 15 digits' };
+    }
+
+    return { isValid: true };
+  };
+
+  const validatePassword = (password: string): { isValid: boolean; error?: string } => {
+    if (!password.trim()) {
+      return { isValid: false, error: 'Password is required' };
+    }
+    if (password.length < 8) {
+      return { isValid: false, error: 'Password must be at least 8 characters long' };
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return { isValid: false, error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' };
     }
     return { isValid: true };
   };
@@ -133,43 +197,52 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
   };
 
   const validateForm = (): boolean => {
-    const nameValidation = validateName(formData.name);
-    const phoneValidation = validatePhoneNumber(formData.phoneNumber);
+    const firstNameValidation = validateFirstName(formData.firstName);
+    const lastNameValidation = validateLastName(formData.lastName);
+    const mobileValidation = validateMobileNumber(formData.mobileNumber);
     const emailValidation = validateEmail(formData.email);
     const roleValidation = validateRole(formData.role);
+    const passwordValidation = validatePassword(formData.password);
 
     setValidation({
-      name: nameValidation,
-      phoneNumber: phoneValidation,
+      firstName: firstNameValidation,
+      lastName: lastNameValidation,
+      mobileNumber: mobileValidation,
       email: emailValidation,
-      role: roleValidation
+      role: roleValidation,
+      password: passwordValidation
     });
 
-    return nameValidation.isValid && phoneValidation.isValid && emailValidation.isValid && roleValidation.isValid && formData.permissions.length > 0;
+    return firstNameValidation.isValid && lastNameValidation.isValid && mobileValidation.isValid && emailValidation.isValid && roleValidation.isValid && passwordValidation.isValid;
   };
 
   // Check if form has changes
   const checkForChanges = () => {
-    const hasChanges = formData.name !== '' ||
-      formData.phoneNumber !== '' ||
+    const hasChanges = formData.firstName !== '' ||
+      formData.lastName !== '' ||
+      formData.mobileNumber !== '' ||
       formData.email !== '' ||
       formData.role !== '' ||
+      formData.password !== '' ||
       formData.branch !== '' ||
-      formData.permissions.length > 0;
+      formData.state !== '';
     setHasUnsavedChanges(hasChanges);
   };
 
   // Memoized calculations for performance
   const canSave = useMemo(() => {
-    return validation.name.isValid &&
-      validation.phoneNumber.isValid &&
+    return validation.firstName.isValid &&
+      validation.lastName.isValid &&
+      validation.mobileNumber.isValid &&
       validation.email.isValid &&
       validation.role.isValid &&
-      formData.permissions.length > 0 &&
-      formData.name !== '' &&
-      formData.phoneNumber !== '' &&
+      validation.password.isValid &&
+      formData.firstName !== '' &&
+      formData.lastName !== '' &&
+      formData.mobileNumber !== '' &&
       formData.email !== '' &&
-      formData.role !== '';
+      formData.role !== '' &&
+      formData.password !== '';
   }, [validation, formData]);
 
   // Focus management
@@ -180,6 +253,32 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
       }, 100);
     }
   }, [isOpen]);
+
+  // Load states and branches when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const loadData = async () => {
+        try {
+          // Fetch states and branches from API endpoints
+          const [apiStatesData, branchesData] = await Promise.all([
+            UserService.getStates(),
+            UserService.getBranches()
+          ]);
+
+          console.log(`📊 States loaded: ${apiStatesData.length}, Branches loaded: ${branchesData.length}`);
+
+          setStates(apiStatesData);
+          setBranches(branchesData);
+        } catch (err) {
+          console.error('Failed to load states and branches:', err);
+          setStates([]);
+          setBranches([]);
+          error('Failed to load states and branches from server. Please try again.');
+        }
+      };
+      loadData();
+    }
+  }, [isOpen, error]);
 
   // Escape key handler
   useEffect(() => {
@@ -292,9 +391,10 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
       {/* Modal Container */}
       <div
         ref={modalRef}
-        className="bg-white rounded-[12px] shadow-2xl max-h-[80vh] overflow-y-auto mx-4 w-full max-w-[688px] sm:mx-0 sm:w-[688px]"
+        className="bg-white rounded-[12px] shadow-2xl max-h-[80vh] overflow-y-auto mx-4 w-full max-w-[688px] sm:mx-0 sm:w-[688px] relative"
         style={{
-          boxShadow: '0px 20px 24px -4px rgba(16, 24, 40, 0.08)'
+          boxShadow: '0px 20px 24px -4px rgba(16, 24, 40, 0.08)',
+          zIndex: 1001
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -360,7 +460,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
         {/* Modal Content - Form Fields */}
         <div className="p-6">
           <div className="space-y-5">
-            {/* Name Input */}
+            {/* First Name Input */}
             <div>
               <label
                 className="block text-sm font-medium mb-1.5"
@@ -372,21 +472,21 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                 }}
               >
-                Name
+                First Name
               </label>
               <input
                 ref={firstInputRef}
                 type="text"
-                value={formData.name}
+                value={formData.firstName}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, name: e.target.value }));
+                  setFormData(prev => ({ ...prev, firstName: e.target.value }));
                   checkForChanges();
                   setTimeout(() => {
-                    const nameValidation = validateName(e.target.value);
-                    setValidation(prev => ({ ...prev, name: nameValidation }));
+                    const firstNameValidation = validateFirstName(e.target.value);
+                    setValidation(prev => ({ ...prev, firstName: firstNameValidation }));
                   }, 300);
                 }}
-                className={`w-full border rounded-lg focus:outline-none transition-colors ${validation.name.isValid
+                className={`w-full border rounded-lg focus:outline-none transition-colors ${validation.firstName.isValid
                   ? 'border-[#D0D5DD] focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20'
                   : 'border-[#F04438] focus:border-[#F04438] focus:ring-2 focus:ring-[#F04438]/20'
                   }`}
@@ -399,13 +499,13 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                   backgroundColor: '#FFFFFF'
                 }}
-                placeholder="e.g. Linear"
-                aria-invalid={!validation.name.isValid}
-                aria-describedby={!validation.name.isValid ? 'name-error' : undefined}
+                placeholder="e.g. John"
+                aria-invalid={!validation.firstName.isValid}
+                aria-describedby={!validation.firstName.isValid ? 'firstName-error' : undefined}
               />
-              {!validation.name.isValid && validation.name.error && (
+              {!validation.firstName.isValid && validation.firstName.error && (
                 <p
-                  id="name-error"
+                  id="firstName-error"
                   className="text-sm text-red-600 mt-1.5"
                   style={{
                     fontSize: '14px',
@@ -415,12 +515,12 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                     fontFamily: 'Open Sauce Sans, sans-serif',
                   }}
                 >
-                  {validation.name.error}
+                  {validation.firstName.error}
                 </p>
               )}
             </div>
 
-            {/* Phone Number Input */}
+            {/* Last Name Input */}
             <div>
               <label
                 className="block text-sm font-medium mb-1.5"
@@ -432,20 +532,20 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                 }}
               >
-                Phone Number
+                Last Name
               </label>
               <input
-                type="tel"
-                value={formData.phoneNumber}
+                type="text"
+                value={formData.lastName}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, phoneNumber: e.target.value }));
+                  setFormData(prev => ({ ...prev, lastName: e.target.value }));
                   checkForChanges();
                   setTimeout(() => {
-                    const phoneValidation = validatePhoneNumber(e.target.value);
-                    setValidation(prev => ({ ...prev, phoneNumber: phoneValidation }));
+                    const lastNameValidation = validateLastName(e.target.value);
+                    setValidation(prev => ({ ...prev, lastName: lastNameValidation }));
                   }, 300);
                 }}
-                className={`w-full border rounded-lg focus:outline-none transition-colors ${validation.phoneNumber.isValid
+                className={`w-full border rounded-lg focus:outline-none transition-colors ${validation.lastName.isValid
                   ? 'border-[#D0D5DD] focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20'
                   : 'border-[#F04438] focus:border-[#F04438] focus:ring-2 focus:ring-[#F04438]/20'
                   }`}
@@ -458,13 +558,13 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                   backgroundColor: '#FFFFFF'
                 }}
-                placeholder="e.g. Linear"
-                aria-invalid={!validation.phoneNumber.isValid}
-                aria-describedby={!validation.phoneNumber.isValid ? 'phone-error' : undefined}
+                placeholder="e.g. Doe"
+                aria-invalid={!validation.lastName.isValid}
+                aria-describedby={!validation.lastName.isValid ? 'lastName-error' : undefined}
               />
-              {!validation.phoneNumber.isValid && validation.phoneNumber.error && (
+              {!validation.lastName.isValid && validation.lastName.error && (
                 <p
-                  id="phone-error"
+                  id="lastName-error"
                   className="text-sm text-red-600 mt-1.5"
                   style={{
                     fontSize: '14px',
@@ -474,7 +574,137 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                     fontFamily: 'Open Sauce Sans, sans-serif',
                   }}
                 >
-                  {validation.phoneNumber.error}
+                  {validation.lastName.error}
+                </p>
+              )}
+            </div>
+
+            {/* Mobile Number Input */}
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  lineHeight: '20px',
+                  color: '#344054',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                }}
+              >
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={formData.mobileNumber}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, mobileNumber: e.target.value }));
+                  checkForChanges();
+                  setTimeout(() => {
+                    const mobileValidation = validateMobileNumber(e.target.value);
+                    setValidation(prev => ({ ...prev, mobileNumber: mobileValidation }));
+                  }, 300);
+                }}
+                className={`w-full border rounded-lg focus:outline-none transition-colors ${validation.mobileNumber.isValid
+                  ? 'border-[#D0D5DD] focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20'
+                  : 'border-[#F04438] focus:border-[#F04438] focus:ring-2 focus:ring-[#F04438]/20'
+                  }`}
+                style={{
+                  height: '44px',
+                  padding: '10px 14px',
+                  fontSize: '16px',
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                  backgroundColor: '#FFFFFF'
+                }}
+                placeholder="e.g. 08012345678"
+                aria-invalid={!validation.mobileNumber.isValid}
+                aria-describedby={!validation.mobileNumber.isValid ? 'mobile-error' : undefined}
+              />
+              {!validation.mobileNumber.isValid && validation.mobileNumber.error && (
+                <p
+                  id="mobile-error"
+                  className="text-sm text-red-600 mt-1.5"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    color: '#F04438',
+                    fontFamily: 'Open Sauce Sans, sans-serif',
+                  }}
+                >
+                  {validation.mobileNumber.error}
+                </p>
+              )}
+            </div>
+
+            {/* Password Input */}
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  lineHeight: '20px',
+                  color: '#344054',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                }}
+              >
+                Password
+              </label>
+              <p
+                className="text-xs text-gray-500 mb-2"
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  lineHeight: '16px',
+                  color: '#667085',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                }}
+              >
+                Must contain at least one uppercase letter, one lowercase letter, and one number. Minimum 8 characters.
+              </p>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, password: e.target.value }));
+                  checkForChanges();
+                  setTimeout(() => {
+                    const passwordValidation = validatePassword(e.target.value);
+                    setValidation(prev => ({ ...prev, password: passwordValidation }));
+                  }, 300);
+                }}
+                className={`w-full border rounded-lg focus:outline-none transition-colors ${validation.password.isValid
+                  ? 'border-[#D0D5DD] focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20'
+                  : 'border-[#F04438] focus:border-[#F04438] focus:ring-2 focus:ring-[#F04438]/20'
+                  }`}
+                style={{
+                  height: '44px',
+                  padding: '10px 14px',
+                  fontSize: '16px',
+                  fontWeight: 400,
+                  lineHeight: '24px',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                  backgroundColor: '#FFFFFF'
+                }}
+                placeholder="Enter secure password"
+                aria-invalid={!validation.password.isValid}
+                aria-describedby={!validation.password.isValid ? 'password-error' : undefined}
+              />
+              {!validation.password.isValid && validation.password.error && (
+                <p
+                  id="password-error"
+                  className="text-sm text-red-600 mt-1.5"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    color: '#F04438',
+                    fontFamily: 'Open Sauce Sans, sans-serif',
+                  }}
+                >
+                  {validation.password.error}
                 </p>
               )}
             </div>
@@ -517,7 +747,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   fontFamily: 'Open Sauce Sans, sans-serif',
                   backgroundColor: '#FFFFFF'
                 }}
-                placeholder="e.g. Linear"
+                placeholder="e.g. john.doe@company.com"
                 aria-invalid={!validation.email.isValid}
                 aria-describedby={!validation.email.isValid ? 'email-error' : undefined}
               />
@@ -558,8 +788,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                   const newRole = e.target.value as UserRoleType;
                   setFormData(prev => ({
                     ...prev,
-                    role: newRole,
-                    permissions: newRole ? ROLE_CONFIG[newRole].defaultPermissions : []
+                    role: newRole
                   }));
                   checkForChanges();
                   const roleValidation = validateRole(e.target.value);
@@ -581,7 +810,7 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                 aria-invalid={!validation.role.isValid}
                 aria-describedby={!validation.role.isValid ? 'role-error' : undefined}
               >
-                <option value="">e.g. Linear</option>
+                <option value="">Select a role</option>
                 {Object.entries(ROLE_CONFIG).map(([key, config]) => (
                   <option key={key} value={key}>
                     {config.label} ({key})
@@ -605,28 +834,28 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
               )}
             </div>
 
-            {/* Branch Input (Conditional) */}
-            {formData.role === 'BM' && (
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1.5"
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    lineHeight: '20px',
-                    color: '#344054',
-                    fontFamily: 'Open Sauce Sans, sans-serif',
-                  }}
-                >
-                  Branch
-                </label>
-                <input
-                  type="text"
-                  value={formData.branch}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, branch: e.target.value }));
-                    checkForChanges();
-                  }}
+            {/* Branch Input */}
+            <div>
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  lineHeight: '20px',
+                  color: '#344054',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                }}
+              >
+                Branch
+              </label>
+              <Select
+                value={formData.branch}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, branch: value }));
+                  checkForChanges();
+                }}
+              >
+                <SelectTrigger
                   className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
                   style={{
                     height: '44px',
@@ -637,103 +866,86 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
                     fontFamily: 'Open Sauce Sans, sans-serif',
                     backgroundColor: '#FFFFFF'
                   }}
-                  placeholder="Enter branch name"
-                  required
-                />
-              </div>
-            )}
+                >
+                  <SelectValue placeholder="Select branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.length === 0 ? (
+                    <SelectItem value="loading" disabled>
+                      Loading branches...
+                    </SelectItem>
+                  ) : (
+                    branches.map((branch) => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Permissions Section */}
+            {/* State Input */}
             <div>
-              <fieldset>
-                <legend
-                  className="block text-sm font-medium mb-3"
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  lineHeight: '20px',
+                  color: '#344054',
+                  fontFamily: 'Open Sauce Sans, sans-serif',
+                }}
+              >
+                State
+              </label>
+              <Select
+                value={formData.state}
+                onValueChange={(value) => {
+                  console.log('State selected:', value); // Debug log
+                  setFormData(prev => ({ ...prev, state: value }));
+                  checkForChanges();
+                }}
+                onOpenChange={(open) => {
+                  console.log('State dropdown open:', open); // Debug log
+                }}
+              >
+                <SelectTrigger
+                  className="w-full border border-[#D0D5DD] rounded-lg focus:outline-none focus:border-[#7A62EB] focus:ring-2 focus:ring-[#7A62EB]/20 transition-colors"
                   style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    lineHeight: '20px',
-                    color: '#344054',
+                    height: '44px',
+                    padding: '10px 14px',
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    lineHeight: '24px',
                     fontFamily: 'Open Sauce Sans, sans-serif',
+                    backgroundColor: '#FFFFFF'
                   }}
                 >
-                  Select Permissions
-                </legend>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                  {Object.entries(PERMISSION_CATEGORIES).map(([category, permissions]) => (
-                    <div key={category} className="col-span-2">
-                      <h4
-                        className="text-sm font-medium mb-2"
-                        style={{
-                          fontSize: '14px',
-                          fontWeight: 500,
-                          lineHeight: '20px',
-                          color: '#344054',
-                          fontFamily: 'Open Sauce Sans, sans-serif',
-                        }}
-                      >
-                        {category}
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        {permissions.map((permission) => (
-                          <label key={permission} className="flex items-center gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={formData.permissions.includes(permission)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    permissions: [...prev.permissions, permission]
-                                  }));
-                                } else {
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    permissions: prev.permissions.filter(p => p !== permission)
-                                  }));
-                                }
-                                checkForChanges();
-                                setTimeout(() => {
-                                  validateForm();
-                                }, 10);
-                              }}
-                              className="w-5 h-5 text-[#7A62EB] border-[#BCC7D3] rounded focus:ring-[#7A62EB] focus:ring-2"
-                              style={{
-                                backgroundColor: '#F9FAFC'
-                              }}
-                            />
-                            <span
-                              className="text-sm"
-                              style={{
-                                fontSize: '14px',
-                                fontWeight: 400,
-                                lineHeight: '20px',
-                                color: '#344054',
-                                fontFamily: 'Open Sauce Sans, sans-serif',
-                              }}
-                            >
-                              {permission}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {formData.permissions.length === 0 && (
-                  <p
-                    className="text-sm text-red-600 mt-2"
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 400,
-                      lineHeight: '20px',
-                      color: '#F04438',
-                      fontFamily: 'Open Sauce Sans, sans-serif',
-                    }}
-                  >
-                    At least one permission must be selected
-                  </p>
-                )}
-              </fieldset>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent
+                  className="z-[1100] bg-white border border-gray-200 shadow-lg"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #D0D5DD',
+                    borderRadius: '8px',
+                    boxShadow: '0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03)'
+                  }}
+                >
+                  {states.length === 0 ? (
+                    <SelectItem value="loading" disabled>
+                      Loading states...
+                    </SelectItem>
+                  ) : (
+                    states.map((state) => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -776,12 +988,14 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
               setIsLoading(true);
               try {
                 const adminData: NewAdminData = {
-                  name: formData.name,
-                  phoneNumber: formData.phoneNumber,
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  mobileNumber: formData.mobileNumber,
                   email: formData.email,
-                  role: formData.role as 'HQ' | 'AM' | 'CO' | 'BM',
-                  permissions: formData.permissions,
-                  branch: formData.branch || undefined
+                  role: formData.role as UserRoleType,
+                  password: formData.password,
+                  branch: formData.branch || undefined,
+                  state: formData.state || undefined
                 };
 
                 await onSave(adminData);
@@ -789,12 +1003,14 @@ export default function CreateAdminModal({ isOpen, onClose, onSave }: CreateAdmi
 
                 // Reset form
                 setFormData({
-                  name: '',
-                  phoneNumber: '',
+                  firstName: '',
+                  lastName: '',
+                  mobileNumber: '',
                   email: '',
                   role: '',
-                  permissions: [],
-                  branch: ''
+                  password: '',
+                  branch: '',
+                  state: ''
                 });
                 setHasUnsavedChanges(false);
                 onClose();

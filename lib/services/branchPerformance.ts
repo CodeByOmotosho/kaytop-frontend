@@ -232,7 +232,9 @@ class BranchPerformanceAPIService implements BranchPerformanceService {
       );
       
       const customers = branchUsers.filter(user => 
-        (user.role as string) === 'customer'
+        (user.role as string) === 'user' ||
+        (user.role as string) === 'customer' ||
+        (user.role as string) === 'client'
       );
 
       // Calculate metrics

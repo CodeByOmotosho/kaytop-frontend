@@ -1,6 +1,7 @@
 /**
- * User Management Service
+ * User Management Service - CACHE BUSTER VERSION 3.0 - FORCE RELOAD
  * Handles user CRUD operations, filtering, and staff management
+ * MODIFIED: 2026-01-25-16:30 - Force browser cache invalidation
  */
 
 import apiClient from '@/lib/apiClient';
@@ -71,28 +72,83 @@ class UserAPIService implements UserService {
 
       const url = `${API_ENDPOINTS.ADMIN.USERS}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
+      console.log('🔍 [getAllUsers] Fetching users from:', url);
+      console.log('🔍 [getAllUsers] Query params:', params);
+      
       const response = await apiClient.get<any>(url);
 
-      // Backend returns direct data format, not wrapped in success/data
-      if (response && typeof response === 'object') {
+      console.log('🔍 [getAllUsers] Raw API response:', response);
+      console.log('🔍 [getAllUsers] Response data type:', typeof response);
+      console.log('🔍 [getAllUsers] Response is array:', Array.isArray(response));
+
+      // Handle Axios response wrapper first
+      let actualData = response;
+      if (response && typeof response === 'object' && response.data !== undefined) {
+        console.log('🔍 [getAllUsers] Extracting data from Axios response wrapper');
+        actualData = response.data;
+      }
+
+      console.log('🔍 [getAllUsers] Actual data after unwrapping:', actualData);
+      console.log('🔍 [getAllUsers] Actual data type:', typeof actualData);
+      console.log('🔍 [getAllUsers] Actual data is array:', Array.isArray(actualData));
+
+      // Now handle different backend response formats
+      if (actualData && typeof actualData === 'object') {
         // Check if it's wrapped in success/data format
-        if (isSuccessResponse(response)) {
-          return response.data;
+        if (isSuccessResponse({ data: actualData } as any)) {
+          console.log('✅ [getAllUsers] Using success/data format');
+          return actualData.data;
         }
         // Check if it's direct array format (users list)
-        else if (Array.isArray(response)) {
+        else if (Array.isArray(actualData)) {
+          console.log('✅ [getAllUsers] Using direct array format, count:', actualData.length);
+          // Log first user to verify structure
+          if (actualData.length > 0) {
+            console.log('🔍 [getAllUsers] First user structure:', actualData[0]);
+          }
           // Backend returns direct array, create paginated response structure
-          return this.createPaginatedResponse(response, response.length, params);
+          return this.createPaginatedResponse(actualData, actualData.length, params);
         }
         // Check if it's already a paginated response object
-        else if (response.data && Array.isArray(response.data)) {
-          return response as unknown as PaginatedResponse<User>;
+        else if (actualData.data && Array.isArray(actualData.data)) {
+          console.log('✅ [getAllUsers] Using paginated response format, count:', actualData.data.length);
+          return actualData as unknown as PaginatedResponse<User>;
+        }
+        // Check if it's a success wrapper with data array
+        else if (actualData.success && actualData.data && Array.isArray(actualData.data)) {
+          console.log('✅ [getAllUsers] Using success wrapper with data array, count:', actualData.data.length);
+          return this.createPaginatedResponse(actualData.data, actualData.data.length, params);
+        }
+        // Check if it has users property (some endpoints return {users: [], total: number})
+        else if (actualData.users && Array.isArray(actualData.users)) {
+          console.log('✅ [getAllUsers] Using users property format, count:', actualData.users.length);
+          return this.createPaginatedResponse(actualData.users, actualData.total || actualData.users.length, params);
+        }
+        // Check if response indicates empty result
+        else if (actualData.message && actualData.message.toLowerCase().includes('no users')) {
+          console.log('✅ [getAllUsers] Backend returned "no users" message');
+          return this.createPaginatedResponse([], 0, params);
         }
       }
 
+      console.error('❌ [getAllUsers] No valid response format found');
+      console.error('❌ [getAllUsers] Response structure:', JSON.stringify(actualData, null, 2));
       throw new Error('Failed to fetch users - invalid response format');
-    } catch (error) {
-      console.error('Users fetch error:', error);
+    } catch (error: any) {
+      console.error('❌ [getAllUsers] Users fetch error:', error);
+      console.error('❌ [getAllUsers] Error response:', error?.response?.data);
+      console.error('❌ [getAllUsers] Error status:', error?.response?.status);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 401) {
+        throw new Error('Authentication required - please log in again');
+      } else if (error?.response?.status === 403) {
+        throw new Error('Insufficient permissions to access user data');
+      } else if (error?.response?.status === 404) {
+        console.warn('⚠️ [getAllUsers] Users endpoint not found, returning empty result');
+        return this.createPaginatedResponse([], 0, params);
+      }
+      
       throw error;
     }
   }
@@ -148,23 +204,76 @@ class UserAPIService implements UserService {
 
   async createStaffUser(data: CreateStaffData): Promise<User> {
     try {
-      const response = await apiClient.post<User>(API_ENDPOINTS.ADMIN.CREATE_STAFF, data);
+      // Check if trying to create system_admin via staff endpoint
+      if (data.role === 'system_admin') {
+        console.warn('Attempting to create system_admin via staff endpoint - this may not be supported by backend');
+      }
+      
+      // Send data in the exact format backend expects
+      const requestData: CreateStaffData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        mobileNumber: data.mobileNumber,
+        password: data.password,
+        role: data.role,
+        branch: data.branch,
+        state: data.state
+      };
+      
+      const response = await apiClient.post<User>(API_ENDPOINTS.ADMIN.CREATE_STAFF, requestData);
 
-      // Backend returns direct data format, not wrapped in success/data
+      // Handle different response formats from backend
+      let userData: any = null;
+
+      // Check if response is wrapped in Axios response format
       if (response && typeof response === 'object') {
-        // Check if it's wrapped in success/data format
-        if ((response as any).success && (response as any).data) {
-          return (response as any).data;
+        // First check if it's an Axios response with .data property
+        if ((response as any).data) {
+          const responseData = (response as any).data;
+          
+          // Check if it's wrapped in success/data format
+          if (responseData.success && responseData.data) {
+            userData = responseData.data;
+          }
+          // Check if response.data is the user object directly
+          else if (responseData.id || responseData.email || responseData.firstName) {
+            userData = responseData;
+          }
+          // Check if response.data is an array (some backends return array)
+          else if (Array.isArray(responseData) && responseData.length > 0) {
+            userData = responseData[0];
+          }
         }
-        // Check if it's direct data format (has user fields)
+        // Check if response itself is the user object (direct format)
         else if ((response as any).id || (response as any).email || (response as any).firstName) {
-          return response as unknown as User;
+          userData = response;
+          console.log('Using direct response format:', userData);
         }
       }
 
+      if (userData) {
+        return userData as User;
+      }
+
+      console.error('Could not parse response format. Response:', response);
       throw new Error('Failed to create staff user - invalid response format');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Staff user creation error:', error);
+      console.error('Error response data:', error?.response?.data);
+      console.error('Error status:', error?.response?.status);
+      console.error('Error message:', error?.message);
+      
+      // Log the full error object for debugging
+      if (error?.response?.data) {
+        console.error('Backend validation errors:', JSON.stringify(error.response.data, null, 2));
+      }
+      
+      // If system_admin role is rejected, provide helpful error message
+      if (error?.response?.status === 400 && data.role === 'system_admin') {
+        throw new Error('Cannot create system_admin users via staff creation endpoint. System admin users may need to be created through a different process.');
+      }
+      
       throw error;
     }
   }
@@ -173,21 +282,36 @@ class UserAPIService implements UserService {
     try {
       const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), data);
 
-      // Backend returns direct data format, not wrapped in success/data
+      // Handle different response formats from backend
+      let userData: any = null;
+
       if (response && typeof response === 'object') {
-        // Check if it's wrapped in success/data format
-        if ((response as any).success && (response as any).data) {
-          return (response as any).data;
+        if ((response as any).data) {
+          const responseData = (response as any).data;
+          
+          if (responseData.success && responseData.data) {
+            userData = responseData.data;
+          }
+          else if (responseData.id || responseData.email || responseData.firstName) {
+            userData = responseData;
+          }
+          else if (Array.isArray(responseData) && responseData.length > 0) {
+            userData = responseData[0];
+          }
         }
-        // Check if it's direct data format (has user fields)
         else if ((response as any).id || (response as any).email || (response as any).firstName) {
-          return response as unknown as User;
+          userData = response;
         }
       }
 
+      if (userData) {
+        return userData as User;
+      }
+
+      console.error('❌ Invalid response format - no valid user data found');
       throw new Error('Failed to update user - invalid response format');
     } catch (error) {
-      console.error('User update error:', error);
+      console.error('❌ User update error:', error);
       throw error;
     }
   }
@@ -220,23 +344,51 @@ class UserAPIService implements UserService {
 
   async updateUserRole(id: string, role: string): Promise<User> {
     try {
-      const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_ROLE(id), { role });
+      const response = await apiClient.patch<User>(API_ENDPOINTS.ADMIN.UPDATE_USER(id), { role });
 
-      // Backend returns direct data format, not wrapped in success/data
+      // Handle different response formats from backend
+      let userData: any = null;
+
       if (response && typeof response === 'object') {
-        // Check if it's wrapped in success/data format
-        if ((response as any).success && (response as any).data) {
-          return (response as any).data;
+        // Check if it's an Axios response with .data property
+        if ((response as any).data) {
+          const responseData = (response as any).data;
+          
+          // Check if it's wrapped in success/data format
+          if (responseData.success && responseData.data) {
+            userData = responseData.data;
+          }
+          // Check if response.data is the user object directly (EXPECTED FORMAT)
+          else if (responseData.id || responseData.email || responseData.firstName) {
+            userData = responseData;
+          }
+          // Check if response.data is an array (fallback)
+          else if (Array.isArray(responseData) && responseData.length > 0) {
+            userData = responseData[0];
+          }
         }
-        // Check if it's direct data format (has user fields)
+        // Check if response itself is the user object (direct format)
         else if ((response as any).id || (response as any).email || (response as any).firstName) {
-          return response as unknown as User;
+          userData = response;
         }
       }
 
+      if (userData) {
+        return userData as User;
+      }
+
       throw new Error('Failed to update user role - invalid response format');
-    } catch (error) {
-      console.error('User role update error:', error);
+    } catch (error: any) {
+      // Provide helpful error messages
+      if (error?.response?.status === 404) {
+        throw new Error(`User with ID ${id} not found or endpoint not available`);
+      } else if (error?.response?.status === 400) {
+        const errorMessage = error?.response?.data?.message || 'Invalid role or request data';
+        throw new Error(`Bad request: ${errorMessage}`);
+      } else if (error?.response?.status === 403) {
+        throw new Error('Insufficient permissions to update user role');
+      }
+      
       throw error;
     }
   }
@@ -288,7 +440,7 @@ class UserAPIService implements UserService {
       console.error('[getUsersByBranch] No format matched - throwing error');
       console.error('[getUsersByBranch] Response structure:', JSON.stringify(data, null, 2));
       throw new Error('Failed to fetch users by branch - invalid response format');
-    } catch (error: Error & { response?: { status?: number }; status?: number }) {
+    } catch (error: any) {
       // Handle 404 errors gracefully (branch might not have users)
       if (error?.response?.status === 404 || error?.status === 404) {
         console.warn(`[getUsersByBranch] Branch "${branch}" not found or has no users (404)`);

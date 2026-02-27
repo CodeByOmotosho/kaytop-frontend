@@ -239,7 +239,11 @@ class GrowthCalculationAPIService implements GrowthCalculationService {
       const response = await unifiedUserService.getUsers({ limit: 1000 });
       const users = response.data || [];
       
-      const customers = users.filter(user => user.role === 'customer');
+      const customers = users.filter(user => 
+        user.role === 'user' || 
+        user.role === 'customer' ||
+        user.role === 'client'
+      );
       
       return customers.length;
     } catch {

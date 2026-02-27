@@ -160,21 +160,46 @@ class SavingsAPIService implements SavingsService {
         API_ENDPOINTS.SAVINGS.CUSTOMER_SAVINGS(customerId)
       );
 
+      // Handle axios response - data is in response.data
+      const responseData = response.data;
+      
       // Backend returns direct data format, not wrapped in success/data
-      if (response && typeof response === 'object') {
-        const transactionResponse = response as TransactionResponse;
+      if (responseData && typeof responseData === 'object') {
+        const transactionResponse = responseData as TransactionResponse;
         // Check if it's wrapped in success/data format
         if (transactionResponse.success && transactionResponse.data) {
           return transactionResponse.data as SavingsAccount;
         }
         // Check if it's direct data format (has savings fields)
-        else if (this.isSavingsAccountLike(response)) {
-          return response as unknown as SavingsAccount;
+        else if (this.isSavingsAccountLike(responseData)) {
+          return responseData as unknown as SavingsAccount;
         }
       }
 
       throw new Error('Failed to fetch customer savings - invalid response format');
     } catch (error) {
+      // Handle 404 errors more gracefully - customer may not have savings account
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
+          console.info(`No savings account found for customer ${customerId}`);
+          // Return empty savings account instead of throwing error
+          return {
+            id: '',
+            customerId: customerId,
+            customerName: 'Unknown Customer',
+            accountNumber: '',
+            balance: 0,
+            status: 'inactive' as const,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            branch: '',
+            interestRate: 0,
+            transactions: []
+          };
+        }
+      }
+      
       console.error('Customer savings fetch error:', error);
       throw error;
     }
@@ -233,6 +258,27 @@ class SavingsAPIService implements SavingsService {
       // Extract data from Axios response
       const data = response.data || response;
 
+      // Log the actual response structure for debugging
+      console.log('Savings transactions API response structure:', {
+        hasData: !!data,
+        dataType: typeof data,
+        isArray: Array.isArray(data),
+        keys: data && typeof data === 'object' ? Object.keys(data) : [],
+        sampleData: data && typeof data === 'object' ? JSON.stringify(data).substring(0, 200) + '...' : data
+      });
+
+      // Handle null or undefined data first
+      if (data === null || data === undefined) {
+        console.warn('Savings transactions API returned null/undefined data');
+        return [];
+      }
+
+      // Handle empty object response early
+      if (data && typeof data === 'object' && Object.keys(data).length === 0) {
+        console.warn('Savings transactions API returned empty object - no transactions available');
+        return [];
+      }
+
       // Backend returns direct data format, not wrapped in success/data
       if (data && typeof data === 'object') {
         // Check if it's wrapped in success/data format
@@ -250,10 +296,33 @@ class SavingsAPIService implements SavingsService {
         }
       }
 
-      throw new Error('Failed to fetch all savings transactions - invalid response format');
+      // Log the response format for debugging (but not as an error since empty responses are valid)
+      console.warn('Unhandled savings transactions response format (returning empty array):', {
+        data,
+        type: typeof data,
+        isArray: Array.isArray(data),
+        keys: data && typeof data === 'object' ? Object.keys(data) : []
+      });
+
+      // Return empty array to prevent page crashes - this is a safe fallback
+      return [];
     } catch (error) {
       console.error('All savings transactions fetch error:', error);
-      throw error;
+      
+      // If it's a network error or API is down, return empty array instead of throwing
+      if (error instanceof Error) {
+        if (error.message.includes('Network Error') || 
+            error.message.includes('timeout') || 
+            error.message.includes('ECONNREFUSED') ||
+            error.message.includes('invalid response format')) {
+          console.warn('API error fetching savings transactions, returning empty array:', error.message);
+          return [];
+        }
+      }
+      
+      // For any other errors, also return empty array to prevent page crashes
+      console.warn('Unexpected error fetching savings transactions, returning empty array:', error);
+      return [];
     }
   }
 }

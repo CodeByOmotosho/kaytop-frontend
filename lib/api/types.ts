@@ -87,8 +87,22 @@ export interface User {
   branch?: string;
   state?: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  accountStatus?: 'fully_verified' | 'pending' | 'suspended';
+  isVerified?: boolean;
+  address?: string | null;
+  dob?: string | null;
+  idNumber?: string | null;
+  idPicture?: string | null;
+  idType?: string | null;
+  guarantorName?: string | null;
+  guarantorEmail?: string | null;
+  guarantorPhone?: string | null;
+  guarantorAddress?: string | null;
+  guarantorPicture?: string | null;
+  verifiedAt?: string | null;
   createdAt: string;
-  updatedAt: string;
+  createdAtBy?: string;
+  updatedAt: string | null;
 }
 
 export interface UserFilterParams {
@@ -110,8 +124,9 @@ export interface CreateStaffData {
   email: string;
   mobileNumber: string;
   password: string;
-  role: 'credit_officer' | 'branch_manager' | 'account_manager' | 'hq_manager';
+  role: 'credit_officer' | 'branch_manager' | 'account_manager' | 'hq_manager' | 'system_admin';
   branch: string;
+  state: string;
 }
 
 export interface UpdateUserData {
@@ -286,7 +301,7 @@ export interface Report {
   dateSent: string;
   timeSent: string;
   reportType: 'daily' | 'weekly' | 'monthly';
-  status: 'submitted' | 'pending' | 'approved' | 'declined';
+  status: 'submitted' | 'pending' | 'approved' | 'declined' | 'draft' | 'forwarded';
   isApproved?: boolean;
   loansDispursed: number;
   loansValueDispursed: string;

@@ -264,102 +264,124 @@ export default function CollectionsTable({
           </tr>
         </thead>
         <tbody>
-          {sortedTransactions.map((transaction, index) => (
-            <tr
-              key={transaction.id}
-              className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-              style={{
-                borderBottom: index < transactions.length - 1 ? '1px solid var(--color-border-gray-200)' : 'none',
-                backgroundColor: selectedTransactions.includes(transaction.id) ? '#F9F5FF' : undefined
-              }}
-              aria-selected={selectedTransactions.includes(transaction.id)}
-            >
-              <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                <Checkbox
-                  checked={selectedTransactions.includes(transaction.id)}
-                  onCheckedChange={(checked) => handleSelectOne(transaction.id, checked === true)}
-                  aria-label={`Select transaction ${transaction.transactionId}`}
-                />
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                  {transaction.transactionId}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  {transaction.type}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                  ₦{transaction.amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                  style={{
-                    backgroundColor: transaction.status === 'Completed' ? '#ECFDF3' : transaction.status === 'Pending' ? '#FFF4ED' : '#FEF3F2',
-                    color: transaction.status === 'Completed' ? '#027A48' : transaction.status === 'Pending' ? '#CC7720' : '#B42318',
-                  }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full mr-1.5"
-                    style={{
-                      backgroundColor: transaction.status === 'Completed' ? '#12B76A' : transaction.status === 'Pending' ? '#FF9326' : '#F04438',
-                    }}
-                  />
-                  {transaction.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {transaction.date}
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-1">
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(transaction.id);
-                    }}
-                    aria-label={`Edit transaction ${transaction.transactionId}`}
-                    title="Edit"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          {sortedTransactions.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="px-6 py-12 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-gray-400">
                       <path
-                        d="M2.5 17.5H17.5M11.6667 4.16667L14.1667 1.66667C14.3877 1.44565 14.6848 1.32031 14.9948 1.32031C15.3047 1.32031 15.6019 1.44565 15.8229 1.66667L18.3333 4.17708C18.5543 4.39811 18.6797 4.69524 18.6797 5.00521C18.6797 5.31518 18.5543 5.61231 18.3333 5.83333L6.66667 17.5H2.5V13.3333L11.6667 4.16667Z"
-                        stroke="#475467"
-                        strokeWidth="1.66667"
+                        d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                        stroke="currentColor"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                     </svg>
-                  </button>
-                  <button
-                    className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(transaction.id);
-                    }}
-                    aria-label={`Delete transaction ${transaction.transactionId}`}
-                    title="Delete"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                      <path
-                        d="M7.5 2.5H12.5M2.5 5H17.5M15.8333 5L15.2489 13.7661C15.1612 15.0813 15.1174 15.7389 14.8333 16.2375C14.5833 16.6765 14.206 17.0294 13.7514 17.2497C13.235 17.5 12.5759 17.5 11.2578 17.5H8.74221C7.42409 17.5 6.76503 17.5 6.24861 17.2497C5.79396 17.0294 5.41674 16.6765 5.16665 16.2375C4.88259 15.7389 4.83875 15.0813 4.75107 13.7661L4.16667 5"
-                        stroke="#475467"
-                        strokeWidth="1.66667"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">No loan collections yet</h3>
+                  <p className="text-sm text-gray-500">This credit officer hasn't collected any loan repayments yet.</p>
                 </div>
               </td>
             </tr>
-          ))}
+          ) : (
+            sortedTransactions.map((transaction, index) => (
+              <tr
+                key={transaction.id}
+                className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                style={{
+                  borderBottom: index < transactions.length - 1 ? '1px solid var(--color-border-gray-200)' : 'none',
+                  backgroundColor: selectedTransactions.includes(transaction.id) ? '#F9F5FF' : undefined
+                }}
+                aria-selected={selectedTransactions.includes(transaction.id)}
+              >
+                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedTransactions.includes(transaction.id)}
+                    onCheckedChange={(checked) => handleSelectOne(transaction.id, checked === true)}
+                    aria-label={`Select transaction ${transaction.transactionId}`}
+                  />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    {transaction.transactionId}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    {transaction.type}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    ₦{transaction.amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor: transaction.status === 'Completed' ? '#ECFDF3' : transaction.status === 'Pending' ? '#FFF4ED' : '#FEF3F2',
+                      color: transaction.status === 'Completed' ? '#027A48' : transaction.status === 'Pending' ? '#CC7720' : '#B42318',
+                    }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full mr-1.5"
+                      style={{
+                        backgroundColor: transaction.status === 'Completed' ? '#12B76A' : transaction.status === 'Pending' ? '#FF9326' : '#F04438',
+                      }}
+                    />
+                    {transaction.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  {transaction.date}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(transaction.id);
+                      }}
+                      aria-label={`Edit transaction ${transaction.transactionId}`}
+                      title="Edit"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="M2.5 17.5H17.5M11.6667 4.16667L14.1667 1.66667C14.3877 1.44565 14.6848 1.32031 14.9948 1.32031C15.3047 1.32031 15.6019 1.44565 15.8229 1.66667L18.3333 4.17708C18.5543 4.39811 18.6797 4.69524 18.6797 5.00521C18.6797 5.31518 18.5543 5.61231 18.3333 5.83333L6.66667 17.5H2.5V13.3333L11.6667 4.16667Z"
+                          stroke="#475467"
+                          strokeWidth="1.66667"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      className="p-2 hover:bg-gray-100 rounded transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(transaction.id);
+                      }}
+                      aria-label={`Delete transaction ${transaction.transactionId}`}
+                      title="Delete"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="M7.5 2.5H12.5M2.5 5H17.5M15.8333 5L15.2489 13.7661C15.1612 15.0813 15.1174 15.7389 14.8333 16.2375C14.5833 16.6765 14.206 17.0294 13.7514 17.2497C13.235 17.5 12.5759 17.5 11.2578 17.5H8.74221C7.42409 17.5 6.76503 17.5 6.24861 17.2497C5.79396 17.0294 5.41674 16.6765 5.16665 16.2375C4.88259 15.7389 4.83875 15.0813 4.75107 13.7661L4.16667 5"
+                          stroke="#475467"
+                          strokeWidth="1.66667"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

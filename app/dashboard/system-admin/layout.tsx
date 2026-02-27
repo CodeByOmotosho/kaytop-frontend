@@ -23,6 +23,7 @@ const systemAdminMenuItems: MenuItem[] = [
     label: "Dashboard",
     icon: "/dashboard.svg",
     link: "/dashboard/system-admin",
+    exact: true,
   },
   {
     label: "Branches",

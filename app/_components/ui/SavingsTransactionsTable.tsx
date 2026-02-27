@@ -11,7 +11,7 @@ interface SavingsTransactionsTableProps {
 }
 
 // Transaction Type Badge Component
-function TransactionTypeBadge({ type }: { type: 'deposit' | 'withdrawal' | 'loan_coverage' }) {
+function TransactionTypeBadge({ type }: { type: string }) {
   const styles = {
     deposit: {
       bg: '#ECFDF3',
@@ -27,12 +27,19 @@ function TransactionTypeBadge({ type }: { type: 'deposit' | 'withdrawal' | 'loan
       bg: '#EFF4FF',
       text: '#1754CC',
       dot: '#0C3C9D'
+    },
+    // Add fallback styles for unknown types
+    default: {
+      bg: '#F2F4F7',
+      text: '#475467',
+      dot: '#98A2B3'
     }
   };
 
-  const style = styles[type];
+  // Get style with fallback to default
+  const style = styles[type as keyof typeof styles] || styles.default;
   const label = type === 'loan_coverage' ? 'Loan Coverage' : 
-                type.charAt(0).toUpperCase() + type.slice(1);
+                type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Unknown';
 
   return (
     <span
@@ -60,7 +67,7 @@ function TransactionTypeBadge({ type }: { type: 'deposit' | 'withdrawal' | 'loan
 }
 
 // Transaction Status Badge Component
-function TransactionStatusBadge({ status }: { status: 'pending' | 'approved' | 'rejected' }) {
+function TransactionStatusBadge({ status }: { status: string }) {
   const styles = {
     pending: {
       bg: '#FFFCF5',
@@ -76,10 +83,18 @@ function TransactionStatusBadge({ status }: { status: 'pending' | 'approved' | '
       bg: '#FEF3F2',
       text: '#B42318',
       dot: '#F04438'
+    },
+    // Add fallback styles for unknown statuses
+    default: {
+      bg: '#F2F4F7',
+      text: '#475467',
+      dot: '#98A2B3'
     }
   };
 
-  const style = styles[status];
+  // Get style with fallback to default
+  const style = styles[status as keyof typeof styles] || styles.default;
+  const displayStatus = status || 'unknown';
 
   return (
     <span
@@ -101,7 +116,7 @@ function TransactionStatusBadge({ status }: { status: 'pending' | 'approved' | '
           backgroundColor: style.dot
         }}
       />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
     </span>
   );
 }
