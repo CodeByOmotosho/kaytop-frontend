@@ -105,11 +105,14 @@ export default function BranchesPage() {
         })
       );
 
-      // Verify the counts add up correctly
+      // Calculate totals from actual fetched data
       const totalBranchCustomers = branchRecordsWithCounts.reduce((sum, branch) => sum + branch.customers, 0);
+      const totalCreditOfficers = branchRecordsWithCounts.reduce((sum, branch) => sum + parseInt(branch.cos || '0', 10), 0);
+      
       console.log(`🔍 Total customers across all branches: ${totalBranchCustomers}`);
       console.log(`🎯 Total customers from customer service: ${allCustomers.length}`);
       console.log(`✅ Counts match: ${totalBranchCustomers === allCustomers.length ? 'YES' : 'NO'}`);
+      console.log(`👔 Total credit officers across all branches: ${totalCreditOfficers}`);
 
       // Apply time period and date range filters
       let filteredBranches = branchRecordsWithCounts;
@@ -127,7 +130,7 @@ export default function BranchesPage() {
 
       setBranchData(filteredBranches);
 
-      // Fetch dashboard statistics
+      // Fetch dashboard statistics for growth percentages
       const dashboardData = await dashboardService.getKPIs();
 
       // Helper function to safely extract values
@@ -140,21 +143,21 @@ export default function BranchesPage() {
       const stats: StatSection[] = [
         {
           label: 'All Branches',
-          value: extractValue(dashboardData.branches?.value, branchRecordsWithCounts.length),
+          value: branchRecordsWithCounts.length, // Use actual count from fetched data
           change: extractValue(dashboardData.branches?.change, 0),
           changeLabel: extractValue(dashboardData.branches?.changeLabel, 'No change'),
           isCurrency: extractValue(dashboardData.branches?.isCurrency, false),
         },
         {
           label: "All CO's",
-          value: extractValue(dashboardData.creditOfficers?.value, 0),
+          value: totalCreditOfficers, // Use calculated total from actual branch data
           change: extractValue(dashboardData.creditOfficers?.change, 0),
           changeLabel: extractValue(dashboardData.creditOfficers?.changeLabel, 'No change'),
           isCurrency: extractValue(dashboardData.creditOfficers?.isCurrency, false),
         },
         {
           label: 'All Customers',
-          value: extractValue(dashboardData.customers?.value, 0),
+          value: totalBranchCustomers, // Use calculated total from actual branch data
           change: extractValue(dashboardData.customers?.change, 0),
           changeLabel: extractValue(dashboardData.customers?.changeLabel, 'No change'),
           isCurrency: extractValue(dashboardData.customers?.isCurrency, false),
