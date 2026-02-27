@@ -13,7 +13,8 @@ import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skel
 import { PAGINATION_LIMIT } from '@/lib/config';
 import { reportsService } from '@/lib/services/reports';
 import { dashboardService } from '@/lib/services/dashboard';
-import type { Report, ReportStatistics, ReportFilters as APIReportFilters } from '@/lib/api/types';
+import type { Report, ReportStatistics, ReportFilters as APIReportFilters, BranchReport } from '@/lib/api/types';
+import BranchAggregateTable from '@/app/_components/ui/BranchAggregateTable';
 import { DateRange } from 'react-day-picker';
 import type { TimePeriod } from '@/app/_components/ui/FilterControls';
 import { useAuth } from '@/app/context/AuthContext';
@@ -47,6 +48,8 @@ export default function ReportsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(PAGINATION_LIMIT);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'reports' | 'branches'>('reports');
+  const [branchAggregates, setBranchAggregates] = useState<BranchReport[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<ReportsFilters>({
     creditOfficer: '',
@@ -208,19 +211,55 @@ export default function ReportsPage() {
     }
   };
 
+  // Fetch branch aggregates data
+  const fetchBranchAggregates = async () => {
+    try {
+      setLoading(true);
+      setApiError(null);
+
+      const response = await reportsService.getBranchAggregateReports({
+        page: currentPage,
+        limit: itemsPerPage,
+        // Apply basic filters if needed
+        reportType: appliedFilters.reportType ? appliedFilters.reportType.toLowerCase() as any : undefined,
+        status: appliedFilters.reportStatus ? appliedFilters.reportStatus.toLowerCase() as any : undefined
+      });
+
+      setBranchAggregates(response.data);
+      setTotalReports(response.pagination.total);
+      setTotalPages(response.pagination.totalPages);
+
+    } catch (err) {
+      console.error('Failed to fetch branch aggregates:', err);
+      setApiError(err instanceof Error ? err.message : 'Failed to load branch data');
+      error('Failed to load branch data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load initial data
   useEffect(() => {
-    fetchReportsData();
-  }, [currentPage, itemsPerPage]);
+    if (viewMode === 'reports') {
+      fetchReportsData();
+    } else {
+      fetchBranchAggregates();
+    }
+  }, [currentPage, itemsPerPage, viewMode]);
 
   // Reload data when filters change
   useEffect(() => {
     if (currentPage === 1) {
-      fetchReportsData();
-    } else {
       setCurrentPage(1);
     }
-  }, [selectedPeriod, dateRange, appliedFilters]);
+
+    // Trigger refetch based on current view mode
+    if (viewMode === 'reports') {
+      fetchReportsData();
+    } else {
+      fetchBranchAggregates();
+    }
+  }, [selectedPeriod, dateRange, appliedFilters, viewMode]);
 
   // Convert API statistics to StatSection format
   const statistics = useMemo(() => {
@@ -254,7 +293,7 @@ export default function ReportsPage() {
     }
     setCurrentPage(1);
     // Refetch data with the new period filter
-    fetchReportsData();
+    if (viewMode === 'reports') fetchReportsData(); else fetchBranchAggregates();
   };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
@@ -265,7 +304,7 @@ export default function ReportsPage() {
     }
     setCurrentPage(1);
     // Refetch data with the new date range
-    fetchReportsData();
+    if (viewMode === 'reports') fetchReportsData(); else fetchBranchAggregates();
   };
 
   const handleFilterClick = () => {
@@ -475,13 +514,41 @@ export default function ReportsPage() {
               >
                 Reports
               </h2>
+
+              {/* View Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => {
+                    setViewMode('reports');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'reports'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                >
+                  All Reports
+                </button>
+                <button
+                  onClick={() => {
+                    setViewMode('branches');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'branches'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                >
+                  By Branch
+                </button>
+              </div>
             </div>
 
-            {/* Reports Table */}
+            {/* Content Section */}
             <div className="max-w-[1075px]">
               {loading ? (
                 <TableSkeleton rows={itemsPerPage} />
-              ) : reports.length === 0 ? (
+              ) : (viewMode === 'reports' && reports.length === 0) || (viewMode === 'branches' && branchAggregates.length === 0) ? (
                 <div
                   className="bg-white rounded-[12px] border border-[#EAECF0] p-12 text-center"
                   role="status"
@@ -491,19 +558,31 @@ export default function ReportsPage() {
                     className="text-base text-[#475467]"
                     style={{ fontFamily: "'Open Sauce Sans', sans-serif" }}
                   >
-                    {apiError ? 'Failed to load reports data. Please try again.' : 'No reports found matching the selected filters.'}
+                    {apiError ? 'Failed to load data. Please try again.' : `No ${viewMode === 'branches' ? 'branch data' : 'reports'} found matching the selected filters.`}
                   </p>
                 </div>
               ) : (
                 <>
-                  <ReportsTable
-                    reports={reports}
-                    selectedReports={selectedReports}
-                    onSelectionChange={handleSelectionChange}
-                    // HQ Managers can edit/delete reports? Possibly. Passing undefined hides buttons.
-                    // Assuming similar to SA for now.
-                    onReportClick={handleReportClick}
-                  />
+                  {viewMode === 'reports' ? (
+                    <ReportsTable
+                      reports={reports}
+                      selectedReports={selectedReports}
+                      onSelectionChange={handleSelectionChange}
+                      onReportClick={handleReportClick}
+                    />
+                  ) : (
+                    <BranchAggregateTable
+                      data={branchAggregates}
+                      loading={loading}
+                      selectedReports={selectedReports}
+                      onSelectionChange={handleSelectionChange}
+                      onRowClick={(branch) => {
+                        // Optional: Navigate to branch details or filter reports by this branch
+                        console.log('Branch clicked:', branch);
+                      }}
+                      onSort={() => { }} // Sorting not implemented yet
+                    />
+                  )}
 
                   {/* Pagination Controls */}
                   {totalReports > 0 && (
