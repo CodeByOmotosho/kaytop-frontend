@@ -199,7 +199,7 @@ export default function LoanSetupStep({
             type="number"
             className="flex-1 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500"
             value={duration === 0 ? "" : duration}
-            onChange={(e) => setDuration(Math.max(1, +e.target.value))}
+            onChange={(e) => setDuration(Math.max(0, +e.target.value))}
           />
           <span className="px-4 text-sm border-l bg-slate-50">Days</span>
         </div>

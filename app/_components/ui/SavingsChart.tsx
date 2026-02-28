@@ -5,7 +5,7 @@ import { ApiResponseError } from "@/app/types/auth";
 import { SummaryProps } from "@/app/types/dashboard";
 import { formatCurrency } from "@/lib/utils";
 import { AxiosError } from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Cell,
   Legend,
@@ -43,6 +43,11 @@ export default function SavingsChart({
 }: PieChartProps) {
   const [activeIndex, setActiveIndex] = useState<number>(defaultIndex ?? 0);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+  setActiveIndex(0);
+}, [data]);
+
 
   if (isLoading) {
     return (
