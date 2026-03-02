@@ -17,7 +17,7 @@ export interface CustomerData {
   guarantorEmail: string;
   guarantorName: string;
   guarantorPhone: string;
-  guarantorPicture: string;
+  guarantorPicture: File | null;
   id: number;
   idNumber: string;
   idPicture: string;
@@ -25,12 +25,19 @@ export interface CustomerData {
   isVerified: boolean;
   lastName: string;
   mobileNumber: string;
-  profilePicture: string;
+  profilePicture: File | null;
   role: string;
   state: string;
   updatedAt?: string | null;
   verificationStatus: string;
   verifiedAt: string;
+  guarantorRelationship: string;
+  guarantorState: string;
+  guarantorBranch: string;
+
+  // ID Verification
+  idCardFile?: File | null;
+  selfieFile?: File | null;
 }
 
 export interface CustomerDataResponse {

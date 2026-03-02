@@ -29,6 +29,7 @@ import { Transactions } from "@/app/types/customer";
 import { SavingsService } from "@/app/services/savingsService";
 import { LoanService } from "@/app/services/loanService";
 import toast from "react-hot-toast";
+import SavingsSparkline from "@/app/_components/ui/SavingsSparkline";
 
 
 interface ActiveLoanCardProps {
@@ -108,13 +109,12 @@ function KpiCards({
           <div className="text-xs text-slate-400">Current balance</div>
         </div>
 
-        <SavingsChart
+        <SavingsSparkline
             isLoading={isLoadingSavings}
             error={savingsError}
             data={savingsChartData}
             isAnimationActive={false}
           />
-
        
       </div>
     </div>
@@ -168,8 +168,8 @@ function ActiveLoanCard({
       </div>
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
-        <Button onClick={onRecordRepayment} className="bg-violet-600 text-white">Record Repayment</Button>
-        <Button onClick={onAddSavings} className="bg-white border border-slate-200">Add Savings</Button>
+        {/* <Button onClick={onRecordRepayment} className="bg-violet-600 text-white">Record Repayment</Button> */}
+        {/* <Button onClick={onAddSavings} className="bg-white border border-slate-200">Add Savings</Button> */}
         <button
           onClick={onViewSchedule}
           className="text-sm text-violet-600 hover:underline"
@@ -311,14 +311,35 @@ export default function CustomerDashboardClient() {
         value: Number(i.value ?? 0),
       }))
     : [];
+
   
-  const savingsSummary = savingsProgress
-    ? mapSavingsProgressData(savingsProgress).map((i) => ({
-        label: i.label,
-        value: Number(i.value ?? 0),
-      }))
-    : [];
-  
+  // const savingsSummary = savings?.transactions?.length
+  // ? savings.transactions.map((t) => ({
+  //     label: new Date(t.createdAt).toLocaleDateString("en-US", {
+  //       month: "short",
+  //     }),
+  //     value: Number(t.amount),
+  //   }))
+  // : [];
+  const savingsSummary = (() => {
+  if (!savings?.transactions?.length) return [];
+
+  let runningTotal = 0;
+
+  return savings.transactions
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() -
+        new Date(b.createdAt).getTime()
+    )
+    .map((t, index) => {
+      runningTotal += Number(t.amount);
+      return {
+        label: index.toString(), // hidden anyway
+        value: runningTotal,
+      };
+    });
+})();
   
 
   
@@ -494,7 +515,7 @@ async function handleAddSavings(amount: number, description: string) {
                   onClose={() => setIsHistoryOpen(false)}
                                isLoading={isLoadingSavings}
                                error={savingsError}
-                               item={savings?.transactions}
+                               item={savings?.transactions as Transactions[]}
                                onPageChange={(page) =>
                                  handlePageChange(page, PaginationKey.branch_customer_savings_page)
                                }
@@ -503,7 +524,7 @@ async function handleAddSavings(amount: number, description: string) {
 
 
 
-       <RecordRepaymentModal
+       {/* <RecordRepaymentModal
               isOpen={isRepaymentModalOpen}
               onClose={() => setIsRepaymentModalOpen(false)}
               loanId={loan?.id}
@@ -521,7 +542,7 @@ async function handleAddSavings(amount: number, description: string) {
               customerId={customer?.id}
                 currentBalance={Number(savings?.balance ?? 0)}
                 onSave={handleAddSavings}
-            />
+            /> */}
     </div>
   );
 }

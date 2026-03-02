@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { ApiResponseError } from "@/app/types/auth";
 import { SavingsService } from "@/app/services/savingsService";
+import { Transactions } from "@/app/types/customer";
 
 export function useMySavingsBalance() {
   const { isLoading, error, data } = useQuery<
@@ -10,7 +11,8 @@ export function useMySavingsBalance() {
       balance: string;
       targetAmount: string;
       targetDescription: string;
-      transactions: Record<string, unknown>[];
+      // transactions: Record<string, unknown>[];
+      transactions: Transactions[];
     },
     AxiosError<ApiResponseError>
   >({
