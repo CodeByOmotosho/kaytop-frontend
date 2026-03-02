@@ -25,6 +25,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { LoanService } from "@/app/services/loanService";
 import { SavingsService } from "@/app/services/savingsService";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 
@@ -243,6 +244,7 @@ export default function DashboardPage() {
   const { customerId } = useParams();
   const router = useRouter();
 const id = Number(customerId);
+const queryClient = useQueryClient();
   /* =======================
      UI STATE
      ======================= */
@@ -420,6 +422,14 @@ async function handleAddSavings(amount: number, description: string) {
   });
 
   toast.success("Savings added successfully");
+
+   await queryClient.invalidateQueries({
+    queryKey: ["customer-savings", customer.id],
+  });
+
+  await queryClient.invalidateQueries({
+    queryKey: ["savings-customerId", customer.id],
+  });
 
   // 🔁 Refresh savings + summaries
   setContextParam(customer?.id, PaginationKey.branch_customer_savings_page);
