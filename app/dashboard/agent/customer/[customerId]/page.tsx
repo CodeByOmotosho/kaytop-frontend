@@ -25,6 +25,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { LoanService } from "@/app/services/loanService";
 import { SavingsService } from "@/app/services/savingsService";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 
@@ -243,6 +244,7 @@ export default function DashboardPage() {
   const { customerId } = useParams();
   const router = useRouter();
 const id = Number(customerId);
+const queryClient = useQueryClient();
   /* =======================
      UI STATE
      ======================= */
@@ -325,6 +327,13 @@ const savingsSummary = savingsProgress
       value: Number(i.value ?? 0),
     }))
   : [];
+  // const savingsSummary =
+  // savingsProgress && !savingsProgressError
+  //   ? mapSavingsProgressData(savingsProgress).map((i) => ({
+  //       label: i.label,
+  //       value: Number(i.value ?? 0),
+  //     }))
+  //   : [];
 
 
   /* =======================
@@ -414,6 +423,14 @@ async function handleAddSavings(amount: number, description: string) {
 
   toast.success("Savings added successfully");
 
+   await queryClient.invalidateQueries({
+    queryKey: ["customer-savings", customer.id],
+  });
+
+  await queryClient.invalidateQueries({
+    queryKey: ["savings-customerId", customer.id],
+  });
+
   // 🔁 Refresh savings + summaries
   setContextParam(customer?.id, PaginationKey.branch_customer_savings_page);
 }
@@ -463,6 +480,12 @@ async function handleAddSavings(amount: number, description: string) {
                 gridCols="grid-cols-1 md:grid-cols-6"
                 />
 
+                {!activeLoan && (
+  <div className="bg-white rounded-lg shadow px-5 py-3 my-3 text-center text-slate-500">
+    No active loan found for this customer.
+  </div>
+)}
+
 {activeLoan && (
         <>
           <div className="px-5 py-3 my-3 bg-white rounded-md">
@@ -486,7 +509,7 @@ async function handleAddSavings(amount: number, description: string) {
 
           </div>
         </>
-      )}
+      )} 
             
 
 

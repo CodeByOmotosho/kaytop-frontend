@@ -75,7 +75,7 @@ const recollections: UpcomingPaymentUI[] =
           {/* Quick actions row under cards (full width of the 3 cards when on small) */}
           <p className="text-slate-900 font-semibold text-lg">Quick Actions</p>
           <div className="sm:col-span-3 flex flex-col sm:flex-row gap-4 mt-1">
-            <button onClick={start} className="flex-1 bg-white px-4 py-5 rounded-xl shadow border text-left cursor-pointer">
+            <button onClick={() => start()} className="flex-1 bg-white px-4 py-5 rounded-xl shadow border text-left cursor-pointer">
               <div className="flex items-center gap-4">
               <div className="rounded-full w-10 h-10 bg-[#f4ebff] flex items-center justify-center">
                 <UserRoundPlus className="text-[#7f56d9]" />

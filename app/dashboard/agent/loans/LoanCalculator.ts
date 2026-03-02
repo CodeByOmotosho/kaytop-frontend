@@ -9,11 +9,12 @@ export function calculateLoan({
 }) {
   const interest = (amount * interestRate) / 100;
   const totalRepayment = amount + interest;
-  const monthlyPayment = totalRepayment / (durationDays / 30);
+  const dailyPayment =
+    durationDays > 0 ? totalRepayment / durationDays : 0;
 
   return {
     interest,
     totalRepayment: Math.round(totalRepayment),
-    monthlyPayment: Math.round(monthlyPayment),
+    dailyPayment: Math.round(dailyPayment),
   };
 }

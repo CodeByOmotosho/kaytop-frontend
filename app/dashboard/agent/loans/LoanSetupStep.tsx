@@ -4,8 +4,6 @@ import { useMemo, useState, useEffect } from "react";
 import CustomerSelect from "./CustomerSelect";
 import { LoanService } from "@/app/services/loanService";
 import { CustomerService } from "@/app/services/customerService";
-import { calculateLoan } from "./LoanCalculator";
-import { LoanDraft } from "./CreateLoanModal";
 import toast from "react-hot-toast";
 import { UploadCloud } from "lucide-react";
 
@@ -18,7 +16,7 @@ export default function LoanSetupStep({
 }) {
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [amount, setAmount] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(30);
+  const [duration, setDuration] = useState<number>(24);
   const [hasLoan, setHasLoan] = useState(false);
   const [checked, setChecked] = useState(false);
   const [showDisbursement, setShowDisbursement] = useState(false);
@@ -27,18 +25,10 @@ export default function LoanSetupStep({
 
   const [loading, setLoading] = useState(false);
   const [checkingLoan, setCheckingLoan] = useState(false);
+  const [createdLoan, setCreatedLoan] = useState<any | null>(null);
+  const isLocked = !!createdLoan;
 
-  const summary = useMemo(
-    () =>
-      calculateLoan({
-        amount,
-        interestRate,
-        durationDays: duration,
-      }),
-    [amount, interestRate, duration]
-  );
 
-  // Reset loan check if customer changes
   useEffect(() => {
     setChecked(false);
     setHasLoan(false);
@@ -48,7 +38,7 @@ export default function LoanSetupStep({
     const loans = await CustomerService.getBranchCustomerLoan(customerId);
     // return loans.some((l) => l.status === "active");
     return loans.some((l) =>
-  ["active", "disbursed", "overdue"].includes(l.status)
+  ["pending", "active", "disbursed", "overdue"].includes(l.status)
 );
 
   };
@@ -70,75 +60,75 @@ export default function LoanSetupStep({
           }
         };
 
+
   const handleContinue = async () => {
-    if (!customerId || amount <= 0) return;
+  if (!customerId || amount <= 0) return;
 
-    setLoading(true);
-    let activeLoan = hasLoan;
+  setLoading(true);
+  let activeLoan = hasLoan;
 
-    // Automatically check loan status if user never clicked
-    if (!checked) {
-      try {
-        activeLoan = await fetchLoanStatus(customerId);
-        setHasLoan(activeLoan);
-        setChecked(true);
-      } catch (err) {
-        toast.error("Failed to check loan status");
-        setLoading(false);
-        return;
-      }
-    }
-
-    setLoading(false);
-
-    if (activeLoan) {
-      toast.error("This customer already has an active loan");
+  if (!checked) {
+    try {
+      activeLoan = await fetchLoanStatus(customerId);
+      setHasLoan(activeLoan);
+      setChecked(true);
+    } catch {
+      toast.error("Failed to check loan status");
+      setLoading(false);
       return;
     }
+  }
 
-    // Show disbursement section
+  if (activeLoan) {
+    toast.error("This customer already has an active loan");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const loan = await LoanService.createLoan(customerId, {
+      amount,
+      term: duration,
+      interestRate,
+    });
+
+    setCreatedLoan(loan);
     setShowDisbursement(true);
-  };
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message || "Failed to create loan"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const submit = async () => {
-    if (!customerId || amount <= 0 || !file) return;
-    
-    if (!file) {
+const submit = async () => {
+  if (!createdLoan || !file) {
     toast.error("Please upload disbursement proof");
     return;
   }
 
-    const draft: LoanDraft = {
-      customerId,
-      amount,
-      durationDays: duration,
-    };
+  try {
+    setLoading(true);
 
-    try {
-      setLoading(true);
+    const formData = new FormData();
+    formData.append("disbursementProof", file);
 
-      const loan = await LoanService.createLoan(draft.customerId, {
-        amount: draft.amount,
-        term: draft.durationDays,
-        interestRate,
-      });
+    await LoanService.disburseLoan(createdLoan.id, formData);
 
-      const formData = new FormData();
-      formData.append("disbursementProof", file);
+    toast.success("Loan disbursed successfully");
+    onSuccess();
+  } catch (error: any) {
+    toast.error(
+      error?.response?.data?.message ||
+      "Failed to disburse loan"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
-      await LoanService.disburseLoan(loan.id, formData);
-
-      toast.success("Loan created and disbursed successfully");
-      onSuccess();
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        "Customer has an unresolved or overdue loan";
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <>
@@ -154,7 +144,7 @@ export default function LoanSetupStep({
           Select Customer
         </label>
         <div className="flex flex-1 items-center border rounded-lg">
-          <div className="flex-1">
+          <div className={isLocked ? "pointer-events-none opacity-70 flex-1" : "flex-1"}>
             <CustomerSelect onSelect={setCustomerId} />
           </div>
           <button
@@ -182,8 +172,11 @@ export default function LoanSetupStep({
           <input
             type="number"
             placeholder="₦0.00"
-            className="flex-1 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500"
-            value={amount === 0 ? "" : amount}
+            value={createdLoan?.amount ?? (amount === 0 ? "" : amount)}
+            readOnly={isLocked}
+            className={`flex-1 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500 ${
+              isLocked ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
             onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
           />
         </div>
@@ -197,29 +190,31 @@ export default function LoanSetupStep({
         <div className="flex flex-1 items-center border rounded-lg overflow-hidden">
           <input
             type="number"
-            className="flex-1 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500"
-            value={duration === 0 ? "" : duration}
+             value={createdLoan?.term ?? (duration === 0 ? "" : duration)}
+            readOnly={isLocked}
+            className={`flex-1 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500 ${
+              isLocked ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
             onChange={(e) => setDuration(Math.max(0, +e.target.value))}
           />
           <span className="px-4 text-sm border-l bg-slate-50">Days</span>
         </div>
       </div>
 
-      {/* Disbursement Section */}
-      {showDisbursement && (
-        <>
-  <div className="mt-6 rounded-xl bg-sky-50 p-6 space-y-6">
-
-    {/* Interest Rate */}
+       {/* Interest Rate */}
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
       <label className="text-sm font-medium sm:w-40">Interest Rate</label>
       <div className="flex-1 relative">
         <input
           type="number"
-          value={interestRate}
           min={0}
+          step={0.1}
+          value={createdLoan?.interestRate ?? (interestRate === 0 ? "" : interestRate)}
+          readOnly={isLocked}
+          className={`w-full rounded-lg border px-4 py-2 pr-10 text-sm ${
+            isLocked ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-violet-500"
+          }`}
           onChange={(e) => setInterestRate(Math.max(0, +e.target.value))}
-          className="w-full rounded-lg border px-4 py-2 pr-10 text-sm focus:ring-2 focus:ring-violet-500"
         /> 
         <span className="absolute right-64 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
           %
@@ -227,12 +222,19 @@ export default function LoanSetupStep({
       </div>
     </div>
 
-    {/* Monthly Payment */}
+      {/* Disbursement Section */}
+      {showDisbursement && (
+        <>
+  <div className="mt-6 rounded-xl bg-sky-50 p-6 space-y-6">
+
+   
+
+    {/* Daily Payment */}
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-      <label className="text-sm font-medium sm:w-40">Monthly Payment</label>
+      <label className="text-sm font-medium sm:w-40">Daily Payment</label>
       <div className="flex-1 relative">
         <div className="w-full rounded-lg border px-4 py-2 pr-6  text-sm font-semibold">
-          ₦{summary.monthlyPayment.toLocaleString()}
+         ₦{Number(createdLoan?.dailyRepayment ?? 0).toLocaleString()}
         </div>
       </div>
     </div>
@@ -242,7 +244,7 @@ export default function LoanSetupStep({
       <label className="text-sm font-medium sm:w-40">Total Repayment</label>
       <div className="flex-1 relative">
         <div className="w-full rounded-lg border px-4 py-2 pr-6  text-sm font-semibold">
-          ₦{summary.totalRepayment.toLocaleString()}
+         ₦{Number(createdLoan?.totalRepayable ?? 0).toLocaleString()}
         </div>
       </div>
     </div>
@@ -290,6 +292,7 @@ export default function LoanSetupStep({
       <div className="flex justify-between gap-4 mt-4">
         <button
           onClick={onCancel}
+          disabled={isLocked}
           className="flex-1 border rounded-lg py-2 text-sm"
         >
           Cancel
@@ -297,11 +300,11 @@ export default function LoanSetupStep({
 
         {!showDisbursement && (
           <button
-            disabled={!customerId || amount <= 0 || loading || hasLoan}
+            disabled={!customerId || amount <= 0 || loading || hasLoan || checkingLoan || isLocked}
             onClick={handleContinue}
             className="flex-1 bg-purple-600 text-white rounded-lg py-2 text-sm disabled:opacity-50"
           >
-            Continue
+            Create Loan
           </button>
         )}
 
@@ -311,7 +314,7 @@ export default function LoanSetupStep({
             disabled={!file || loading}
             className="flex-1 bg-purple-600 text-white rounded-lg py-2 disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Create and Disburse Loan"}
+            {loading ? "Processing..." : "Disburse Loan"}
           </button>
         )}
       </div>
