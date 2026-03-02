@@ -55,11 +55,11 @@ export default function LoginForm() {
       auth(accessToken, role);
       setCookie(accessToken, role);
 
-      // if (!isVerified) {
-      //   toast.success("Your account is under review");
-      //   router.push("/review");
-      //   return;
-      // }
+      if (!isVerified) {
+        toast.success("Your account is under review");
+        router.push("/review");
+        return;
+      }
 
       toast.success("You have logged in successfully");
 
