@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useCreateCustomer } from "../queries/useCreateCustomer";
 import { useUpdateGuarantorDetails } from "../queries/useUpdateGuarantorDetails";
+import { useUpdateCustomerBasicInfo } from "../queries/useUpdateCustomerBasicInfo";
 
 
 export interface CustomerData {
@@ -55,7 +56,8 @@ interface FlowContextType {
   isCreatingCustomer: boolean;
   isUpdatingGuarantor: boolean;
 
-  start: () => void;
+  // start: () => void;
+  start: (customer?: CustomerData & { id: number }) => void;
   close: () => void;
 
   nextStep: () => void;
@@ -102,6 +104,9 @@ const initialData: CustomerData = {
   selfieFile: null,
 };
 
+type FlowMode = "create" | "edit";
+
+
 export function AddCustomerFlowProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<number>(1);
@@ -120,26 +125,38 @@ export function AddCustomerFlowProvider({ children }: { children: ReactNode }) {
 
   const createCustomerMutation = useCreateCustomer();
   const guarantorMutation = useUpdateGuarantorDetails(customerId!);
+  const updateBasicInfoMutation =
+  useUpdateCustomerBasicInfo(customerId!);
+
+const [mode, setMode] = useState<FlowMode>("create");
+
 
   // Step 1 submit
   const submitStep1 = async () => {
-  const formData = new FormData();
+  try {
+    setIsCreatingCustomer(true);
+    if (mode === "create") {
+       const formData = new FormData();
   formData.append("firstName", data.firstName);
   formData.append("lastName", data.lastName);
   formData.append("email", data.email);
   formData.append("mobileNumber", data.mobileNumber);
   formData.append("state", data.state);
   formData.append("branch", data.branch);
+  formData.append("address", data.address);
 
   if (data.profilePicture) {
     formData.append("profilePicture", data.profilePicture);
   }
-
-  try {
-    setIsCreatingCustomer(true);
     const res = await createCustomerMutation.mutateAsync(formData);
-
     setCustomerId(res?.id); 
+    } else {
+      await updateBasicInfoMutation.mutateAsync({
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
+    }
+   
     setStep(2);
   } finally {
     setIsCreatingCustomer(false);
@@ -149,6 +166,9 @@ export function AddCustomerFlowProvider({ children }: { children: ReactNode }) {
   // Step 2 submit
   const submitStep2 = async () => {
   if (!customerId) return;
+
+  try {
+      setIsUpdatingGuarantor(true);
 
   const formData = new FormData();
   formData.append("guarantorName", data.guarantorName);
@@ -161,8 +181,6 @@ export function AddCustomerFlowProvider({ children }: { children: ReactNode }) {
     formData.append("guarantorPicture", data.guarantorPicture);
   }
 
-  try {
-    setIsUpdatingGuarantor(true);
     await guarantorMutation.mutateAsync(formData);
     setStep(3);
   } finally {
@@ -172,21 +190,38 @@ export function AddCustomerFlowProvider({ children }: { children: ReactNode }) {
 
 
   // Start flow
-  const start = () => {
-    setOpen(true);
+  // const start = () => {
+  //   setOpen(true);
+  //   setStep(1);
+  // };
+  const start = (customer?: CustomerData & { id: number }) => {
+    if (customer) {
+      setMode("edit");
+      setCustomerId(customer.id);
+
+      // 🔥 Prefill ALL data
+      setData({
+        ...initialData,
+        ...customer,
+      });
+    } else {
+      setMode("create");
+      setCustomerId(undefined);
+      setData(initialData);
+    }
+
     setStep(1);
+    setOpen(true);
   };
 
-  // Close flow
+  /* ================= CLOSE ================= */
+
   const close = () => {
     setOpen(false);
     setStep(1);
-    setIdStep("upload");
-    setEntryMode("upload");
-    setCapturedFile(null);
-    setCapturedPreview(null);
-    setData(initialData);
     setCustomerId(undefined);
+    setData(initialData);
+    setMode("create");
   };
 
   // Navigation

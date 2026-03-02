@@ -10,6 +10,7 @@ import Pagination from "./Pagination";
 import DeleteCustomerModal from "@/app/dashboard/agent/customer/customers/DeleteCustomerModal";
 import EditCustomerModal from "@/app/dashboard/agent/customer/customers/EditCustomerModal";
 import {  useDeleteCustomer, useUpdateCustomer } from "@/app/hooks/useCustomers";
+import { useCustomerFlow } from "@/app/dashboard/agent/AddCustomerFlow/AddCustomerFlowProvider";
 
 interface TableProps {
   isLoading: boolean;
@@ -39,7 +40,6 @@ export function CustomerTable({
     router.push(`/dashboard/agent/customer/${id}`);
   };
 
-  const [editCustomer, setEditCustomer] = useState<CustomerData | null>(null);
   const [deleteCustomer, setDeleteCustomer] = useState<CustomerData | null>(null);
 
   const [page, setPage] = useState(1);
@@ -47,21 +47,23 @@ export function CustomerTable({
   const updateMutation = useUpdateCustomer();
   const deleteMutation = useDeleteCustomer();
 
+  
+  const { start } = useCustomerFlow();
   const handleEdit = (customer: CustomerData) => {
-    setEditCustomer(customer);
+    start(customer);
   };
 
   const handleDelete = (customer: CustomerData) => {
     setDeleteCustomer(customer);
   };
 
-  const handleSaveEdit = async (
-    customerId: number,
-    payload: { firstName: string; lastName: string }
-  ) => {
-    await updateMutation.mutateAsync({ userId: customerId, payload });
-    setEditCustomer(null);
-  };
+  // const handleSaveEdit = async (
+  //   customerId: number,
+  //   payload: { firstName: string; lastName: string }
+  // ) => {
+  //   await updateMutation.mutateAsync({ userId: customerId, payload });
+  //   setEditCustomer(null);
+  // };
 
   const handleConfirmDelete = async (customerId: number) => {
     await deleteMutation.mutateAsync(customerId);
@@ -149,7 +151,7 @@ export function CustomerTable({
                 <Pencil size={16} />
               </button>
 
-              <button
+              {/* <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete(c);
@@ -157,7 +159,7 @@ export function CustomerTable({
                 className="text-red-600 hover:text-red-800"
               >
                 <Trash2 size={16} />
-              </button>
+              </button> */}
             </td>
 
             </tr>
@@ -172,14 +174,6 @@ export function CustomerTable({
           onPageChange={onPageChange}
         />
       )}
-
-       {/* Edit Modal */}
-        <EditCustomerModal
-          isOpen={editCustomer !== null}
-          onClose={() => setEditCustomer(null)}
-          customer={editCustomer}
-          onSave={handleSaveEdit}
-        />
 
         {/* Delete Modal */}
         <DeleteCustomerModal
