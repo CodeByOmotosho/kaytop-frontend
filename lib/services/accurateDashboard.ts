@@ -157,28 +157,144 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
       if (params?.branch) queryParams.append('branch', params.branch);
 
       const endpoint = `/dashboard/kpi${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      const response = await apiClient.get<unknown>(endpoint);
+      console.log(`🔍 Fetching KPI data from ${endpoint}...`);
       
-      return (response.data as Record<string, unknown>) || {};
+      const response = await apiClient.get<unknown>(endpoint);
+      const kpiData = (response.data as Record<string, unknown>) || {};
+      
+      // Log what the KPI endpoint provides
+      console.log('📊 KPI endpoint response fields:', Object.keys(kpiData));
+      console.log('📊 KPI data sample:', {
+        totalBranches: kpiData.totalBranches,
+        totalCreditOfficers: kpiData.totalCreditOfficers,
+        totalCustomers: kpiData.totalCustomers,
+        totalUsers: kpiData.totalUsers,
+        totalLoans: kpiData.totalLoans,
+        activeLoans: kpiData.activeLoans
+      });
+      
+      return kpiData;
     } catch (error) {
-      console.error('KPI data fetch error:', error);
+      console.error('❌ KPI data fetch error:', error);
       return {};
     }
   }
 
   /**
-   * Fetch users data with role-based filtering to reduce payload
+   * Fetch users data - uses the same approach as the customers page
+   * Fetches from staff endpoint + branch endpoints to get complete user list
    */
   private async fetchUsersData(): Promise<Record<string, unknown>[]> {
     try {
+      console.log('🔄 Fetching users using enhanced approach (staff + branches)...');
       
-      // Use the unified user service to get all users (it already uses /admin/staff/my-staff)
-      // This ensures consistency between dashboard stats and credit officers page
-      console.log('🔄 Fetching all users from unified service for dashboard stats...');
-      const allUsersResponse = await unifiedUserService.getUsers({ limit: 1000 });
-      const allUsers = allUsersResponse.data || [];
+      const allUsers: Record<string, unknown>[] = [];
+      const processedIds = new Set<string>();
       
-      console.log(`📊 Total users fetched for dashboard: ${allUsers.length}`);
+      // 1. Fetch staff members (has proper role field)
+      let staffUsers: Record<string, unknown>[] = [];
+      try {
+        console.log('📋 Fetching staff from /admin/staff/my-staff...');
+        const staffResponse = await apiClient.get<unknown>('/admin/staff/my-staff');
+        const staffData = staffResponse.data || staffResponse;
+        
+        if (Array.isArray(staffData)) {
+          staffUsers = staffData as Record<string, unknown>[];
+          staffData.forEach((user: Record<string, unknown>) => {
+            const userId = user.id as string;
+            if (userId && !processedIds.has(userId)) {
+              allUsers.push(user);
+              processedIds.add(userId);
+            }
+          });
+          console.log(`✅ Got ${staffData.length} staff members with roles`);
+          
+          // Log staff by role for debugging
+          const staffByRole: Record<string, number> = {};
+          staffData.forEach((user: Record<string, unknown>) => {
+            const role = (user.role as string) || 'undefined';
+            staffByRole[role] = (staffByRole[role] || 0) + 1;
+          });
+          console.log('📊 Staff from /admin/staff/my-staff:', staffByRole);
+        }
+      } catch (error) {
+        console.error('⚠️ Failed to fetch staff:', error);
+      }
+      
+      // 2. Fetch users from branches (includes customers)
+      let branchUsersCount = 0;
+      let branchCreditOfficersCount = 0;
+      let branchCustomersCount = 0;
+      
+      try {
+        console.log('🏢 Fetching branch names...');
+        const branchesResponse = await apiClient.get<string[]>('/users/branches');
+        const branches = Array.isArray(branchesResponse.data) ? branchesResponse.data : [];
+        
+        console.log(`🏢 Found ${branches.length} branches, fetching users from each...`);
+        
+        for (const branch of branches) {
+          try {
+            const branchUsersResponse = await apiClient.get<unknown>(`/admin/users/branch/${branch}`);
+            
+            let branchUsers: Record<string, unknown>[] = [];
+            
+            // Handle different response formats
+            if (branchUsersResponse.data && typeof branchUsersResponse.data === 'object') {
+              const responseData = branchUsersResponse.data as Record<string, unknown>;
+              
+              if (Array.isArray(responseData.users)) {
+                branchUsers = responseData.users as Record<string, unknown>[];
+              } else if (Array.isArray(branchUsersResponse.data)) {
+                branchUsers = branchUsersResponse.data as Record<string, unknown>[];
+              }
+            } else if (Array.isArray(branchUsersResponse)) {
+              branchUsers = branchUsersResponse as Record<string, unknown>[];
+            }
+            
+            // Add users that haven't been processed yet
+            let newUsersCount = 0;
+            let newCreditOfficers = 0;
+            let newCustomers = 0;
+            
+            branchUsers.forEach((user: Record<string, unknown>) => {
+              const userId = user.id as string;
+              const userRole = (user.role as string) || '';
+              
+              if (userId && !processedIds.has(userId)) {
+                allUsers.push(user);
+                processedIds.add(userId);
+                newUsersCount++;
+                
+                // Count by role
+                if (userRole.toLowerCase().includes('credit')) {
+                  newCreditOfficers++;
+                } else if (userRole === 'user' || userRole === 'customer' || userRole === 'client') {
+                  newCustomers++;
+                }
+              }
+            });
+            
+            branchUsersCount += newUsersCount;
+            branchCreditOfficersCount += newCreditOfficers;
+            branchCustomersCount += newCustomers;
+            
+            if (newUsersCount > 0) {
+              console.log(`  ✅ ${branch}: Added ${newUsersCount} new users (${newCreditOfficers} COs, ${newCustomers} customers)`);
+            }
+            
+          } catch (error) {
+            console.warn(`  ⚠️ Failed to fetch users from ${branch}:`, error);
+          }
+        }
+        
+        console.log(`📊 Branch endpoints summary: ${branchUsersCount} new users (${branchCreditOfficersCount} COs, ${branchCustomersCount} customers)`);
+        
+      } catch (error) {
+        console.error('⚠️ Failed to fetch branches:', error);
+      }
+      
+      console.log(`📊 Total unique users fetched: ${allUsers.length}`);
       
       // Log role distribution for debugging
       const roleDistribution: Record<string, number> = {};
@@ -187,6 +303,63 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
         roleDistribution[role] = (roleDistribution[role] || 0) + 1;
       });
       console.log('🎭 Dashboard users role distribution:', roleDistribution);
+      
+      // Critical check: Compare staff COs vs total COs
+      const staffCOs = staffUsers.filter(u => {
+        const role = (u.role as string)?.toLowerCase() || '';
+        return role.includes('credit');
+      }).length;
+      
+      const totalCOs = allUsers.filter(u => {
+        const role = (u.role as string)?.toLowerCase() || '';
+        return role.includes('credit');
+      }).length;
+      
+      if (staffCOs !== totalCOs) {
+        console.warn(`⚠️ DISCREPANCY DETECTED:`);
+        console.warn(`   - /admin/staff/my-staff has ${staffCOs} credit officers`);
+        console.warn(`   - After adding branch users, we have ${totalCOs} credit officers`);
+        console.warn(`   - Missing: ${staffCOs - totalCOs} credit officers from branch endpoints`);
+        
+        // Find which COs are missing
+        const staffCOIds = new Set(
+          staffUsers
+            .filter(u => (u.role as string)?.toLowerCase().includes('credit'))
+            .map(u => u.id as string)
+        );
+        
+        const allCOIds = new Set(
+          allUsers
+            .filter(u => (u.role as string)?.toLowerCase().includes('credit'))
+            .map(u => u.id as string)
+        );
+        
+        const missingCOIds = [...staffCOIds].filter(id => !allCOIds.has(id));
+        
+        if (missingCOIds.length > 0) {
+          console.warn(`   - Missing CO IDs: ${missingCOIds.join(', ')}`);
+          const missingCOs = staffUsers.filter(u => missingCOIds.includes(u.id as string));
+          console.warn(`   - Missing COs details:`, missingCOs.map(u => ({
+            id: u.id,
+            name: `${u.firstName} ${u.lastName}`,
+            branch: u.branch,
+            email: u.email
+          })));
+        }
+      }
+      
+      // Show sample of each role type
+      Object.keys(roleDistribution).forEach(role => {
+        const sampleUser = allUsers.find(u => u.role === role);
+        if (sampleUser) {
+          console.log(`👤 Sample ${role}:`, {
+            id: sampleUser.id,
+            name: `${sampleUser.firstName} ${sampleUser.lastName}`,
+            email: sampleUser.email,
+            branch: sampleUser.branch
+          });
+        }
+      });
       
       return allUsers;
     } catch (error) {
@@ -256,6 +429,7 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
 
   /**
    * Calculate accurate statistics from fetched data
+   * Prefers KPI endpoint data when available, falls back to calculated values
    */
   private async calculateAccurateStatistics(
     kpiData: Record<string, unknown>,
@@ -265,7 +439,25 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
     params?: DashboardParams
   ): Promise<DashboardKPIs> {
     
-    // Calculate accurate counts from real data
+    console.log('📊 Calculating dashboard statistics...');
+    console.log(`📊 KPI endpoint provides: ${Object.keys(kpiData).length} fields`);
+    console.log(`📊 Users data: ${usersData.length} users`);
+    console.log(`📊 Branches data: ${branchesData.length} branches`);
+    console.log(`📊 Loans data: ${loansData.length} loans`);
+    
+    // Check if KPI endpoint provides the counts we need
+    const hasKPIBranches = kpiData.totalBranches !== undefined && kpiData.totalBranches !== null;
+    const hasKPICreditOfficers = kpiData.totalCreditOfficers !== undefined && kpiData.totalCreditOfficers !== null;
+    const hasKPICustomers = kpiData.totalCustomers !== undefined && kpiData.totalCustomers !== null;
+    const hasKPILoans = kpiData.totalLoans !== undefined && kpiData.totalLoans !== null;
+    
+    console.log('🔍 KPI endpoint data availability:');
+    console.log(`  - Branches: ${hasKPIBranches ? '✅ Available' : '❌ Missing'} (${kpiData.totalBranches})`);
+    console.log(`  - Credit Officers: ${hasKPICreditOfficers ? '✅ Available' : '❌ Missing'} (${kpiData.totalCreditOfficers})`);
+    console.log(`  - Customers: ${hasKPICustomers ? '✅ Available' : '❌ Missing'} (${kpiData.totalCustomers})`);
+    console.log(`  - Loans: ${hasKPILoans ? '✅ Available' : '❌ Missing'} (${kpiData.totalLoans})`);
+    
+    // Calculate from user data as fallback
     const creditOfficers = usersData.filter(user => {
       const userRole = (user.role as string)?.toLowerCase() || '';
       return userRole === 'credit_officer' || 
@@ -275,59 +467,31 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
              userRole.includes('credit');
     });
     
-    console.log('🔍 Filtering customers from users data...');
-    console.log(`📊 Total users to filter: ${usersData.length}`);
-    
-    // Debug: Show all unique roles in the dataset
-    const uniqueRoles = [...new Set(usersData.map(user => user.role as string))];
-    console.log('🎭 Available roles in dataset:', uniqueRoles);
-    
-    // Debug: Show sample users for each role
-    uniqueRoles.forEach(role => {
-      const sampleUser = usersData.find(user => user.role === role);
-      console.log(`👤 Sample ${role}:`, { 
-        id: sampleUser?.id, 
-        name: `${sampleUser?.firstName} ${sampleUser?.lastName}`,
-        email: sampleUser?.email,
-        branch: sampleUser?.branch 
-      });
-    });
-    
     const customers = usersData.filter(user => {
-      const isCustomer = (user.role as string) === 'user' || 
-                        (user.role as string) === 'customer' ||
-                        (user.role as string) === 'client';
-      if (isCustomer) {
-        console.log('✅ Found customer:', user);
-      }
-      return isCustomer;
+      return (user.role as string) === 'user' || 
+             (user.role as string) === 'customer' ||
+             (user.role as string) === 'client';
     });
     
-    console.log(`👥 Customers found: ${customers.length}`);
-    console.log(`👔 Credit officers found: ${creditOfficers.length}`);
+    console.log(`👥 Calculated from user data: ${customers.length} customers, ${creditOfficers.length} credit officers`);
     
-    // If no credit officers found, log helpful information
-    if (creditOfficers.length === 0) {
-      console.warn('⚠️ No credit officers found in dataset. Available roles:', uniqueRoles);
-      console.warn('💡 Consider checking if credit officers exist in the system or if they use a different role name.');
-    }
+    // Use KPI endpoint data if available, otherwise use calculated values
+    const finalBranchCount = hasKPIBranches ? (kpiData.totalBranches as number) : branchesData.length;
+    const finalCreditOfficerCount = hasKPICreditOfficers ? (kpiData.totalCreditOfficers as number) : creditOfficers.length;
+    const finalCustomerCount = hasKPICustomers ? (kpiData.totalCustomers as number) : customers.length;
+    const finalLoanCount = hasKPILoans ? (kpiData.totalLoans as number) : loansData.length;
+    
+    console.log('✅ Final counts (KPI endpoint preferred):');
+    console.log(`  - Branches: ${finalBranchCount} ${hasKPIBranches ? '(from KPI)' : '(calculated)'}`);
+    console.log(`  - Credit Officers: ${finalCreditOfficerCount} ${hasKPICreditOfficers ? '(from KPI)' : '(calculated)'}`);
+    console.log(`  - Customers: ${finalCustomerCount} ${hasKPICustomers ? '(from KPI)' : '(calculated)'}`);
+    console.log(`  - Loans: ${finalLoanCount} ${hasKPILoans ? '(from KPI)' : '(calculated)'}`);
     
     const activeLoans = loansData.filter(loan => 
       (loan.status as string) === 'active' || (loan.status as string) === 'disbursed'
     );
     
-    console.log('💰 Calculating total loan amount from loans data...');
-    console.log(`📊 Total loans to process: ${loansData.length}`);
-    
-    // Debug: Show sample loan data
-    if (loansData.length > 0) {
-      console.log('📝 Sample loan:', loansData[0]);
-      console.log('💵 Sample loan amount:', loansData[0].amount);
-      console.log('💵 Sample loan amount type:', typeof loansData[0].amount);
-    }
-    
     const totalLoanAmount = loansData.reduce((sum, loan) => {
-      // Handle both number and string amounts
       const amount = typeof loan.amount === 'string' 
         ? parseFloat((loan.amount as string).replace(/[^0-9.-]/g, '')) 
         : ((loan.amount as number) || 0);
@@ -340,18 +504,17 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
       return sum + amount;
     }, 0);
     
-    console.log(`💰 Total loan amount calculated: ${totalLoanAmount}`);
-    
     const missedPayments = loansData.filter(loan => 
       (loan.status as string) === 'defaulted' || (loan.status as string) === 'overdue'
     );
 
     // Calculate real growth rates by comparing with previous period
+    // Use final counts (KPI endpoint preferred, calculated as fallback)
     const currentMetrics = {
-      branches: branchesData.length,
-      creditOfficers: creditOfficers.length,
-      customers: customers.length,
-      loansProcessed: loansData.length,
+      branches: finalBranchCount,
+      creditOfficers: finalCreditOfficerCount,
+      customers: finalCustomerCount,
+      loansProcessed: finalLoanCount,
       loanAmounts: totalLoanAmount,
       activeLoans: activeLoans.length,
       missedPayments: missedPayments.length
@@ -373,25 +536,25 @@ class AccurateDashboardAPIService implements AccurateDashboardService {
 
     return {
       branches: this.createStatisticValue(
-        branchesData.length,
+        finalBranchCount,
         getGrowthRate('branches', growthData.branchesGrowth),
         false
       ),
       
       creditOfficers: this.createStatisticValue(
-        creditOfficers.length,
+        finalCreditOfficerCount,
         getGrowthRate('creditOfficers', growthData.creditOfficersGrowth),
         false
       ),
       
       customers: this.createStatisticValue(
-        customers.length,
+        finalCustomerCount,
         getGrowthRate('customers', growthData.customersGrowth),
         false
       ),
       
       loansProcessed: this.createStatisticValue(
-        loansData.length,
+        finalLoanCount,
         getGrowthRate('loansProcessed', growthData.loansProcessedGrowth),
         false
       ),

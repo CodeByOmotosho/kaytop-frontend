@@ -18,6 +18,7 @@ export default function page(): JSX.Element {
       </p>
       <ForgotPasswordForm/>
       
+      
     </div>
   );
 }
