@@ -12,6 +12,7 @@ import Pagination from '@/app/_components/ui/Pagination';
 import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
 import { PAGINATION_LIMIT } from '@/lib/config';
 import { enhancedUserService } from '@/lib/services/enhancedUserService';
+import { unifiedUserService } from '@/lib/services/unifiedUser';
 import { dashboardService } from '@/lib/services/dashboard';
 import { extractValue } from '@/lib/utils/dataExtraction';
 import { formatDate } from '@/lib/utils';
