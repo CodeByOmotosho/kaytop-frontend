@@ -376,11 +376,12 @@ function handleViewSchedule() {
   setIsScheduleOpen(true);
 }
 
-async function handleRecordCash(amount: number, proof?: File) {
+async function handleRecordCash(amount: number, paymentDate: string, proof?: File) {
   if (!loan?.id) throw new Error("Invalid loan");
 
   const formData = new FormData();
   formData.append("amount", String(amount));
+  formData.append("paymentDate", paymentDate);
 
   if (proof) {
     formData.append("proof", proof);
