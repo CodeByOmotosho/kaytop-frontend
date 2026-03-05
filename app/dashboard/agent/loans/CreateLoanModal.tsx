@@ -27,7 +27,13 @@ export default function CreateLoanModal({
       <div className="fixed inset-0 bg-black/40" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-xl bg-white rounded-2xl p-6">
+        <DialogPanel className="w-full max-w-xl bg-white rounded-2xl p-6 max-h-[90vh] flex flex-col">
+           {/* Header */}
+      <h2 className="text-lg font-semibold mb-1">Create new loan</h2>
+      <p className="text-sm text-slate-500 mb-8">
+        Tell us about your customer. It only takes a few minutes.
+      </p>
+      <div className="overflow-y-auto">
           <LoanSetupStep
             onCancel={closeAndReset}
             onSuccess={() => {
@@ -35,6 +41,7 @@ export default function CreateLoanModal({
               closeAndReset();
             }}
           />
+          </div>
         </DialogPanel>
       </div>
     </Dialog>

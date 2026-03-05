@@ -13,7 +13,7 @@ interface Props {
   nextPayment: number;
   fullPayment: number;
   savingsBalance: number;
-  onRecordCash: (amount: number, proof?: File) => Promise<void>;
+  onRecordCash: (amount: number, paymentDate:string, proof?: File) => Promise<void>;
   onUseSavings: (amount: number) => Promise<void>;
 }
 
@@ -39,6 +39,9 @@ export default function RecordRepaymentModal({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const showHeader = step !== "success" && step !== "request-success";
+  const [paymentDate, setPaymentDate] = useState<string>(
+  new Date().toISOString().split("T")[0]
+);
 
 
   const hasSavings = savingsBalance > 0;
@@ -82,7 +85,7 @@ export default function RecordRepaymentModal({
 
     try {
       if (method === "cash") {
-        await onRecordCash(amount, proof || undefined);
+        await onRecordCash(amount, paymentDate, proof || undefined);
       } else {
         await onUseSavings(amount);
       }
@@ -240,6 +243,21 @@ export default function RecordRepaymentModal({
               </p>
             </div>
 
+            {/* Payment Date */}
+            {method === "cash" && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Payment Date
+                </label>
+                <input
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+
             {/* Proof Upload (Cash only) */}
             {method === "cash" && (
               <div>
@@ -265,7 +283,7 @@ export default function RecordRepaymentModal({
               </Button>
               <Button
                 onClick={() => (method === "cash" ? setStep("summary") : handleRecordRepayment())}
-                disabled={!amount || amount <= 0 || (method === "savings" && amount > savingsBalance)}
+                disabled={!amount || amount <= 0 || !paymentDate || (method === "savings" && amount > savingsBalance)}
                className="w-full flex-1 bg-violet-600 text-white"
               >
                 {method === "cash" ? "Continue" : "Make Request"}
@@ -281,7 +299,7 @@ export default function RecordRepaymentModal({
             <DetailRow label="Payment Method" value="Cash" />
             <DetailRow label="Amount" value={`₦${amount?.toLocaleString()}`} />
             <DetailRow label="Loan ID" value={`#${loanId}`} />
-            <DetailRow label="Date" value={new Date()?.toLocaleDateString()} border />
+            <DetailRow label="Date" value={new Date(paymentDate).toLocaleDateString()} border />
              {/* <DetailRow label="Service fee" value="₦0.00" />
                   <DetailRow label="Late repayment fee" value="₦0.00" border /> */}
             <DetailRow label="Total" value={`₦${amount?.toLocaleString()}`} bold />
