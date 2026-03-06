@@ -391,7 +391,9 @@ async function handleRecordCash(amount: number, paymentDate: string, proof?: Fil
 
   // Optional but recommended
   toast.success("Repayment recorded successfully");
-
+await queryClient.invalidateQueries({
+    queryKey: ["loan-customerId", customer.id],
+  });
   // Refresh data
   setContextParam(loan?.id, PaginationKey.active_loan_id);
 }
@@ -407,6 +409,12 @@ async function handleUseSavings(amount: number) {
   });
 
   toast.success("Savings repayment request sent");
+  await queryClient.invalidateQueries({
+    queryKey: ["loan-customerId", customer.id],
+  }); 
+  await queryClient.invalidateQueries({
+    queryKey: ["savings-customerId", customer.id],
+  });
 
   // Refresh balances / loan
   setContextParam(loan.id, PaginationKey.active_loan_id);
