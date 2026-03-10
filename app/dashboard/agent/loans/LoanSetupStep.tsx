@@ -132,12 +132,6 @@ const submit = async () => {
 
   return (
     <>
-      {/* Header */}
-      <h2 className="text-lg font-semibold mb-1">Create new loan</h2>
-      <p className="text-sm text-slate-500 mb-6">
-        Tell us about your customer. It only takes a few minutes.
-      </p>
-
       {/* Select Customer */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <label className="text-sm font-medium text-slate-700 sm:w-40">
@@ -289,7 +283,7 @@ const submit = async () => {
 
 
       {/* Footer Buttons */}
-      <div className="flex justify-between gap-4 mt-4">
+      <div className="flex justify-between gap-4 mt-6 mb-2">
         <button
           onClick={onCancel}
           disabled={isLocked}

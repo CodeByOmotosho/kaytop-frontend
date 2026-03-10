@@ -376,11 +376,12 @@ function handleViewSchedule() {
   setIsScheduleOpen(true);
 }
 
-async function handleRecordCash(amount: number, proof?: File) {
+async function handleRecordCash(amount: number, paymentDate: string, proof?: File) {
   if (!loan?.id) throw new Error("Invalid loan");
 
   const formData = new FormData();
   formData.append("amount", String(amount));
+  formData.append("paymentDate", paymentDate);
 
   if (proof) {
     formData.append("proof", proof);
@@ -390,7 +391,9 @@ async function handleRecordCash(amount: number, proof?: File) {
 
   // Optional but recommended
   toast.success("Repayment recorded successfully");
-
+await queryClient.invalidateQueries({
+    queryKey: ["loan-customerId", customer.id],
+  });
   // Refresh data
   setContextParam(loan?.id, PaginationKey.active_loan_id);
 }
@@ -406,6 +409,12 @@ async function handleUseSavings(amount: number) {
   });
 
   toast.success("Savings repayment request sent");
+  await queryClient.invalidateQueries({
+    queryKey: ["loan-customerId", customer.id],
+  }); 
+  await queryClient.invalidateQueries({
+    queryKey: ["savings-customerId", customer.id],
+  });
 
   // Refresh balances / loan
   setContextParam(loan.id, PaginationKey.active_loan_id);
