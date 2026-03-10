@@ -1,528 +1,1138 @@
-'use client';
+// 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import FilterControls from '@/app/_components/ui/FilterControls';
-import { StatisticsCard, StatSection } from '@/app/_components/ui/StatisticsCard';
-import Table, { BranchRecord } from '@/app/_components/ui/Table';
-import { ToastContainer } from '@/app/_components/ui/ToastContainer';
-import { useToast } from '@/app/hooks/useToast';
-import Pagination from '@/app/_components/ui/Pagination';
-import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
-import AdvancedFiltersModal, { AdvancedFilters } from '@/app/_components/ui/AdvancedFiltersModal';
-import { DateRange } from 'react-day-picker';
-import { userService } from '@/lib/services/users';
-import { dashboardService } from '@/lib/services/dashboard';
-import type { User, PaginatedResponse } from '@/lib/api/types';
-import type { TimePeriod } from '@/app/_components/ui/FilterControls';
+// import React, { useState, useEffect } from 'react';
+// import { useRouter } from 'next/navigation';
+// import FilterControls from '@/app/_components/ui/FilterControls';
+// import { StatisticsCard, StatSection } from '@/app/_components/ui/StatisticsCard';
+// import Table, { BranchRecord } from '@/app/_components/ui/Table';
+// import { ToastContainer } from '@/app/_components/ui/ToastContainer';
+// import { useToast } from '@/app/hooks/useToast';
+// import Pagination from '@/app/_components/ui/Pagination';
+// import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
+// import AdvancedFiltersModal, { AdvancedFilters } from '@/app/_components/ui/AdvancedFiltersModal';
+// import { DateRange } from 'react-day-picker';
+// import { userService } from '@/lib/services/users';
+// import { dashboardService } from '@/lib/services/dashboard';
+// import type { User, PaginatedResponse } from '@/lib/api/types';
+// import type { TimePeriod } from '@/app/_components/ui/FilterControls';
 
-import { branchService } from '@/lib/services/branches';
+// import { branchService } from '@/lib/services/branches';
+
+// export default function BranchesPage() {
+//   const router = useRouter();
+//   const { toasts, removeToast, success, error } = useToast();
+//   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
+//   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+//   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [sortColumn, setSortColumn] = useState<keyof BranchRecord | null>(null);
+//   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [itemsPerPage, setItemsPerPage] = useState(10);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+//   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+//     region: '',
+//     coCountMin: '',
+//     coCountMax: '',
+//     customerCountMin: '',
+//     customerCountMax: '',
+//     dateFrom: '',
+//     dateTo: '',
+//   });
+
+//   // API data state
+//   const [branchData, setBranchData] = useState<BranchRecord[]>([]);
+//   const [branchStatistics, setBranchStatistics] = useState<StatSection[]>([]);
+//   const [apiError, setApiError] = useState<string | null>(null);
+
+//   // Fetch branch data from API
+//   const fetchBranchData = async () => {
+//     try {
+//       setIsLoading(true);
+//       setApiError(null);
+
+//       // Fetch branches directly from branch service (no more user transformation)
+//       const branchesResponse = await branchService.getAllBranches({ limit: 1000 });
+//       const branchRecords = branchesResponse.data.map(branch => ({
+//         id: branch.id,
+//         branchId: `ID: ${branch.code}`,
+//         name: branch.name,
+//         cos: '0', // Will be populated from user data
+//         customers: 0, // Will be populated from user data
+//         dateCreated: branch.dateCreated.split('T')[0]
+//       }));
+
+//       // Get user counts for each branch
+//       const branchRecordsWithCounts = await Promise.all(
+//         branchRecords.map(async (record) => {
+//           try {
+//             const branchUsers = await userService.getUsersByBranch(record.name, { page: 1, limit: 1000 });
+//             const usersData = branchUsers?.data || [];
+//             const creditOfficers = usersData.filter(user => user.role === 'credit_officer');
+//             const customers = usersData.filter(user =>
+//               user.role === 'user' ||
+//               user.role === 'customer' ||
+//               user.role === 'client'
+//             );
+
+//             return {
+//               ...record,
+//               cos: creditOfficers.length.toString(),
+//               customers: customers.length,
+//             };
+//           } catch (error: any) {
+//             // Log warning but don't fail - return record with zero counts
+//             const errorMsg = error?.message || 'Unknown error';
+//             const statusCode = error?.response?.status || error?.status;
+//             console.warn(`Failed to get user counts for branch "${record.name}" (${statusCode || 'no status'}): ${errorMsg}`);
+
+//             return {
+//               ...record,
+//               cos: '0',
+//               customers: 0,
+//             };
+//           }
+//         })
+//       );
+
+//       // Calculate totals from actual fetched data
+//       const totalCreditOfficers = branchRecordsWithCounts.reduce((sum, branch) => sum + parseInt(branch.cos || '0', 10), 0);
+//       const totalCustomers = branchRecordsWithCounts.reduce((sum, branch) => sum + branch.customers, 0);
+
+//       console.log(`👔 Total credit officers across all branches: ${totalCreditOfficers}`);
+//       console.log(`👥 Total customers across all branches: ${totalCustomers}`);
+
+//       // Apply time period and date range filters
+//       let filteredBranches = branchRecordsWithCounts;
+//       if (selectedPeriod || dateRange) {
+//         const { filterByTimePeriod, filterByDateRange } = await import('@/lib/utils/dateFilters');
+
+//         if (selectedPeriod && selectedPeriod !== 'custom') {
+//           // Apply preset time period filter
+//           filteredBranches = filterByTimePeriod(branchRecordsWithCounts, 'dateCreated', selectedPeriod);
+//         } else if (dateRange) {
+//           // Apply custom date range filter
+//           filteredBranches = filterByDateRange(branchRecordsWithCounts, 'dateCreated', dateRange);
+//         }
+//       }
+
+//       setBranchData(filteredBranches);
+
+//       // Fetch dashboard statistics for growth percentages
+//       const dashboardData = await dashboardService.getKPIs();
+
+//       // Helper function to safely extract values
+//       const extractValue = (obj: any, fallback: any = 0) => {
+//         if (obj === null || obj === undefined) return fallback;
+//         if (typeof obj === 'object' && obj.value !== undefined) return obj.value;
+//         return obj;
+//       };
+
+//       const stats: StatSection[] = [
+//         {
+//           label: 'All Branches',
+//           value: branchRecordsWithCounts.length, // Use actual count from fetched data
+//           change: extractValue(dashboardData.branches?.change, 0),
+//           changeLabel: extractValue(dashboardData.branches?.changeLabel, 'No change'),
+//           isCurrency: extractValue(dashboardData.branches?.isCurrency, false),
+//         },
+//         {
+//           label: "All CO's",
+//           value: totalCreditOfficers, // Use calculated total from actual branch data
+//           change: extractValue(dashboardData.creditOfficers?.change, 0),
+//           changeLabel: extractValue(dashboardData.creditOfficers?.changeLabel, 'No change'),
+//           isCurrency: extractValue(dashboardData.creditOfficers?.isCurrency, false),
+//         },
+//         {
+//           label: 'All Customers',
+//           value: totalCustomers, // Use calculated total from actual branch data
+//           change: extractValue(dashboardData.customers?.change, 0),
+//           changeLabel: extractValue(dashboardData.customers?.changeLabel, 'No change'),
+//           isCurrency: extractValue(dashboardData.customers?.isCurrency, false),
+//         },
+//         {
+//           label: 'Active Loans',
+//           value: extractValue(dashboardData.activeLoans?.value, 0),
+//           change: extractValue(dashboardData.activeLoans?.change, 0),
+//           changeLabel: extractValue(dashboardData.activeLoans?.changeLabel, 'No change'),
+//           isCurrency: extractValue(dashboardData.activeLoans?.isCurrency, false),
+//         },
+//       ];
+
+//       setBranchStatistics(stats);
+
+//     } catch (err) {
+//       console.error('Failed to fetch branch data:', err);
+//       setApiError(err instanceof Error ? err.message : 'Failed to load branch data');
+//       error('Failed to load branch data. Please try again.');
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   // Load initial data
+//   useEffect(() => {
+//     fetchBranchData();
+//   }, []);
+
+//   const handleRowClick = (row: BranchRecord) => {
+//     // Extract the ID from the row object
+//     router.push(`/dashboard/hq/branches/${row.id}`);
+//   };
+
+//   const handlePeriodChange = (period: TimePeriod) => {
+//     setSelectedPeriod(period);
+//     // Clear custom date range when selecting a preset period
+//     if (period !== 'custom') {
+//       setDateRange(undefined);
+//     }
+//     // Refetch data with the new period filter
+//     fetchBranchData();
+//   };
+
+//   const handleDateRangeChange = (range: DateRange | undefined) => {
+//     setDateRange(range);
+//     // When a custom date range is selected, set period to 'custom'
+//     if (range) {
+//       setSelectedPeriod('custom');
+//     }
+//     // Refetch data with the new date range
+//     fetchBranchData();
+//   };
+
+//   const handleFilterClick = () => {
+//     setIsAdvancedFiltersOpen(true);
+//   };
+
+//   const handleApplyAdvancedFilters = (filters: AdvancedFilters) => {
+//     setAdvancedFilters(filters);
+//     setCurrentPage(1); // Reset to first page
+
+//     const activeCount = Object.values(filters).filter((v) => v !== '').length;
+//     if (activeCount > 0) {
+//       success(`${activeCount} filter${activeCount > 1 ? 's' : ''} applied successfully!`);
+//     }
+//   };
+
+//   const handleSelectionChange = (selectedIds: string[]) => {
+//     setSelectedBranches(selectedIds);
+//     console.log('Selected branches:', selectedIds);
+//   };
+
+//   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     setSearchQuery(e.target.value);
+//   };
+
+//   const handleClearSearch = () => {
+//     setSearchQuery('');
+//   };
+
+//   const handleSort = (column: string) => {
+//     const col = column as keyof BranchRecord;
+//     if (sortColumn === col) {
+//       // Toggle direction if same column
+//       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+//     } else {
+//       // New column, default to ascending
+//       setSortColumn(col);
+//       setSortDirection('asc');
+//     }
+//   };
+
+//   // Filter branches based on search query and advanced filters
+//   const filteredBranches = branchData.filter((branch) => {
+//     // Search filter
+//     if (searchQuery.trim()) {
+//       const query = searchQuery.toLowerCase();
+//       const matchesSearch =
+//         branch.name.toLowerCase().includes(query) ||
+//         branch.branchId.toLowerCase().includes(query) ||
+//         branch.id.toLowerCase().includes(query);
+//       if (!matchesSearch) return false;
+//     }
+
+//     // Advanced filters
+//     // Region filter (would need region data in branch records)
+//     if (advancedFilters.region) {
+//       // TODO: Add region field to branch data
+//       // For now, skip this filter
+//     }
+
+//     // CO Count filter
+//     const coCount = parseInt(branch.cos.replace('%', '')) || 0;
+//     if (advancedFilters.coCountMin && coCount < parseInt(advancedFilters.coCountMin)) {
+//       return false;
+//     }
+//     if (advancedFilters.coCountMax && coCount > parseInt(advancedFilters.coCountMax)) {
+//       return false;
+//     }
+
+//     // Customer Count filter
+//     if (advancedFilters.customerCountMin && branch.customers < parseInt(advancedFilters.customerCountMin)) {
+//       return false;
+//     }
+//     if (advancedFilters.customerCountMax && branch.customers > parseInt(advancedFilters.customerCountMax)) {
+//       return false;
+//     }
+
+//     // Date range filter
+//     const branchDate = new Date(branch.dateCreated).getTime();
+//     if (advancedFilters.dateFrom) {
+//       const fromDate = new Date(advancedFilters.dateFrom).getTime();
+//       if (branchDate < fromDate) return false;
+//     }
+//     if (advancedFilters.dateTo) {
+//       const toDate = new Date(advancedFilters.dateTo).getTime();
+//       if (branchDate > toDate) return false;
+//     }
+
+//     return true;
+//   });
+
+//   // Sort filtered branches
+//   const sortedBranches = [...filteredBranches].sort((a, b) => {
+//     if (!sortColumn) return 0;
+
+//     let aValue = a[sortColumn];
+//     let bValue = b[sortColumn];
+
+//     // Handle different data types
+//     if (sortColumn === 'customers') {
+//       // Numeric comparison
+//       return sortDirection === 'asc'
+//         ? (aValue as number) - (bValue as number)
+//         : (bValue as number) - (aValue as number);
+//     } else if (sortColumn === 'dateCreated') {
+//       // Date comparison
+//       const aDate = new Date(aValue as string).getTime();
+//       const bDate = new Date(bValue as string).getTime();
+//       return sortDirection === 'asc' ? aDate - bDate : bDate - aDate;
+//     } else {
+//       // String comparison
+//       const aStr = String(aValue).toLowerCase();
+//       const bStr = String(bValue).toLowerCase();
+//       if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
+//       if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
+//       return 0;
+//     }
+//   });
+
+//   // Pagination
+//   const totalPages = Math.ceil(sortedBranches.length / itemsPerPage);
+//   const startIndex = (currentPage - 1) * itemsPerPage;
+//   const endIndex = startIndex + itemsPerPage;
+//   const paginatedBranches = sortedBranches.slice(startIndex, endIndex);
+
+//   const handlePageChange = (page: number) => {
+//     setCurrentPage(page);
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
+//   };
+
+//   const handleItemsPerPageChange = (items: number) => {
+//     setItemsPerPage(items);
+//     setCurrentPage(1); // Reset to first page
+//   };
+
+//   return (
+//     <div className="drawer-content flex flex-col">
+//       <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
+//         <div className="max-w-[1150px]">
+//           <div>
+//             {/* Page Header */}
+//             <div className="mb-12 flex flex-col sm:flex-row items-start justify-between gap-4">
+//               <div>
+//                 <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}>
+//                   Overview
+//                 </h1>
+//                 <p className="text-base font-medium" style={{ color: 'var(--color-text-primary)', opacity: 0.5 }}>
+//                   All Branches
+//                 </p>
+//               </div>
+//             </div>
+
+//             {/* Filter Controls */}
+//             <div style={{ marginBottom: '56px' }}>
+//               <FilterControls
+//                 selectedPeriod={selectedPeriod}
+//                 onPeriodChange={handlePeriodChange}
+//                 onDateRangeChange={handleDateRangeChange}
+//                 onFilter={handleFilterClick}
+//               />
+//             </div>
+
+//             {/* Statistics Card */}
+//             <div className="w-full max-w-[1091px]" style={{ marginBottom: '48px' }}>
+//               {isLoading ? (
+//                 <StatisticsCardSkeleton />
+//               ) : apiError ? (
+//                 <div className="bg-white rounded-lg border border-[#EAECF0] p-6">
+//                   <div className="text-center">
+//                     <p className="text-[#E43535] mb-2">Failed to load statistics</p>
+//                     <button
+//                       onClick={() => fetchBranchData()}
+//                       className="text-[#7F56D9] hover:text-[#6941C6] font-medium"
+//                     >
+//                       Try again
+//                     </button>
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <>
+//                   {console.log('🎯 Rendering StatisticsCard with:', branchStatistics)}
+//                   <StatisticsCard sections={branchStatistics} />
+//                 </>
+//               )}
+//             </div>
+
+//             {/* Branches Section Title and Search */}
+//             <div className="pl-4 flex items-center justify-between" style={{ marginBottom: '24px' }}>
+//               <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
+//                 Branches
+//               </h2>
+
+//               {/* Search Input */}
+//               <div className="relative w-[320px]">
+//                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+//                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+//                     <path
+//                       d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
+//                       stroke="#667085"
+//                       strokeWidth="1.66667"
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                     />
+//                   </svg>
+//                 </div>
+//                 <input
+//                   type="text"
+//                   value={searchQuery}
+//                   onChange={handleSearchChange}
+//                   placeholder="Search by Name or ID..."
+//                   className="w-full pl-10 pr-10 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 transition-all"
+//                   style={{
+//                     border: '1px solid var(--color-border-gray-300)',
+//                     '--tw-ring-color': 'var(--color-primary-600)'
+//                   } as React.CSSProperties}
+//                   aria-label="Search branches"
+//                   suppressHydrationWarning
+//                 />
+//                 {searchQuery && (
+//                   <button
+//                     onClick={handleClearSearch}
+//                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+//                     aria-label="Clear search"
+//                   >
+//                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+//                       <path
+//                         d="M12 4L4 12M4 4L12 12"
+//                         stroke="#667085"
+//                         strokeWidth="1.5"
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                       />
+//                     </svg>
+//                   </button>
+//                 )}
+//               </div>
+//             </div>
+
+//             {/* Branches Table */}
+//             <div className="max-w-[1041px]">
+//               {isLoading ? (
+//                 <TableSkeleton rows={itemsPerPage} />
+//               ) : paginatedBranches.length > 0 ? (
+//                 <>
+//                   <Table
+//                     data={paginatedBranches}
+//                     tableType="branches"
+//                     onSelectionChange={handleSelectionChange}
+//                     onRowClick={handleRowClick}
+//                     sortColumn={sortColumn}
+//                     sortDirection={sortDirection}
+//                     onSort={handleSort}
+//                   />
+
+//                   {/* Pagination Controls */}
+//                   <div className="mt-4 flex items-center justify-between">
+//                     <div className="flex items-center gap-2">
+//                       <span className="text-sm text-[#475467]">
+//                         Showing {startIndex + 1}-{Math.min(endIndex, sortedBranches.length)} of {sortedBranches.length} results
+//                       </span>
+//                       <select
+//                         value={itemsPerPage}
+//                         onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+//                         className="px-3 py-1.5 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
+//                         aria-label="Items per page"
+//                       >
+//                         <option value={10}>10 per page</option>
+//                         <option value={25}>25 per page</option>
+//                         <option value={50}>50 per page</option>
+//                       </select>
+//                     </div>
+
+//                     <Pagination
+//                       totalPages={totalPages}
+//                       page={currentPage}
+//                       onPageChange={handlePageChange}
+//                     />
+//                   </div>
+//                 </>
+//               ) : (
+//                 <div className="bg-white rounded-lg border border-[#EAECF0] p-12 text-center">
+//                   <svg
+//                     className="mx-auto h-12 w-12 text-gray-400 mb-4"
+//                     fill="none"
+//                     viewBox="0 0 24 24"
+//                     stroke="currentColor"
+//                     aria-hidden="true"
+//                   >
+//                     <path
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                       strokeWidth={2}
+//                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+//                     />
+//                   </svg>
+//                   <h3 className="text-lg font-medium text-gray-900 mb-1">
+//                     No branches found
+//                   </h3>
+//                   <p className="text-sm text-gray-500 mb-4">
+//                     No branches match your search "{searchQuery}"
+//                   </p>
+//                   <button
+//                     onClick={handleClearSearch}
+//                     className="px-4 py-2 text-sm font-medium text-[#7F56D9] hover:text-[#6941C6] transition-colors"
+//                   >
+//                     Clear search
+//                   </button>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       </main>
+
+//       {/* Toast Notifications */}
+//       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+//       {/* Advanced Filters Modal */}
+//       <AdvancedFiltersModal
+//         isOpen={isAdvancedFiltersOpen}
+//         onClose={() => setIsAdvancedFiltersOpen(false)}
+//         onApply={handleApplyAdvancedFilters}
+//         currentFilters={advancedFilters}
+//       />
+//     </div>
+//   );
+// }
+
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import FilterControls from "@/app/_components/ui/FilterControls";
+import {
+    StatisticsCard,
+    StatSection,
+} from "@/app/_components/ui/StatisticsCard";
+import Table, { BranchRecord } from "@/app/_components/ui/Table";
+import { ToastContainer } from "@/app/_components/ui/ToastContainer";
+import { useToast } from "@/app/hooks/useToast";
+import Pagination from "@/app/_components/ui/Pagination";
+import {
+    StatisticsCardSkeleton,
+    TableSkeleton,
+} from "@/app/_components/ui/Skeleton";
+import AdvancedFiltersModal, {
+    AdvancedFilters,
+} from "@/app/_components/ui/AdvancedFiltersModal";
+import { DateRange } from "react-day-picker";
+import { hqManagerService } from "@/lib/services/hq-manager.service";
+import type { TimePeriod } from "@/app/_components/ui/FilterControls";
+
+// Type based on the actual API response
+interface ApiBranch {
+    name: string;
+    customerCount: number;
+    officerCount: number;
+    loanCount: number;
+    savingsBalance: number;
+}
 
 export default function BranchesPage() {
-  const router = useRouter();
-  const { toasts, removeToast, success, error } = useToast();
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortColumn, setSortColumn] = useState<keyof BranchRecord | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
-    region: '',
-    coCountMin: '',
-    coCountMax: '',
-    customerCountMin: '',
-    customerCountMax: '',
-    dateFrom: '',
-    dateTo: '',
-  });
+    const router = useRouter();
+    const { toasts, removeToast, success, error } = useToast();
+    const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [sortColumn, setSortColumn] = useState<keyof BranchRecord | null>(
+        null,
+    );
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+        region: "",
+        coCountMin: "",
+        coCountMax: "",
+        customerCountMin: "",
+        customerCountMax: "",
+        dateFrom: "",
+        dateTo: "",
+    });
 
-  // API data state
-  const [branchData, setBranchData] = useState<BranchRecord[]>([]);
-  const [branchStatistics, setBranchStatistics] = useState<StatSection[]>([]);
-  const [apiError, setApiError] = useState<string | null>(null);
+    // API data state - using the exact response structure
+    const [branchData, setBranchData] = useState<BranchRecord[]>([]);
+    const [totalBranches, setTotalBranches] = useState(0);
+    const [branchStatistics, setBranchStatistics] = useState<StatSection[]>([]);
+    const [apiError, setApiError] = useState<string | null>(null);
 
-  // Fetch branch data from API
-  const fetchBranchData = async () => {
-    try {
-      setIsLoading(true);
-      setApiError(null);
+    // Transform API branch to BranchRecord format
+    const transformApiBranchToRecord = (
+        apiBranch: ApiBranch,
+        index: number,
+    ): BranchRecord => {
+        // Generate a consistent ID from the branch name
+        const branchId = `BR-${apiBranch.name.substring(0, 3).toUpperCase()}-${index + 1}`;
 
-      // Fetch branches directly from branch service (no more user transformation)
-      const branchesResponse = await branchService.getAllBranches({ limit: 1000 });
-      const branchRecords = branchesResponse.data.map(branch => ({
-        id: branch.id,
-        branchId: `ID: ${branch.code}`,
-        name: branch.name,
-        cos: '0', // Will be populated from user data
-        customers: 0, // Will be populated from user data
-        dateCreated: branch.dateCreated.split('T')[0]
-      }));
+        return {
+            id: apiBranch.name,
+            branchId: branchId,
+            name: apiBranch.name,
+            cos: apiBranch.officerCount.toString(),
+            customers: apiBranch.customerCount,
+            dateCreated: "", // Not provided in the API response
+            // Add additional fields that might be needed for display
+            loanCount: apiBranch.loanCount,
+            savingsBalance: apiBranch.savingsBalance,
+        };
+    };
 
-      // Get user counts for each branch
-      const branchRecordsWithCounts = await Promise.all(
-        branchRecords.map(async (record) => {
-          try {
-            const branchUsers = await userService.getUsersByBranch(record.name, { page: 1, limit: 1000 });
-            const usersData = branchUsers?.data || [];
-            const creditOfficers = usersData.filter(user => user.role === 'credit_officer');
-            const customers = usersData.filter(user =>
-              user.role === 'user' ||
-              user.role === 'customer' ||
-              user.role === 'client'
+    // Fetch branch data from HQ Manager API
+    const fetchBranchData = async () => {
+        try {
+            setIsLoading(true);
+            setApiError(null);
+
+            console.log("🏢 Fetching branches using HQ Manager Service...");
+
+            // Get my assigned branches from HQ Manager API
+            const response = await hqManagerService.getMyBranches();
+            console.log("✅ Branch response:", response);
+
+            // The response matches exactly: { totalBranches, branches }
+            const apiBranches = response.branches as ApiBranch[];
+            const total = response.totalBranches as number;
+
+            setTotalBranches(total);
+
+            // Transform API branches to BranchRecord format
+            const branchRecords = apiBranches.map((branch, index) =>
+                transformApiBranchToRecord(branch, index),
             );
 
-            return {
-              ...record,
-              cos: creditOfficers.length.toString(),
-              customers: customers.length,
-            };
-          } catch (error: any) {
-            // Log warning but don't fail - return record with zero counts
-            const errorMsg = error?.message || 'Unknown error';
-            const statusCode = error?.response?.status || error?.status;
-            console.warn(`Failed to get user counts for branch "${record.name}" (${statusCode || 'no status'}): ${errorMsg}`);
+            // Apply time period and date range filters (if we had dates)
+            // Note: The API doesn't provide dates, so we'll skip date filtering for now
+            let filteredBranches = branchRecords;
 
-            return {
-              ...record,
-              cos: '0',
-              customers: 0,
-            };
-          }
-        })
-      );
+            setBranchData(filteredBranches);
 
-      // Calculate totals from actual fetched data
-      const totalCreditOfficers = branchRecordsWithCounts.reduce((sum, branch) => sum + parseInt(branch.cos || '0', 10), 0);
-      const totalCustomers = branchRecordsWithCounts.reduce((sum, branch) => sum + branch.customers, 0);
-      
-      console.log(`👔 Total credit officers across all branches: ${totalCreditOfficers}`);
-      console.log(`👥 Total customers across all branches: ${totalCustomers}`);
+            // Calculate totals from actual branch data
+            const totalCreditOfficers = apiBranches.reduce(
+                (sum, branch) => sum + branch.officerCount,
+                0,
+            );
+            const totalCustomers = apiBranches.reduce(
+                (sum, branch) => sum + branch.customerCount,
+                0,
+            );
+            const totalLoans = apiBranches.reduce(
+                (sum, branch) => sum + branch.loanCount,
+                0,
+            );
+            const totalSavings = apiBranches.reduce(
+                (sum, branch) => sum + branch.savingsBalance,
+                0,
+            );
 
-      // Apply time period and date range filters
-      let filteredBranches = branchRecordsWithCounts;
-      if (selectedPeriod || dateRange) {
-        const { filterByTimePeriod, filterByDateRange } = await import('@/lib/utils/dateFilters');
+            console.log(
+                `👔 Total credit officers across all branches: ${totalCreditOfficers}`,
+            );
+            console.log(
+                `👥 Total customers across all branches: ${totalCustomers}`,
+            );
+            console.log(`💰 Total loans across all branches: ${totalLoans}`);
+            console.log(
+                `💵 Total savings across all branches: ₦${totalSavings}`,
+            );
 
-        if (selectedPeriod && selectedPeriod !== 'custom') {
-          // Apply preset time period filter
-          filteredBranches = filterByTimePeriod(branchRecordsWithCounts, 'dateCreated', selectedPeriod);
-        } else if (dateRange) {
-          // Apply custom date range filter
-          filteredBranches = filterByDateRange(branchRecordsWithCounts, 'dateCreated', dateRange);
+            // Create statistics sections based on actual data
+            const stats: StatSection[] = [
+                {
+                    label: "All Branches",
+                    value: total,
+                    change: 0, // No historical data for change
+                    changeLabel: "Branches under your management",
+                    isCurrency: false,
+                },
+                {
+                    label: "All CO's",
+                    value: totalCreditOfficers,
+                    change: 0,
+                    changeLabel: "Credit officers across all branches",
+                    isCurrency: false,
+                },
+                {
+                    label: "All Customers",
+                    value: totalCustomers,
+                    change: 0,
+                    changeLabel: "Customers across all branches",
+                    isCurrency: false,
+                },
+                {
+                    label: "Active Loans",
+                    value: totalLoans,
+                    change: 0,
+                    changeLabel: "Total loans across branches",
+                    isCurrency: false,
+                },
+                {
+                    label: "Total Savings",
+                    value: totalSavings,
+                    change: 0,
+                    changeLabel: "Savings balance across branches",
+                    isCurrency: true,
+                },
+            ];
+
+            setBranchStatistics(stats);
+        } catch (err) {
+            console.error("❌ Failed to fetch branch data:", err);
+            setApiError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to load branch data",
+            );
+            error("Failed to load branch data. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
-      }
+    };
 
-      setBranchData(filteredBranches);
+    // Load initial data
+    useEffect(() => {
+        fetchBranchData();
+    }, []);
 
-      // Fetch dashboard statistics for growth percentages
-      const dashboardData = await dashboardService.getKPIs();
+    const handleRowClick = (row: BranchRecord) => {
+        // Navigate to branch details page
+        router.push(`/dashboard/hq/branches/${row.id}`);
+    };
 
-      // Helper function to safely extract values
-      const extractValue = (obj: any, fallback: any = 0) => {
-        if (obj === null || obj === undefined) return fallback;
-        if (typeof obj === 'object' && obj.value !== undefined) return obj.value;
-        return obj;
-      };
+    const handlePeriodChange = (period: TimePeriod) => {
+        setSelectedPeriod(period);
+        // Clear custom date range when selecting a preset period
+        if (period !== "custom") {
+            setDateRange(undefined);
+        }
+        // Note: Date filtering will be client-side since API doesn't provide dates
+        fetchBranchData();
+    };
 
-      const stats: StatSection[] = [
-        {
-          label: 'All Branches',
-          value: branchRecordsWithCounts.length, // Use actual count from fetched data
-          change: extractValue(dashboardData.branches?.change, 0),
-          changeLabel: extractValue(dashboardData.branches?.changeLabel, 'No change'),
-          isCurrency: extractValue(dashboardData.branches?.isCurrency, false),
-        },
-        {
-          label: "All CO's",
-          value: totalCreditOfficers, // Use calculated total from actual branch data
-          change: extractValue(dashboardData.creditOfficers?.change, 0),
-          changeLabel: extractValue(dashboardData.creditOfficers?.changeLabel, 'No change'),
-          isCurrency: extractValue(dashboardData.creditOfficers?.isCurrency, false),
-        },
-        {
-          label: 'All Customers',
-          value: totalCustomers, // Use calculated total from actual branch data
-          change: extractValue(dashboardData.customers?.change, 0),
-          changeLabel: extractValue(dashboardData.customers?.changeLabel, 'No change'),
-          isCurrency: extractValue(dashboardData.customers?.isCurrency, false),
-        },
-        {
-          label: 'Active Loans',
-          value: extractValue(dashboardData.activeLoans?.value, 0),
-          change: extractValue(dashboardData.activeLoans?.change, 0),
-          changeLabel: extractValue(dashboardData.activeLoans?.changeLabel, 'No change'),
-          isCurrency: extractValue(dashboardData.activeLoans?.isCurrency, false),
-        },
-      ];
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        setDateRange(range);
+        // When a custom date range is selected, set period to 'custom'
+        if (range) {
+            setSelectedPeriod("custom");
+        }
+        // Note: Date filtering will be client-side since API doesn't provide dates
+        fetchBranchData();
+    };
 
-      setBranchStatistics(stats);
+    const handleFilterClick = () => {
+        setIsAdvancedFiltersOpen(true);
+    };
 
-    } catch (err) {
-      console.error('Failed to fetch branch data:', err);
-      setApiError(err instanceof Error ? err.message : 'Failed to load branch data');
-      error('Failed to load branch data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const handleApplyAdvancedFilters = (filters: AdvancedFilters) => {
+        setAdvancedFilters(filters);
+        setCurrentPage(1); // Reset to first page
 
-  // Load initial data
-  useEffect(() => {
-    fetchBranchData();
-  }, []);
+        const activeCount = Object.values(filters).filter(
+            (v) => v !== "",
+        ).length;
+        if (activeCount > 0) {
+            success(
+                `${activeCount} filter${activeCount > 1 ? "s" : ""} applied successfully!`,
+            );
+        }
+    };
 
-  const handleRowClick = (row: BranchRecord) => {
-    // Extract the ID from the row object
-    router.push(`/dashboard/hq/branches/${row.id}`);
-  };
+    const handleSelectionChange = (selectedIds: string[]) => {
+        setSelectedBranches(selectedIds);
+        console.log("Selected branches:", selectedIds);
+    };
 
-  const handlePeriodChange = (period: TimePeriod) => {
-    setSelectedPeriod(period);
-    // Clear custom date range when selecting a preset period
-    if (period !== 'custom') {
-      setDateRange(undefined);
-    }
-    // Refetch data with the new period filter
-    fetchBranchData();
-  };
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+        setCurrentPage(1); // Reset to first page on search
+    };
 
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    setDateRange(range);
-    // When a custom date range is selected, set period to 'custom'
-    if (range) {
-      setSelectedPeriod('custom');
-    }
-    // Refetch data with the new date range
-    fetchBranchData();
-  };
+    const handleClearSearch = () => {
+        setSearchQuery("");
+        setCurrentPage(1);
+    };
 
-  const handleFilterClick = () => {
-    setIsAdvancedFiltersOpen(true);
-  };
+    const handleSort = (column: string) => {
+        const col = column as keyof BranchRecord;
+        if (sortColumn === col) {
+            // Toggle direction if same column
+            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+        } else {
+            // New column, default to ascending
+            setSortColumn(col);
+            setSortDirection("asc");
+        }
+    };
 
-  const handleApplyAdvancedFilters = (filters: AdvancedFilters) => {
-    setAdvancedFilters(filters);
-    setCurrentPage(1); // Reset to first page
+    // Filter branches based on search query and advanced filters
+    const filteredBranches = branchData.filter((branch) => {
+        // Search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            const matchesSearch =
+                branch.name.toLowerCase().includes(query) ||
+                branch.branchId.toLowerCase().includes(query);
+            if (!matchesSearch) return false;
+        }
 
-    const activeCount = Object.values(filters).filter((v) => v !== '').length;
-    if (activeCount > 0) {
-      success(`${activeCount} filter${activeCount > 1 ? 's' : ''} applied successfully!`);
-    }
-  };
+        // CO Count filter (officerCount)
+        const coCount = parseInt(branch.cos) || 0;
+        if (
+            advancedFilters.coCountMin &&
+            coCount < parseInt(advancedFilters.coCountMin)
+        ) {
+            return false;
+        }
+        if (
+            advancedFilters.coCountMax &&
+            coCount > parseInt(advancedFilters.coCountMax)
+        ) {
+            return false;
+        }
 
-  const handleSelectionChange = (selectedIds: string[]) => {
-    setSelectedBranches(selectedIds);
-    console.log('Selected branches:', selectedIds);
-  };
+        // Customer Count filter
+        if (
+            advancedFilters.customerCountMin &&
+            branch.customers < parseInt(advancedFilters.customerCountMin)
+        ) {
+            return false;
+        }
+        if (
+            advancedFilters.customerCountMax &&
+            branch.customers > parseInt(advancedFilters.customerCountMax)
+        ) {
+            return false;
+        }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
+        return true;
+    });
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
+    // Sort filtered branches
+    const sortedBranches = [...filteredBranches].sort((a, b) => {
+        if (!sortColumn) return 0;
 
-  const handleSort = (column: string) => {
-    const col = column as keyof BranchRecord;
-    if (sortColumn === col) {
-      // Toggle direction if same column
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New column, default to ascending
-      setSortColumn(col);
-      setSortDirection('asc');
-    }
-  };
+        let aValue = a[sortColumn];
+        let bValue = b[sortColumn];
 
-  // Filter branches based on search query and advanced filters
-  const filteredBranches = branchData.filter((branch) => {
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        branch.name.toLowerCase().includes(query) ||
-        branch.branchId.toLowerCase().includes(query) ||
-        branch.id.toLowerCase().includes(query);
-      if (!matchesSearch) return false;
-    }
+        // Handle different data types
+        if (sortColumn === "customers" || sortColumn === "cos") {
+            // Numeric comparison (convert string to number for cos)
+            const aNum =
+                sortColumn === "cos"
+                    ? parseInt(aValue as string) || 0
+                    : (aValue as number);
+            const bNum =
+                sortColumn === "cos"
+                    ? parseInt(bValue as string) || 0
+                    : (bValue as number);
+            return sortDirection === "asc" ? aNum - bNum : bNum - aNum;
+        } else {
+            // String comparison
+            const aStr = String(aValue).toLowerCase();
+            const bStr = String(bValue).toLowerCase();
+            if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+            if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
+            return 0;
+        }
+    });
 
-    // Advanced filters
-    // Region filter (would need region data in branch records)
-    if (advancedFilters.region) {
-      // TODO: Add region field to branch data
-      // For now, skip this filter
-    }
+    // Pagination
+    const totalPages = Math.ceil(sortedBranches.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedBranches = sortedBranches.slice(startIndex, endIndex);
 
-    // CO Count filter
-    const coCount = parseInt(branch.cos.replace('%', '')) || 0;
-    if (advancedFilters.coCountMin && coCount < parseInt(advancedFilters.coCountMin)) {
-      return false;
-    }
-    if (advancedFilters.coCountMax && coCount > parseInt(advancedFilters.coCountMax)) {
-      return false;
-    }
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
 
-    // Customer Count filter
-    if (advancedFilters.customerCountMin && branch.customers < parseInt(advancedFilters.customerCountMin)) {
-      return false;
-    }
-    if (advancedFilters.customerCountMax && branch.customers > parseInt(advancedFilters.customerCountMax)) {
-      return false;
-    }
+    const handleItemsPerPageChange = (items: number) => {
+        setItemsPerPage(items);
+        setCurrentPage(1); // Reset to first page
+    };
 
-    // Date range filter
-    const branchDate = new Date(branch.dateCreated).getTime();
-    if (advancedFilters.dateFrom) {
-      const fromDate = new Date(advancedFilters.dateFrom).getTime();
-      if (branchDate < fromDate) return false;
-    }
-    if (advancedFilters.dateTo) {
-      const toDate = new Date(advancedFilters.dateTo).getTime();
-      if (branchDate > toDate) return false;
-    }
+    return (
+        <div className="drawer-content flex flex-col">
+            <main
+                className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6"
+                style={{ paddingTop: "40px" }}
+            >
+                <div className="max-w-[1150px]">
+                    <div>
+                        {/* Page Header */}
+                        <div className="mb-12 flex flex-col sm:flex-row items-start justify-between gap-4">
+                            <div>
+                                <h1
+                                    className="text-2xl font-bold"
+                                    style={{
+                                        color: "var(--color-text-primary)",
+                                        marginBottom: "8px",
+                                    }}
+                                >
+                                    Overview
+                                </h1>
+                                <p
+                                    className="text-base font-medium"
+                                    style={{
+                                        color: "var(--color-text-primary)",
+                                        opacity: 0.5,
+                                    }}
+                                >
+                                    All Branches
+                                </p>
+                            </div>
+                        </div>
 
-    return true;
-  });
+                        {/* Filter Controls */}
+                        <div style={{ marginBottom: "56px" }}>
+                            <FilterControls
+                                selectedPeriod={selectedPeriod}
+                                onPeriodChange={handlePeriodChange}
+                                onDateRangeChange={handleDateRangeChange}
+                                onFilter={handleFilterClick}
+                            />
+                        </div>
 
-  // Sort filtered branches
-  const sortedBranches = [...filteredBranches].sort((a, b) => {
-    if (!sortColumn) return 0;
+                        {/* Statistics Card */}
+                        <div
+                            className="w-full max-w-[1091px]"
+                            style={{ marginBottom: "48px" }}
+                        >
+                            {isLoading ? (
+                                <StatisticsCardSkeleton />
+                            ) : apiError ? (
+                                <div className="bg-white rounded-lg border border-[#EAECF0] p-6">
+                                    <div className="text-center">
+                                        <p className="text-[#E43535] mb-2">
+                                            {apiError}
+                                        </p>
+                                        <button
+                                            onClick={() => fetchBranchData()}
+                                            className="text-[#7F56D9] hover:text-[#6941C6] font-medium"
+                                        >
+                                            Try again
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <StatisticsCard sections={branchStatistics} />
+                            )}
+                        </div>
 
-    let aValue = a[sortColumn];
-    let bValue = b[sortColumn];
+                        {/* Branches Section Title and Search */}
+                        <div
+                            className="pl-4 flex items-center justify-between"
+                            style={{ marginBottom: "24px" }}
+                        >
+                            <h2
+                                className="text-lg font-semibold"
+                                style={{ color: "var(--color-text-dark)" }}
+                            >
+                                Branches
+                            </h2>
 
-    // Handle different data types
-    if (sortColumn === 'customers') {
-      // Numeric comparison
-      return sortDirection === 'asc'
-        ? (aValue as number) - (bValue as number)
-        : (bValue as number) - (aValue as number);
-    } else if (sortColumn === 'dateCreated') {
-      // Date comparison
-      const aDate = new Date(aValue as string).getTime();
-      const bDate = new Date(bValue as string).getTime();
-      return sortDirection === 'asc' ? aDate - bDate : bDate - aDate;
-    } else {
-      // String comparison
-      const aStr = String(aValue).toLowerCase();
-      const bStr = String(bValue).toLowerCase();
-      if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
-      if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    }
-  });
+                            {/* Search Input */}
+                            <div className="relative w-[320px]">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 20 20"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
+                                            stroke="#667085"
+                                            strokeWidth="1.66667"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
+                                    placeholder="Search by Name or ID..."
+                                    className="w-full pl-10 pr-10 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 transition-all"
+                                    style={
+                                        {
+                                            border: "1px solid var(--color-border-gray-300)",
+                                            "--tw-ring-color":
+                                                "var(--color-primary-600)",
+                                        } as React.CSSProperties
+                                    }
+                                    aria-label="Search branches"
+                                    suppressHydrationWarning
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={handleClearSearch}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                                        aria-label="Clear search"
+                                    >
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                        >
+                                            <path
+                                                d="M12 4L4 12M4 4L12 12"
+                                                stroke="#667085"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
 
-  // Pagination
-  const totalPages = Math.ceil(sortedBranches.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedBranches = sortedBranches.slice(startIndex, endIndex);
+                        {/* Branches Table */}
+                        <div className="max-w-[1041px]">
+                            {isLoading ? (
+                                <TableSkeleton rows={itemsPerPage} />
+                            ) : paginatedBranches.length > 0 ? (
+                                <>
+                                    <Table
+                                        data={paginatedBranches}
+                                        tableType="branches"
+                                        onSelectionChange={
+                                            handleSelectionChange
+                                        }
+                                        onRowClick={handleRowClick}
+                                        sortColumn={sortColumn}
+                                        sortDirection={sortDirection}
+                                        onSort={handleSort}
+                                    />
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+                                    {/* Pagination Controls */}
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-[#475467]">
+                                                Showing {startIndex + 1}-
+                                                {Math.min(
+                                                    endIndex,
+                                                    sortedBranches.length,
+                                                )}{" "}
+                                                of {sortedBranches.length}{" "}
+                                                results
+                                            </span>
+                                            <select
+                                                value={itemsPerPage}
+                                                onChange={(e) =>
+                                                    handleItemsPerPageChange(
+                                                        Number(e.target.value),
+                                                    )
+                                                }
+                                                className="px-3 py-1.5 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
+                                                aria-label="Items per page"
+                                            >
+                                                <option value={10}>
+                                                    10 per page
+                                                </option>
+                                                <option value={25}>
+                                                    25 per page
+                                                </option>
+                                                <option value={50}>
+                                                    50 per page
+                                                </option>
+                                            </select>
+                                        </div>
 
-  const handleItemsPerPageChange = (items: number) => {
-    setItemsPerPage(items);
-    setCurrentPage(1); // Reset to first page
-  };
-
-  return (
-    <div className="drawer-content flex flex-col">
-      <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
-        <div className="max-w-[1150px]">
-          <div>
-            {/* Page Header */}
-            <div className="mb-12 flex flex-col sm:flex-row items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                  Overview
-                </h1>
-                <p className="text-base font-medium" style={{ color: 'var(--color-text-primary)', opacity: 0.5 }}>
-                  All Branches
-                </p>
-              </div>
-            </div>
-
-            {/* Filter Controls */}
-            <div style={{ marginBottom: '56px' }}>
-              <FilterControls
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={handlePeriodChange}
-                onDateRangeChange={handleDateRangeChange}
-                onFilter={handleFilterClick}
-              />
-            </div>
-
-            {/* Statistics Card */}
-            <div className="w-full max-w-[1091px]" style={{ marginBottom: '48px' }}>
-              {isLoading ? (
-                <StatisticsCardSkeleton />
-              ) : apiError ? (
-                <div className="bg-white rounded-lg border border-[#EAECF0] p-6">
-                  <div className="text-center">
-                    <p className="text-[#E43535] mb-2">Failed to load statistics</p>
-                    <button
-                      onClick={() => fetchBranchData()}
-                      className="text-[#7F56D9] hover:text-[#6941C6] font-medium"
-                    >
-                      Try again
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {console.log('🎯 Rendering StatisticsCard with:', branchStatistics)}
-                  <StatisticsCard sections={branchStatistics} />
-                </>
-              )}
-            </div>
-
-            {/* Branches Section Title and Search */}
-            <div className="pl-4 flex items-center justify-between" style={{ marginBottom: '24px' }}>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
-                Branches
-              </h2>
-
-              {/* Search Input */}
-              <div className="relative w-[320px]">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
-                      stroke="#667085"
-                      strokeWidth="1.66667"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  placeholder="Search by Name or ID..."
-                  className="w-full pl-10 pr-10 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 transition-all"
-                  style={{
-                    border: '1px solid var(--color-border-gray-300)',
-                    '--tw-ring-color': 'var(--color-primary-600)'
-                  } as React.CSSProperties}
-                  aria-label="Search branches"
-                  suppressHydrationWarning
-                />
-                {searchQuery && (
-                  <button
-                    onClick={handleClearSearch}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M12 4L4 12M4 4L12 12"
-                        stroke="#667085"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Branches Table */}
-            <div className="max-w-[1041px]">
-              {isLoading ? (
-                <TableSkeleton rows={itemsPerPage} />
-              ) : paginatedBranches.length > 0 ? (
-                <>
-                  <Table
-                    data={paginatedBranches}
-                    tableType="branches"
-                    onSelectionChange={handleSelectionChange}
-                    onRowClick={handleRowClick}
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                  />
-
-                  {/* Pagination Controls */}
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-[#475467]">
-                        Showing {startIndex + 1}-{Math.min(endIndex, sortedBranches.length)} of {sortedBranches.length} results
-                      </span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                        className="px-3 py-1.5 text-sm border border-[#D0D5DD] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7F56D9] focus:border-[#7F56D9]"
-                        aria-label="Items per page"
-                      >
-                        <option value={10}>10 per page</option>
-                        <option value={25}>25 per page</option>
-                        <option value={50}>50 per page</option>
-                      </select>
+                                        <Pagination
+                                            totalPages={totalPages}
+                                            page={currentPage}
+                                            onPageChange={handlePageChange}
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="bg-white rounded-lg border border-[#EAECF0] p-12 text-center">
+                                    <svg
+                                        className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                        />
+                                    </svg>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                                        No branches found
+                                    </h3>
+                                    <p className="text-sm text-gray-500 mb-4">
+                                        {searchQuery
+                                            ? `No branches match your search "${searchQuery}"`
+                                            : "No branches available"}
+                                    </p>
+                                    {searchQuery && (
+                                        <button
+                                            onClick={handleClearSearch}
+                                            className="px-4 py-2 text-sm font-medium text-[#7F56D9] hover:text-[#6941C6] transition-colors"
+                                        >
+                                            Clear search
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    <Pagination
-                      totalPages={totalPages}
-                      page={currentPage}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="bg-white rounded-lg border border-[#EAECF0] p-12 text-center">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400 mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">
-                    No branches found
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    No branches match your search "{searchQuery}"
-                  </p>
-                  <button
-                    onClick={handleClearSearch}
-                    className="px-4 py-2 text-sm font-medium text-[#7F56D9] hover:text-[#6941C6] transition-colors"
-                  >
-                    Clear search
-                  </button>
                 </div>
-              )}
-            </div>
-          </div>
+            </main>
+
+            {/* Toast Notifications */}
+            <ToastContainer toasts={toasts} onClose={removeToast} />
+
+            {/* Advanced Filters Modal */}
+            <AdvancedFiltersModal
+                isOpen={isAdvancedFiltersOpen}
+                onClose={() => setIsAdvancedFiltersOpen(false)}
+                onApply={handleApplyAdvancedFilters}
+                currentFilters={advancedFilters}
+            />
         </div>
-      </main>
-
-      {/* Toast Notifications */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
-
-      {/* Advanced Filters Modal */}
-      <AdvancedFiltersModal
-        isOpen={isAdvancedFiltersOpen}
-        onClose={() => setIsAdvancedFiltersOpen(false)}
-        onApply={handleApplyAdvancedFilters}
-        currentFilters={advancedFilters}
-      />
-    </div>
-  );
+    );
 }

@@ -1,548 +1,684 @@
-'use client';
+"use client";
 
-import { useState, use, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { StatisticsCard, StatSection } from '@/app/_components/ui/StatisticsCard';
-import Pagination from '@/app/_components/ui/Pagination';
-import { StatisticsCardSkeleton, TableSkeleton } from '@/app/_components/ui/Skeleton';
-import { useToast } from '@/app/hooks/useToast';
-import { ToastContainer } from '@/app/_components/ui/ToastContainer';
-import CreditOfficerInfoCard from '@/app/_components/ui/CreditOfficerInfoCard';
-import CreditOfficerTabs from '@/app/_components/ui/CreditOfficerTabs';
-import CollectionsTable from '@/app/_components/ui/CollectionsTable';
-import LoansDisbursedTable from '@/app/_components/ui/LoansDisbursedTable';
-import DeleteConfirmationModal from '@/app/_components/ui/DeleteConfirmationModal';
-import EditCollectionModal from '@/app/_components/ui/EditCollectionModal';
-import EditLoanModal from '@/app/_components/ui/EditLoanModal';
-import { userService } from '@/lib/services/users';
-import { loanService } from '@/lib/services/loans';
-import { savingsService } from '@/lib/services/savings';
-import { creditOfficerService } from '@/lib/services/creditOfficer';
-import type { User, Loan, Transaction } from '@/lib/api/types';
+import { use, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { hqManagerService } from "@/lib/services/hq-manager.service";
+import { useToast } from "@/app/hooks/useToast";
+import { ToastContainer } from "@/app/_components/ui/ToastContainer";
+import { PageSkeleton } from "@/app/_components/ui/Skeleton";
+import FilterControls from "@/app/_components/ui/FilterControls";
+import type { TimePeriod } from "@/app/_components/ui/FilterControls";
+import { DateRange } from "react-day-picker";
 
-interface CreditOfficerDetails {
-  id: string;
-  name: string;
-  coId: string;
-  dateJoined: string;
-  email: string;
-  phone: string;
-  gender: string;
+interface PageProps {
+    params: Promise<{ id: string }>;
 }
 
-interface CollectionTransaction {
-  id: string;
-  transactionId: string;
-  customerName?: string;
-  amount: number;
-  status: 'Completed' | 'Pending' | 'Failed';
-  date: string;
-  type: 'Deposit' | 'Withdrawal' | 'Transfer';
+// Types based on the actual API responses
+interface DisbursedLoansResponse {
+    success: boolean;
+    data: {
+        loans: any[]; // Empty array in the response
+        summary: {
+            officerId: number;
+            totalLoansDisbursed: number;
+            totalAmountDisbursed: number;
+            averageLoanSize: number;
+            totalAmountRepaid: number;
+            totalOutstandingBalance: number;
+            activeLoans: number;
+            completedLoans: number;
+            repaymentRate: number;
+        };
+        dateRange: {
+            start: string;
+            end: string;
+        };
+    };
 }
 
-interface DisbursedLoan {
-  id: string;
-  loanId: string;
-  name: string;
-  amount: number;
-  status: 'Active' | 'Completed' | 'Defaulted';
-  interest: number;
-  nextRepayment: string;
-  creditOfficerId: string;
+interface CollectionsResponse {
+    success: boolean;
+    data: {
+        collections: any[]; // Empty array in the response
+        summary: {
+            officerId: number;
+            totalCollections: number;
+            totalAmountCollected: number;
+            directRepayments: {
+                count: number;
+                amount: number;
+                percentage: number;
+            };
+            loanCoverageFromSavings: {
+                count: number;
+                amount: number;
+                percentage: number;
+            };
+            lateCollections: number;
+            onTimeCollections: number;
+            collectionEfficiencyRate: number;
+            averageCollectionAmount: number;
+        };
+        dateRange: {
+            start: string;
+            end: string;
+        };
+    };
 }
 
-export default function CreditOfficerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  // Unwrap params Promise (Next.js 15+ requirement)
-  const { id } = use(params);
+export default function CreditOfficerDetailsPage({ params }: PageProps) {
+    const { id } = use(params);
+    const router = useRouter();
+    const { toasts, removeToast, error: showError } = useToast();
 
-  const router = useRouter();
-  const { toasts, removeToast, success, error } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'collections' | 'loans-disbursed'>('collections');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-  const [selectedLoans, setSelectedLoans] = useState<string[]>([]);
-  const itemsPerPage = 10;
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"disbursed" | "collections">(
+        "disbursed",
+    );
 
-  // API data state
-  const [creditOfficer, setCreditOfficer] = useState<CreditOfficerDetails | null>(null);
-  const [collectionsData, setCollectionsData] = useState<CollectionTransaction[]>([]);
-  const [loansData, setLoansData] = useState<DisbursedLoan[]>([]);
-  const [creditOfficerStatistics, setCreditOfficerStatistics] = useState<StatSection[]>([]);
-  const [apiError, setApiError] = useState<string | null>(null);
+    // Filter state
+    const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(null);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  // Delete modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; type: string } | null>(null);
+    // Data state
+    const [disbursedData, setDisbursedData] = useState<
+        DisbursedLoansResponse["data"] | null
+    >(null);
+    const [collectionsData, setCollectionsData] = useState<
+        CollectionsResponse["data"] | null
+    >(null);
 
-  // Edit modal state
-  const [editCollectionModalOpen, setEditCollectionModalOpen] = useState(false);
-  const [selectedCollection, setSelectedCollection] = useState<CollectionTransaction | null>(null);
-  const [editLoanModalOpen, setEditLoanModalOpen] = useState(false);
-  const [selectedLoan, setSelectedLoan] = useState<DisbursedLoan | null>(null);
+    // Fetch disbursed loans
+    const fetchDisbursedLoans = async () => {
+        try {
+            const params: any = {};
 
-  // Transform User to CreditOfficerDetails
-  const transformUserToCreditOfficerDetails = (user: User): CreditOfficerDetails => ({
-    id: String(user.id), // Ensure ID is string
-    name: `${user.firstName} ${user.lastName}`,
-    coId: String(user.id).slice(-5), // Convert to string before slicing
-    dateJoined: new Date(user.createdAt).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit'
-    }),
-    email: user.email,
-    phone: user.mobileNumber,
-    gender: 'Not specified' // This field might not be available in the API
-  });
+            if (selectedPeriod && selectedPeriod !== "custom") {
+                params.timeFilter = selectedPeriod;
+            } else if (dateRange?.from && dateRange?.to) {
+                params.startDate = dateRange.from.toISOString().split("T")[0];
+                params.endDate = dateRange.to.toISOString().split("T")[0];
+            }
 
-  // Transform Transaction to CollectionTransaction
-  const transformTransactionToCollection = (transaction: Transaction, customerName: string): CollectionTransaction => ({
-    id: String(transaction.id), // Ensure ID is string
-    transactionId: String(transaction.id).slice(-8).toUpperCase(),
-    customerName,
-    amount: transaction.amount,
-    status: transaction.status === 'approved' ? 'Completed' :
-      transaction.status === 'rejected' ? 'Failed' : 'Pending',
-    date: new Date(transaction.createdAt).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit'
-    }),
-    type: transaction.type === 'deposit' ? 'Deposit' :
-      transaction.type === 'withdrawal' ? 'Withdrawal' : 'Transfer'
-  });
-
-  // Transform Loan to DisbursedLoan
-  const transformLoanToDisbursed = (loan: Loan, customerName: string): DisbursedLoan => ({
-    id: String(loan.id), // Ensure ID is string
-    loanId: String(loan.id).slice(-8).toUpperCase(),
-    name: customerName,
-    amount: loan.amount,
-    status: loan.status === 'active' ? 'Active' :
-      loan.status === 'completed' ? 'Completed' : 'Defaulted',
-    interest: loan.interestRate || 0,
-    nextRepayment: loan.nextRepaymentDate ? new Date(loan.nextRepaymentDate).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit'
-    }) : 'N/A',
-    creditOfficerId: id
-  });
-
-  // Fetch credit officer data
-  const fetchCreditOfficerData = async () => {
-    try {
-      setIsLoading(true);
-      setApiError(null);
-
-      console.log(`[CreditOfficerPage] Starting data fetch for officer ID: ${id}`);
-
-      // Use the new credit officer service to get all data
-      const creditOfficerData = await creditOfficerService.getCreditOfficerData(id);
-
-      console.log(`[CreditOfficerPage] Credit officer data received:`, {
-        officer: creditOfficerData.officer.id,
-        branchCustomers: creditOfficerData.branchCustomers.length,
-        branchLoans: creditOfficerData.branchLoans.length,
-        branchTransactions: creditOfficerData.branchTransactions.length
-      });
-
-      const officerDetails = transformUserToCreditOfficerDetails(creditOfficerData.officer);
-      setCreditOfficer(officerDetails);
-
-      // Transform loans to disbursed loans format
-      const transformedLoans = await Promise.all(
-        creditOfficerData.branchLoans.map(async (loan: Loan) => {
-          let customerName = 'Unknown Customer';
-
-          // Find customer in branch customers for efficiency
-          const customer = creditOfficerData.branchCustomers.find(c => String(c.id) === String(loan.customerId));
-          if (customer) {
-            customerName = `${customer.firstName} ${customer.lastName}`;
-          }
-
-          return transformLoanToDisbursed(loan, customerName);
-        })
-      );
-
-      console.log(`[CreditOfficerPage] Transformed ${transformedLoans.length} loans`);
-      setLoansData(transformedLoans);
-
-      // Transform transactions to collections format
-      const transformedCollections = creditOfficerData.branchTransactions.map((transaction: Transaction, index: number) => {
-        let customerName = 'Unknown Customer';
-
-        // Try to match with branch customers
-        if (creditOfficerData.branchCustomers.length > 0) {
-          const customer = creditOfficerData.branchCustomers[index % creditOfficerData.branchCustomers.length];
-          customerName = `${customer.firstName} ${customer.lastName}`;
+            const response = await hqManagerService.getOfficerDisbursedLoans(
+                parseInt(id),
+                params,
+            );
+            setDisbursedData(response.data);
+        } catch (err) {
+            console.error("Failed to fetch disbursed loans:", err);
         }
+    };
 
-        return transformTransactionToCollection(transaction, customerName);
-      });
+    // Fetch collections
+    const fetchCollections = async () => {
+        try {
+            const params: any = {};
 
-      console.log(`[CreditOfficerPage] Transformed ${transformedCollections.length} transactions`);
-      setCollectionsData(transformedCollections);
+            if (selectedPeriod && selectedPeriod !== "custom") {
+                params.timeFilter = selectedPeriod;
+            } else if (dateRange?.from && dateRange?.to) {
+                params.startDate = dateRange.from.toISOString().split("T")[0];
+                params.endDate = dateRange.to.toISOString().split("T")[0];
+            }
 
-      // Use statistics from the service
-      const stats: StatSection[] = [
-        {
-          label: 'All Customers',
-          value: creditOfficerData.statistics.totalCustomers,
-          change: 0,
-          changeLabel: 'Customers managed by this credit officer',
-          isCurrency: false,
-        },
-        {
-          label: 'Active Loans',
-          value: creditOfficerData.statistics.activeLoans,
-          change: 0,
-          changeLabel: 'Currently active loans managed',
-          isCurrency: false,
-        },
-        {
-          label: 'Loans Processed',
-          value: creditOfficerData.statistics.totalLoansProcessed,
-          change: 0,
-          changeLabel: 'Total loans processed by this officer',
-          isCurrency: false,
-        },
-        {
-          label: 'Loan Amount',
-          value: creditOfficerData.statistics.totalLoanAmount,
-          change: 0,
-          changeLabel: 'Total amount of loans managed',
-          isCurrency: true
-        },
-      ];
+            const response = await hqManagerService.getOfficerCollections(
+                parseInt(id),
+                params,
+            );
+            setCollectionsData(response.data);
+        } catch (err) {
+            console.error("Failed to fetch collections:", err);
+        }
+    };
 
-      console.log(`[CreditOfficerPage] Statistics set:`, stats);
-      setCreditOfficerStatistics(stats);
+    // Load initial data
+    useEffect(() => {
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                await Promise.all([fetchDisbursedLoans(), fetchCollections()]);
+            } catch (err) {
+                setError(
+                    err instanceof Error ? err.message : "Failed to load data",
+                );
+                showError("Failed to load credit officer details");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    } catch (err) {
-      console.error('Failed to fetch credit officer data:', err);
-      setApiError(err instanceof Error ? err.message : 'Failed to load credit officer data');
-      error('Failed to load credit officer data. Please try again.');
-    } finally {
-      setIsLoading(false);
+        if (id) {
+            loadData();
+        }
+    }, [id]);
+
+    // Refetch when filters change
+    useEffect(() => {
+        if (!isLoading) {
+            if (activeTab === "disbursed") {
+                fetchDisbursedLoans();
+            } else {
+                fetchCollections();
+            }
+        }
+    }, [selectedPeriod, dateRange]);
+
+    const handleBack = () => {
+        router.push("/dashboard/hq/credit-officers");
+    };
+
+    const handlePeriodChange = (period: TimePeriod) => {
+        setSelectedPeriod(period);
+        if (period !== "custom") {
+            setDateRange(undefined);
+        }
+    };
+
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        setDateRange(range);
+        if (range) {
+            setSelectedPeriod("custom");
+        }
+    };
+
+    // Get active data based on tab
+    const activeData =
+        activeTab === "disbursed" ? disbursedData : collectionsData;
+
+    if (isLoading) {
+        return <PageSkeleton />;
     }
-  };
 
-  // Load initial data
-  useEffect(() => {
-    fetchCreditOfficerData();
-  }, [id]);
-
-  const handleTabChange = (tab: 'collections' | 'loans-disbursed') => {
-    setActiveTab(tab);
-    setCurrentPage(1); // Reset to page 1 when switching tabs
-    setSelectedCollections([]); // Clear selections when switching tabs
-    setSelectedLoans([]);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCollectionEdit = (collectionId: string) => {
-    const collection = collectionsData.find(c => c.id === collectionId);
-    if (collection) {
-      setSelectedCollection(collection);
-      setEditCollectionModalOpen(true);
+    if (error) {
+        return (
+            <div className="drawer-content flex flex-col min-h-screen">
+                <main className="flex-1 pl-[58px] pr-6 pt-6">
+                    <div className="max-w-[1200px]">
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <div className="text-center max-w-md">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                    Error Loading Officer
+                                </h2>
+                                <p className="text-gray-600 mb-6">{error}</p>
+                                <button
+                                    onClick={handleBack}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-[#7F56D9] rounded-lg hover:bg-[#6941C6]"
+                                >
+                                    Back to Credit Officers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
     }
-  };
 
-  const handleCollectionSave = async (updatedCollection: CollectionTransaction) => {
-    try {
-      setIsLoading(true);
-
-      // In a real implementation, you would update the transaction via API
-      // For now, we'll just show success message
-      console.log('Saving collection:', updatedCollection);
-
-      success(`Collection ${updatedCollection.transactionId} updated successfully!`);
-      setEditCollectionModalOpen(false);
-      setSelectedCollection(null);
-
-      // Refresh data
-      await fetchCreditOfficerData();
-    } catch (err) {
-      console.error('Failed to update collection:', err);
-      error('Failed to update collection. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCollectionDelete = (collectionId: string) => {
-    const collection = collectionsData.find(c => c.id === collectionId);
-    if (collection) {
-      setItemToDelete({ id: collectionId, name: collection.transactionId, type: 'Collection' });
-      setDeleteModalOpen(true);
-    }
-  };
-
-  const handleLoanEdit = (loanId: string) => {
-    const loan = loansData.find(l => l.id === loanId);
-    if (loan) {
-      setSelectedLoan(loan);
-      setEditLoanModalOpen(true);
-    }
-  };
-
-  const handleLoanSave = async (updatedLoan: DisbursedLoan) => {
-    try {
-      setIsLoading(true);
-
-      // In a real implementation, you would update the loan via API
-      // For now, we'll just show success message
-      console.log('Saving loan:', updatedLoan);
-
-      success(`Loan ${updatedLoan.loanId} updated successfully!`);
-      setEditLoanModalOpen(false);
-      setSelectedLoan(null);
-
-      // Refresh data
-      await fetchCreditOfficerData();
-    } catch (err) {
-      console.error('Failed to update loan:', err);
-      error('Failed to update loan. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLoanDelete = (loanId: string) => {
-    const loan = loansData.find(l => l.id === loanId);
-    if (loan) {
-      setItemToDelete({ id: loanId, name: loan.loanId, type: 'Loan' });
-      setDeleteModalOpen(true);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (itemToDelete) {
-      try {
-        setIsLoading(true);
-
-        // In a real implementation, you would delete via API
-        console.log(`Deleting ${itemToDelete.type}:`, itemToDelete.id);
-
-        success(`${itemToDelete.type} "${itemToDelete.name}" deleted successfully!`);
-        setDeleteModalOpen(false);
-        setItemToDelete(null);
-
-        // Refresh data
-        await fetchCreditOfficerData();
-      } catch (err) {
-        console.error(`Failed to delete ${itemToDelete.type}:`, err);
-        error(`Failed to delete ${itemToDelete.type}. Please try again.`);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const handleCollectionSelectionChange = (selectedIds: string[]) => {
-    setSelectedCollections(selectedIds);
-  };
-
-  const handleLoanSelectionChange = (selectedIds: string[]) => {
-    setSelectedLoans(selectedIds);
-  };
-
-  // Pagination for collections
-  const totalCollectionPages = Math.ceil(collectionsData.length / itemsPerPage);
-  const collectionStartIndex = (currentPage - 1) * itemsPerPage;
-  const collectionEndIndex = collectionStartIndex + itemsPerPage;
-  const paginatedCollections = collectionsData.slice(collectionStartIndex, collectionEndIndex);
-
-  // Pagination for loans
-  const totalLoanPages = Math.ceil(loansData.length / itemsPerPage);
-  const loanStartIndex = (currentPage - 1) * itemsPerPage;
-  const loanEndIndex = loanStartIndex + itemsPerPage;
-  const paginatedLoans = loansData.slice(loanStartIndex, loanEndIndex);
-
-  const totalPages = activeTab === 'collections' ? totalCollectionPages : totalLoanPages;
-
-  const handleBack = () => {
-    router.push('/dashboard/hq/credit-officers');
-  };
-
-  return (
-    <div className="drawer-content flex flex-col">
-      <main className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6" style={{ paddingTop: '40px' }}>
-        <div className="max-w-[1150px]">
-          <div>
-            {/* Back Button */}
-            <button
-              onClick={handleBack}
-              className="mb-4 hover:opacity-70 transition-opacity duration-200 flex items-center gap-2"
-              aria-label="Go back to credit officers list"
+    return (
+        <div className="drawer-content flex flex-col min-h-screen">
+            <main
+                className="flex-1 px-4 sm:px-6 md:pl-[58px] md:pr-6"
+                style={{ paddingTop: "40px" }}
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M15.8334 10H4.16669M4.16669 10L10 15.8333M4.16669 10L10 4.16667"
-                  stroke="#000000"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+                <div className="w-full" style={{ maxWidth: "1200px" }}>
+                    {/* Back Button */}
+                    <button
+                        onClick={handleBack}
+                        className="mb-6 hover:opacity-70 transition-opacity flex items-center gap-2"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                        >
+                            <path
+                                d="M15.8334 10H4.16669M4.16669 10L10 15.8333M4.16669 10L10 4.16667"
+                                stroke="#000000"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                        <span className="text-sm text-gray-600">
+                            Back to Credit Officers
+                        </span>
+                    </button>
 
-            {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                Credit Officer
-              </h1>
-              {/* Breadcrumb line */}
-              <div className="w-[18px] h-[2px] bg-black mb-6"></div>
-            </div>
+                    {/* Header */}
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-bold text-[#021C3E] mb-2">
+                            Credit Officer Details
+                        </h1>
+                        <p className="text-base text-[#021C3E] opacity-50">
+                            Officer ID: {id}
+                        </p>
+                    </div>
 
-            {/* Credit Officer Info Card */}
-            <div className="w-full max-w-[1091px]" style={{ marginBottom: '48px' }}>
-              {apiError ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 text-red-500">
-                      <svg fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
+                    {/* Summary Cards - Disbursed Loans */}
+                    {disbursedData && (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Total Disbursed
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {formatCurrency(
+                                        disbursedData.summary
+                                            .totalAmountDisbursed,
+                                    )}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {disbursedData.summary.totalLoansDisbursed}{" "}
+                                    loans
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Outstanding Balance
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {formatCurrency(
+                                        disbursedData.summary
+                                            .totalOutstandingBalance,
+                                    )}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Active: {disbursedData.summary.activeLoans}
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Amount Repaid
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {formatCurrency(
+                                        disbursedData.summary.totalAmountRepaid,
+                                    )}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Completed:{" "}
+                                    {disbursedData.summary.completedLoans}
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Repayment Rate
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {disbursedData.summary.repaymentRate}%
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Avg loan:{" "}
+                                    {formatCurrency(
+                                        disbursedData.summary.averageLoanSize,
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Summary Cards - Collections */}
+                    {collectionsData && (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Total Collections
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {formatCurrency(
+                                        collectionsData.summary
+                                            .totalAmountCollected,
+                                    )}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {collectionsData.summary.totalCollections}{" "}
+                                    collections
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Collection Efficiency
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {
+                                        collectionsData.summary
+                                            .collectionEfficiencyRate
+                                    }
+                                    %
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    On time:{" "}
+                                    {collectionsData.summary.onTimeCollections}
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Direct Repayments
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {formatCurrency(
+                                        collectionsData.summary.directRepayments
+                                            .amount,
+                                    )}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {
+                                        collectionsData.summary.directRepayments
+                                            .count
+                                    }{" "}
+                                    payments
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg border border-gray-200">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Savings Coverage
+                                </p>
+                                <p className="text-2xl font-bold text-[#021C3E]">
+                                    {formatCurrency(
+                                        collectionsData.summary
+                                            .loanCoverageFromSavings.amount,
+                                    )}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {
+                                        collectionsData.summary
+                                            .loanCoverageFromSavings.count
+                                    }{" "}
+                                    loans
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Filter Controls */}
+                    <div className="mb-6">
+                        <FilterControls
+                            selectedPeriod={selectedPeriod}
+                            onPeriodChange={handlePeriodChange}
+                            onDateRangeChange={handleDateRangeChange}
+                            onFilter={() => {}}
+                        />
                     </div>
-                    <div>
-                      <h3 className="text-red-800 font-medium">Error Loading Credit Officer Data</h3>
-                      <p className="text-red-600 text-sm mt-1">{apiError}</p>
+
+                    {/* Tabs */}
+                    <div className="mb-6 border-b border-gray-200">
+                        <nav className="flex gap-6">
+                            <button
+                                onClick={() => setActiveTab("disbursed")}
+                                className={`pb-2 px-1 text-sm font-medium ${
+                                    activeTab === "disbursed"
+                                        ? "text-[#7F56D9] border-b-2 border-[#7F56D9]"
+                                        : "text-gray-500"
+                                }`}
+                            >
+                                Disbursed Loans (
+                                {disbursedData?.summary.totalLoansDisbursed ||
+                                    0}
+                                )
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("collections")}
+                                className={`pb-2 px-1 text-sm font-medium ${
+                                    activeTab === "collections"
+                                        ? "text-[#7F56D9] border-b-2 border-[#7F56D9]"
+                                        : "text-gray-500"
+                                }`}
+                            >
+                                Collections (
+                                {collectionsData?.summary.totalCollections || 0}
+                                )
+                            </button>
+                        </nav>
                     </div>
-                  </div>
+
+                    {/* Date Range Info */}
+                    {activeData?.dateRange && (
+                        <div className="mb-4 text-sm text-gray-500">
+                            Showing data from{" "}
+                            {formatDate(activeData.dateRange.start)} to{" "}
+                            {formatDate(activeData.dateRange.end)}
+                        </div>
+                    )}
+
+                    {/* Tab Content */}
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        {activeTab === "disbursed" && (
+                            <>
+                                {!disbursedData?.loans ||
+                                disbursedData.loans.length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <p className="text-gray-500">
+                                            No disbursed loans found for this
+                                            period
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Customer
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Principal
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Interest
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Total Repayable
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Amount Paid
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Remaining
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Status
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Disbursed
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Interest Amt
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {disbursedData.loans.map(
+                                                (loan: any, index: number) => (
+                                                    <tr
+                                                        key={loan.id}
+                                                        className={
+                                                            index <
+                                                            disbursedData.loans
+                                                                .length -
+                                                                1
+                                                                ? "border-b border-gray-200"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        <td className="px-6 py-4 text-sm text-gray-900">
+                                                            {loan.customerName}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatCurrency(
+                                                                parseFloat(
+                                                                    loan.principal,
+                                                                ),
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {loan.interestRate}%
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatCurrency(
+                                                                parseFloat(
+                                                                    loan.totalRepayable,
+                                                                ),
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatCurrency(
+                                                                parseFloat(
+                                                                    loan.amountPaid,
+                                                                ),
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatCurrency(
+                                                                parseFloat(
+                                                                    loan.remainingBalance,
+                                                                ),
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span
+                                                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                                                    loan.status ===
+                                                                    "active"
+                                                                        ? "bg-green-50 text-green-700"
+                                                                        : loan.status ===
+                                                                            "completed"
+                                                                          ? "bg-blue-50 text-blue-700"
+                                                                          : "bg-yellow-50 text-yellow-700"
+                                                                }`}
+                                                            >
+                                                                {loan.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatDate(
+                                                                loan.disbursementDate,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatCurrency(
+                                                                loan.interestAmount,
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </>
+                        )}
+
+                        {activeTab === "collections" && (
+                            <>
+                                {!collectionsData?.collections ||
+                                collectionsData.collections.length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <p className="text-gray-500">
+                                            No collections found for this period
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Customer
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Amount
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Branch
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Type
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Status
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
+                                                    Collected Date
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {collectionsData.collections.map(
+                                                (
+                                                    collection: any,
+                                                    index: number,
+                                                ) => (
+                                                    <tr
+                                                        key={collection.id}
+                                                        className={
+                                                            index <
+                                                            collectionsData
+                                                                .collections
+                                                                .length -
+                                                                1
+                                                                ? "border-b border-gray-200"
+                                                                : ""
+                                                        }
+                                                    >
+                                                        <td className="px-6 py-4 text-sm text-gray-900">
+                                                            {
+                                                                collection.customer
+                                                            }
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatCurrency(
+                                                                parseFloat(
+                                                                    collection.amount,
+                                                                ),
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {collection.branch}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {collection.type ===
+                                                            "direct"
+                                                                ? "Direct Repayment"
+                                                                : "Savings Coverage"}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span
+                                                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                                                    collection.status ===
+                                                                    "on_time"
+                                                                        ? "bg-green-50 text-green-700"
+                                                                        : "bg-yellow-50 text-yellow-700"
+                                                                }`}
+                                                            >
+                                                                {collection.status ===
+                                                                "on_time"
+                                                                    ? "On Time"
+                                                                    : "Late"}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                                            {formatDate(
+                                                                collection.collectedDate,
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
-              ) : isLoading || !creditOfficer ? (
-                <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <CreditOfficerInfoCard
-                  fields={[
-                    { label: 'Name', value: creditOfficer.name },
-                    { label: 'CO ID', value: creditOfficer.coId },
-                    { label: 'Date Joined', value: creditOfficer.dateJoined },
-                    { label: 'Email address', value: creditOfficer.email },
-                    { label: 'Phone number', value: creditOfficer.phone },
-                    { label: 'Gender', value: creditOfficer.gender }
-                  ]}
-                />
-              )}
-            </div>
+            </main>
 
-            {/* Statistics Card */}
-            <div className="w-full max-w-[1091px]" style={{ marginBottom: '48px' }}>
-              {isLoading ? (
-                <StatisticsCardSkeleton />
-              ) : (
-                <StatisticsCard sections={creditOfficerStatistics} />
-              )}
-            </div>
-
-            {/* Tab Navigation */}
-            <CreditOfficerTabs activeTab={activeTab} onTabChange={handleTabChange} />
-
-            {/* Tab Content */}
-            <div
-              className="max-w-[1041px]"
-              role="tabpanel"
-              id={`${activeTab}-panel`}
-              aria-labelledby={`${activeTab}-tab`}
-            >
-              {isLoading ? (
-                <TableSkeleton rows={itemsPerPage} />
-              ) : activeTab === 'collections' ? (
-                <>
-                  <CollectionsTable
-                    transactions={paginatedCollections}
-                    selectedTransactions={selectedCollections}
-                    onSelectionChange={handleCollectionSelectionChange}
-                    onEdit={handleCollectionEdit}
-                    onDelete={handleCollectionDelete}
-                  />
-                  {/* Pagination */}
-                  <div className="mt-4">
-                    <Pagination
-                      totalPages={totalPages}
-                      page={currentPage}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <LoansDisbursedTable
-                    loans={paginatedLoans}
-                    selectedLoans={selectedLoans}
-                    onSelectionChange={handleLoanSelectionChange}
-                    onEdit={handleLoanEdit}
-                    onDelete={handleLoanDelete}
-                  />
-                  {/* Pagination */}
-                  <div className="mt-4">
-                    <Pagination
-                      totalPages={totalPages}
-                      page={currentPage}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+            {/* Toast Container */}
+            <ToastContainer toasts={toasts} onClose={removeToast} />
         </div>
-      </main>
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => {
-          setDeleteModalOpen(false);
-          setItemToDelete(null);
-        }}
-        onConfirm={confirmDelete}
-        title={`Delete ${itemToDelete?.type || 'Item'}`}
-        message={`Are you sure you want to delete ${itemToDelete?.type.toLowerCase() || 'this item'}`}
-        itemName={itemToDelete?.name}
-      />
-
-      {/* Edit Collection Modal */}
-      <EditCollectionModal
-        isOpen={editCollectionModalOpen}
-        onClose={() => {
-          setEditCollectionModalOpen(false);
-          setSelectedCollection(null);
-        }}
-        onSave={handleCollectionSave}
-        transaction={selectedCollection}
-      />
-
-      {/* Edit Loan Modal */}
-      <EditLoanModal
-        isOpen={editLoanModalOpen}
-        onClose={() => {
-          setEditLoanModalOpen(false);
-          setSelectedLoan(null);
-        }}
-        onSave={handleLoanSave}
-        loan={selectedLoan}
-      />
-
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onClose={removeToast} />
-    </div>
-  );
+    );
 }
