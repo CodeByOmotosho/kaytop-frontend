@@ -76,7 +76,10 @@ export default function UserLoanTable({
                 <td className="p-4">
                   <StatusBadge status={loan.status.toUpperCase()} />
                 </td>
-                <td className="p-4">{`NGN${loan.amount}`}</td>
+                <td className="p-4"> ₦{Number(loan.amount).toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</td>
                 <td className="p-4">{loan.interestRate}%</td>
                 <td className="p-4"> {loan?.dueDate
                     ? new Date(loan.dueDate).toDateString()

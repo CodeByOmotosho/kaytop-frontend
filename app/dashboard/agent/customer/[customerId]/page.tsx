@@ -306,7 +306,9 @@ const queryClient = useQueryClient();
   /* =======================
      DERIVED DATA
      ======================= */
-  const activeLoan = loans?.find((l) => l.status === "active") ?? null;
+  const activeLoan = loans?.find((l) =>
+  ["active", "disbursed", "overdue"].includes(l.status)
+);
    
       const activeLoanSummary = activeLoan ? getActiveLoanSummary(activeLoan) : [];
 
