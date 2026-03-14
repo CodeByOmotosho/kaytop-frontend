@@ -64,7 +64,7 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
                 </div>
                 <div className="bg-white/30 p-4 rounded-lg mt-4">
                     <div>
-                        <p className="text-sm opacity-90">Rec~ollections</p>
+                        <p className="text-sm opacity-90">Recollections</p>
                         <p className="text-xl font-semibold mt-1">
                             {formatCurrency(todaysCollections)}
                         </p>

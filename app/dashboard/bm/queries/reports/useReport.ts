@@ -10,29 +10,38 @@ import { AxiosError } from "axios";
 import { useSearchParams } from "next/navigation";
 
 interface QueryProps {
-  branch?: string;
+    branch?: string;
 }
+
 export function useReport({ branch }: QueryProps) {
-  const searchParams = useSearchParams();
-  const rawStatus = searchParams.get("status");
-  const status =
-    rawStatus && isReportStatus(rawStatus) ? rawStatus : ReportStatus.DRAFT;
+    const searchParams = useSearchParams();
+    const rawStatus = searchParams.get("status");
 
-  const { page, limit } = useUrlPagination(PaginationKey.report_page);
-  const type = useUrlParam<ReportType>(PaginationKey.report_type, (value) =>
-    isReportType(value) ? value : "custom"
-  );
+    const status =
+        rawStatus && isReportStatus(rawStatus) ? rawStatus : undefined;
 
-  const { isLoading, error, data } = useQuery<
-    ReportResponse,
-    AxiosError<ApiResponseError>
-  >({
-    queryKey: ["branch-reports", page, limit, status, type, branch],
-    queryFn: () => {
-      return ReportService.getReports({ page, limit, status, branch, type });
-    },
-    enabled: Boolean(branch),
-  });
+    const { page, limit } = useUrlPagination(PaginationKey.report_page);
 
-  return { isLoading, error, data };
+    const rawType = searchParams.get("type");
+    const type =
+        rawType && isReportType(rawType) ? (rawType as ReportType) : undefined;
+
+    const { isLoading, error, data } = useQuery<
+        ReportResponse,
+        AxiosError<ApiResponseError>
+    >({
+        queryKey: ["branch-reports", page, limit, status, type, branch],
+        queryFn: () => {
+            return ReportService.getReports({
+                page,
+                limit,
+                status,
+                branch,
+                type,
+            });
+        },
+        enabled: Boolean(branch),
+    });
+
+    return { isLoading, error, data };
 }
