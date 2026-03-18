@@ -5,7 +5,7 @@ import { useCustomerFlow } from "./AddCustomerFlow/AddCustomerFlowProvider";
 import CreateLoanModal from "./loans/CreateLoanModal";
 import { CustomerHeader } from "@/app/_components/ui/CustomerHeader";
 
-import { PenLine, UserRoundPlus } from "lucide-react";
+import { AlertCircle, PenLine, UserRoundPlus } from "lucide-react";
 import { ActivityChart } from "./dashboard/ActivityChart";
 import { KpiCards } from "./dashboard/KpiCards";
 import {
@@ -16,12 +16,14 @@ import { useLoanRecollections } from "./queries/useLoanRecollections";
 import { AxiosError } from "axios";
 import { DashboardKpiResponse } from "@/app/types/dashboard";
 import { useOfficerDashboard } from "@/app/hooks/useOfficerDashboard";
+import FailedDisbursementModal from "./loans/FailedDisbursementModal";
 
 export default function AgentDashboardClient() {
     const { start } = useCustomerFlow();
     const [isLoanModalOpen, setLoanModalOpen] = useState(false);
+    const [isFailedDisbursementModalOpen, setFailedDisbursementModalOpen] =
+        useState(false);
 
-    // Changed from useDashboardQuery to useOfficerDashboard
     const {
         data: dashboardData,
         isLoading: isDashboardLoading,
@@ -124,6 +126,26 @@ export default function AgentDashboardClient() {
                                 </div>
                             </div>
                         </button>
+
+                        {/* New Failed Disbursement Card */}
+                        <button
+                            onClick={() => setFailedDisbursementModalOpen(true)}
+                            className="cursor-pointer bg-white px-4 py-5 rounded-xl shadow border text-left hover:shadow-md transition-shadow"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="rounded-full w-10 h-10 bg-amber-100 flex items-center justify-center">
+                                    <AlertCircle className="text-amber-600" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold">
+                                        Failed Disbursements
+                                    </p>
+                                    <p className="text-sm text-slate-500">
+                                        Retry failed loan disbursements
+                                    </p>
+                                </div>
+                            </div>
+                        </button>
                     </div>
                 </div>
 
@@ -138,6 +160,11 @@ export default function AgentDashboardClient() {
             <CreateLoanModal
                 open={isLoanModalOpen}
                 onClose={() => setLoanModalOpen(false)}
+            />
+
+            <FailedDisbursementModal
+                open={isFailedDisbursementModalOpen}
+                onClose={() => setFailedDisbursementModalOpen(false)}
             />
         </div>
     );

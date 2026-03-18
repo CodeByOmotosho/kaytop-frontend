@@ -388,7 +388,7 @@ export default function LoanDetailsPage({ params }: PageProps) {
                         <div className="bg-white rounded-lg border border-gray-200 p-4">
                             <p className="text-sm text-gray-500 mb-1">Term</p>
                             <p className="text-xl font-bold text-[#021C3E]">
-                                {loan.term} months
+                                {loan.term} days
                             </p>
                         </div>
                         <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -606,7 +606,7 @@ export default function LoanDetailsPage({ params }: PageProps) {
                                                         >
                                                             <td className="py-2 text-sm">
                                                                 {formatDateSafe(
-                                                                    repayment.date,
+                                                                    repayment.paymentDate,
                                                                 )}
                                                             </td>
                                                             <td className="py-2 text-sm">
